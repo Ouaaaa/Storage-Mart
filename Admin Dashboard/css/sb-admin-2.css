@@ -10731,7 +10731,12 @@ a:focus {
 .sidebar-dark.toggled #sidebarToggle::after {
   color: rgba(255, 255, 255, 0.5);
 }
+.btn-update {
+  color: #fff;
+  background-color: #e74a3b;
+  border-color: #e74a3b;
 
+}
 .btn-circle {
   border-radius: 100%;
   height: 2.5rem;

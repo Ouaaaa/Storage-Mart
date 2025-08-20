@@ -223,68 +223,18 @@
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800"></h1>
+                    <p class="mb-4">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
 
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Accounts</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Account</h6>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-											<th>Account ID</th>
-                                            <th>Username</th>
-                                            <th>Password</th>
-                                            <th>Usertype</th>
-											<th>datecreated</th>
-											<th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Account ID</th>
-                                            <th>Username</th>
-                                            <th>Password</th>
-                                            <th>Usertype</th>
-											<th>datecreated</th>
-											<th>Action</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['account_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['username']) ?></td>
-                                            <td><?= htmlspecialchars($row['password']) ?></td>
-                                            <td><?= htmlspecialchars($row['usertype']) ?></td>
-                                            <td><?= htmlspecialchars($row['datecreated']) ?></td>
-                                            <td>
-                                                <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
-                                                    <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Delete</button>
-                                                </form>
-                                            </td>
-                                        </tr>
-                                        <?php } ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                            
                         </div>
                     </div>
-                    <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
-                                                    <form method="POST" style="display:inline;">
-                                                </form>
 
                 </div>
                 <!-- /.container-fluid -->
