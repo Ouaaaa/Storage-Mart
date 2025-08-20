@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>StorageMart LMS Login</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="icon" type="image/png" href="Images/favicon.png" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Header -->
+    <header class="storagemart-header">
+      <img src="Images/storagemart-logo.png" alt="StorageMart Logo" />
+    </header>
+
+    <!-- Main Content -->
+    <main class="index-main-content">
+      <div class="login-box">
+        <div class="logo-banner">
+          <span class="logo-white">LMS</span
+          ><span class="logo-orange">mart</span>
+        </div>
+
+        <form action="/login" method="POST" id="loginForm">
+          <label for="idNumber">ID Number</label>
+          <input
+            type="text"
+            id="idNumber"
+            name="idNumber"
+            placeholder="Enter your ID number"
+            required
+            oninput="this.value = this.value.replace(/[^0-9]/g, '')"
+          />
+
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            name="password"
+            placeholder="Enter your password"
+            required
+          />
+
+          <button type="submit">LOG IN</button>
+
+          <div class="forgot-password">
+            <a href="#">Forgot password?</a>
+          </div>
+        </form>
+        <script>
+          document
+            .getElementById("loginForm")
+            .addEventListener("submit", async (e) => {
+              e.preventDefault();
+              const idNumber = document.getElementById("idNumber").value;
+              const password = document.getElementById("password").value;
+
+              const res = await fetch("/login", {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ idNumber, password }),
+              });
+
+              const result = await res.json();
+
+              if (result.success) {
+                window.location.href = "/admin.html"; // Redirect if login is correct
+              } else {
+                alert("Invalid credentials.");
+              }
+            });
+        </script>
+      </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+      <p>
+        &copy; 2025 StorageMart. All rights reserved. For Internal Use Only.
+      </p>
+    </footer>
+  </body>
+</html>
