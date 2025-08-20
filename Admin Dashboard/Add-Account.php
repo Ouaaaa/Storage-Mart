@@ -40,7 +40,67 @@
 
 
 ?>
+<?php
+require_once "config.php";
+session_start();
 
+if (isset($_POST['btnSubmit'])) {
+    // Check if the user already exists
+    $sql = "SELECT * FROM tblaccounts WHERE username = ?";
+    
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        mysqli_stmt_bind_param($stmt, "s", $_POST['txtUsername']);
+        if (mysqli_stmt_execute($stmt)) {
+            $result = mysqli_stmt_get_result($stmt);
+            if (mysqli_num_rows($result) == 0) {
+                // Insert new account into the table
+                $sql = "INSERT INTO tblaccounts (username, password, usertype, datecreated) VALUES (?, ?, ?, ?)";
+                if ($stmt = mysqli_prepare($link, $sql)) {
+                    $datecreated = date("m/d/Y");
+                    mysqli_stmt_bind_param($stmt, "sss", $_POST['txtUsername'], $_POST['txtPassword'], $datecreated);
+                    
+                    if (mysqli_stmt_execute($stmt)) {
+                        // ✅ Store account ID in session
+                        $account_id = mysqli_insert_id($link);
+                        $_SESSION['account_id'] = $account_id;
+
+                        // ✅ Redirect to step 2 without query string
+                        header("Location: registerpage2.php");
+                        exit();
+                    } else {
+                        echo "Error inserting account.";
+                    }
+                }
+            } else {
+                $errorMessage = "Username already in use.";
+            }
+        } else {
+            echo "<font color='red'>Error on select statement.</font>";
+        }
+    }
+}
+?>
+<?php
+require_once "config.php";
+include ("session-checker.php")
+
+if (isset($_POST['btnSubmit'])){
+    //Checking of the Account if it exist 
+    $sql = "SELECT * FROM tblaccounts where username =?";
+
+    if($stmt = mysqli_prepare($link, $sql))
+    {
+        $result = $mysqli_stmt_get_result($stmt);
+        //Inserting in tblaccounts
+        if (mysqloi_num_rows($result)) == 0 
+        {
+            $sql = "INSERT INTO tblaccounts(account_id, username, password, usertype, createdby, datecreated) VALUES (?, ?, ?, ?, ?, ?)";
+            if($stmt_prepare) 
+        }
+    }
+}
+
+?>
 <html lang="en">
 
 <head>
@@ -61,7 +121,7 @@
 
     <!-- Custom styles for this template -->
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
-
+    <link href="css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
     <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
@@ -232,7 +292,79 @@
                             <h6 class="m-0 font-weight-bold text-primary">Add Account</h6>
                         </div>
                         <div class="card-body">
-                            
+                            <div class="container mt-4">
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    <h1>Account Details</h1>
+                                    <div class ="row mb-5">
+                                        <div class = "col-md-6">
+                                            <label for="username" class="form-label">Username</label>
+                                            <input type="text" class ="form-control" id ="username" name="username" placeholder="Username">
+                                        </div>
+                                        <div class = "col-md-6">
+                                            <label for="password" class="form-label">Password</label>
+                                            <input type="text" class ="form-control" id ="password" name="password" placeholder="Password">
+                                        </div>
+
+                                    </div>
+
+                                    <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="user-type" class="form-label">User Type</label>
+                                        <select id="user-type" name="user-type" class="form-control">
+                                        <option value="">-- Select User Type --</option>
+                                        <option value="ADMIN">Admin</option>
+                                        <option value="HR">Human Resources</option>
+                                        <option value="ACCTNG">ACCOUNTING</option>
+                                        </select>
+                                    </div>
+                                    </div>
+
+
+                                    <h1>Employee Details </h1>
+                                    <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="last-name" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="last-name" name="last-name" placeholder="Last name">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="first-name" class="form-label">First Name</label>
+                                        <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First name">
+                                    </div>
+                                    </div>
+
+                                    <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="middle-name" class="form-label">Middle Name</label>
+                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name">
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="department" class="form-label">Department</label>
+                                        <select id="department" name="department" class="form-control">
+                                        <option value="">-- Select Department --</option>
+                                        <option value="IT">Information Technology</option>
+                                        <option value=""></option>
+                                        <option value=""></option>
+                                        </select>
+                                    </div>
+                                    </div>
+
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for="branch" class="form-label">Branch</label>
+                                                <select id="branch" name="branch" class="form-control">
+                                                <option value="">-- Select Branch --</option>
+                                                <option value="ERAN">Eran</option>
+                                                <option value=""></option>
+                                                <option value=""></option>
+                                                </select>
+                                            </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                    <button type="submit" class="btn btn-danger" name="btnCancel">Cancel</button>
+                                </form>
+                            </div>
+
                         </div>
                     </div>
 

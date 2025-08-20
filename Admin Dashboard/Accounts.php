@@ -228,7 +228,7 @@
                         For more information about DataTables, please visit the <a target="_blank"
                             href="https://datatables.net">official DataTables documentation</a>.</p>
 
-                    <!-- DataTales Example -->
+                    <!-- Main conctent -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">List of Accounts</h6>
@@ -280,10 +280,10 @@
                             </div>
                         </div>
                     </div>
-                    <form method="POST" style="display:inline;">
-                        <input type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                        <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
-                    </form>
+            </div>
+        </div>
+        </div>
+
 
                 </div>
                 <!-- /.container-fluid -->
