@@ -281,10 +281,9 @@
                         </div>
                     </div>
                     <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
-                                                    <form method="POST" style="display:inline;">
-                                                </form>
+                        <input type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
+                        <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
+                    </form>
 
                 </div>
                 <!-- /.container-fluid -->
