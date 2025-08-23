@@ -1,105 +1,70 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
-
-    $accountID = $_SESSION['account_id'];
-    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
-
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "i", $accountID);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $username);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
-    }
-
-    $_SESSION['username'] = $username;
-
-    // Handle delete request
-    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Decline') {
-        $accountToDelete = $_POST['account_id'];
-
-        // Protect against SQL injection
-        $deleteSQL = "DELETE FROM tblaccounts WHERE account_id = ?";
-        if ($stmt = mysqli_prepare($link, $deleteSQL)) {
-            mysqli_stmt_bind_param($stmt, "i", $accountToDelete);
-            if (mysqli_stmt_execute($stmt)) {
-                // Optional: redirect to refresh the page
-                header("Location: " . $_SERVER['PHP_SELF']);
-                exit();
-            } else {
-                echo "<script>alert('Error deleting account.');</script>";
-            }
-            mysqli_stmt_close($stmt);
-        }
-    }
-
-    $fetchQuery = "SELECT * FROM tblaccounts";
-    $result = mysqli_query($link, $fetchQuery);
-
-
-?>
-<?php
 require_once "config.php";
-session_start();
+include ("session-checker.php");
 
 if (isset($_POST['btnSubmit'])) {
-    // Check if the user already exists
+    // Check if the student is already existing
     $sql = "SELECT * FROM tblaccounts WHERE username = ?";
     
     if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "s", $_POST['txtUsername']);
+        mysqli_stmt_bind_param($stmt, "s", $_POST['username']);
         if (mysqli_stmt_execute($stmt)) {
             $result = mysqli_stmt_get_result($stmt);
-            if (mysqli_num_rows($result) == 0) {
-                // Insert new account into the table
-                $sql = "INSERT INTO tblaccounts (username, password, usertype, datecreated) VALUES (?, ?, ?, ?)";
+            if (mysqli_num_rows($result) == 0) {    
+                $sql = "INSERT INTO tblaccounts (username, password, usertype, status, createdby, datecreated)
+                        VALUES (?, ?, ?, 'ACTIVE', ?, ?)";
                 if ($stmt = mysqli_prepare($link, $sql)) {
+                    $password = $_POST['password'];
+                    $usertype = $_POST['user-type'];
+                    $createdby = $_SESSION['username'];
                     $datecreated = date("m/d/Y");
-                    mysqli_stmt_bind_param($stmt, "sss", $_POST['txtUsername'], $_POST['txtPassword'], $datecreated);
-                    
+                    mysqli_stmt_bind_param($stmt, "sssss", $_POST['username'], $password, $usertype, $createdby, $datecreated);
                     if (mysqli_stmt_execute($stmt)) {
-                        // ✅ Store account ID in session
                         $account_id = mysqli_insert_id($link);
-                        $_SESSION['account_id'] = $account_id;
-
-                        // ✅ Redirect to step 2 without query string
-                        header("Location: registerpage2.php");
-                        exit();
+                        $sql = "INSERT INTO tblemployee (account_id, lastname, firstname, middlename, department, branch, createdby, datecreated)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+                        if ($stmt = mysqli_prepare($link, $sql)) {
+                            mysqli_stmt_bind_param($stmt, "isssssss", $account_id,
+                                $_POST['last-name'], $_POST['first-name'], $_POST['middle-name'],
+                                $_POST['department'], $_POST['branch'], $createdby, $datecreated);
+                            if (mysqli_stmt_execute($stmt)) {
+                                $employee_id = mysqli_insert_id($link);
+                                // Insert into tbllogs
+                                $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) VALUES (?, ?, ?, ?, ?, ?)";
+                                if ($stmt = mysqli_prepare($link, $sql)) {
+                                    $date = date("m/d/Y");
+                                    $time = date("h:i:sa");
+                                    $action = "Create";
+                                    $module = "Employee Management";
+                                    mysqli_stmt_bind_param($stmt, "ssssss", $date, $time, $action, $module, $employee_id, $_SESSION['username']);
+                                    if (mysqli_stmt_execute($stmt)) {
+                                        $notificationMessage = "New Student successfully created!";
+                                    } else {
+                                        echo "<font color='red'>Error on inserting into tbllogs.</font>";
+                                    }
+                                } else {
+                                    echo "<font color='red'>Error preparing statement for tbllogs.</font>";
+                                }
+                            } else {
+                                echo "<font color='red'>Error on inserting into tblaccounts.</font>";
+                            }
+                        } else {
+                            echo "<font color='red'>Error preparing statement for tblaccounts.</font>";
+                        }
                     } else {
-                        echo "Error inserting account.";
+                        echo "<font color='red'>Error on inserting into tblstudents.</font>";
                     }
+                } else {
+                    echo "<font color='red'>Error preparing statement for tblstudents.</font>";
                 }
             } else {
-                $errorMessage = "Username already in use.";
+                $errorMessage = "Student number already in use.";
             }
         } else {
             echo "<font color='red'>Error on select statement.</font>";
         }
     }
 }
-?>
-<?php
-require_once "config.php";
-include ("session-checker.php")
-
-if (isset($_POST['btnSubmit'])){
-    //Checking of the Account if it exist 
-    $sql = "SELECT * FROM tblaccounts where username =?";
-
-    if($stmt = mysqli_prepare($link, $sql))
-    {
-        $result = $mysqli_stmt_get_result($stmt);
-        //Inserting in tblaccounts
-        if (mysqloi_num_rows($result)) == 0 
-        {
-            $sql = "INSERT INTO tblaccounts(account_id, username, password, usertype, createdby, datecreated) VALUES (?, ?, ?, ?, ?, ?)";
-            if($stmt_prepare) 
-        }
-    }
-}
-
 ?>
 <html lang="en">
 
@@ -298,11 +263,12 @@ if (isset($_POST['btnSubmit'])){
                                     <div class ="row mb-5">
                                         <div class = "col-md-6">
                                             <label for="username" class="form-label">Username</label>
-                                            <input type="text" class ="form-control" id ="username" name="username" placeholder="Username">
+                                            <input type="text" class ="form-control" id ="username" name="username" placeholder="Username" required>
                                         </div>
                                         <div class = "col-md-6">
                                             <label for="password" class="form-label">Password</label>
-                                            <input type="text" class ="form-control" id ="password" name="password" placeholder="Password">
+                                            <input type="text" class ="form-control" id ="password" name="password" placeholder="Password" required>
+                                            <span id = "showPassword" class = "show-password-toggle" onclick = "togglePasswordVisibility()">Show</span>
                                         </div>
 
                                     </div>
@@ -310,7 +276,7 @@ if (isset($_POST['btnSubmit'])){
                                     <div class="row mb-5">
                                     <div class="col-md-6">
                                         <label for="user-type" class="form-label">User Type</label>
-                                        <select id="user-type" name="user-type" class="form-control">
+                                        <select id="user-type" name="user-type" class="form-control" required>
                                         <option value="">-- Select User Type --</option>
                                         <option value="ADMIN">Admin</option>
                                         <option value="HR">Human Resources</option>
@@ -324,22 +290,22 @@ if (isset($_POST['btnSubmit'])){
                                     <div class="row mb-5">
                                     <div class="col-md-6">
                                         <label for="last-name" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="last-name" name="last-name" placeholder="Last name">
+                                        <input type="text" class="form-control" id="last-name" name="last-name" placeholder="Last name" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="first-name" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First name">
+                                        <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First name" required>
                                     </div>
                                     </div>
 
                                     <div class="row mb-5">
                                     <div class="col-md-6">
                                         <label for="middle-name" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name">
+                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="department" class="form-label">Department</label>
-                                        <select id="department" name="department" class="form-control">
+                                        <select id="department" name="department" class="form-control" required>
                                         <option value="">-- Select Department --</option>
                                         <option value="IT">Information Technology</option>
                                         <option value=""></option>
@@ -351,7 +317,7 @@ if (isset($_POST['btnSubmit'])){
                                     <div class ="row mb-5">
                                             <div class="col-md-6">
                                                 <label for="branch" class="form-label">Branch</label>
-                                                <select id="branch" name="branch" class="form-control">
+                                                <select id="branch" name="branch" class="form-control" required>
                                                 <option value="">-- Select Branch --</option>
                                                 <option value="ERAN">Eran</option>
                                                 <option value=""></option>
@@ -361,13 +327,13 @@ if (isset($_POST['btnSubmit'])){
                                     </div>
 
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <button type="submit" class="btn btn-danger" name="btnCancel">Cancel</button>
-                                </form>
+                                    <a href="Accounts.php" class="btn btn-danger">Cancel</a>
+                                    </form>
                             </div>
 
                         </div>
                     </div>
-
+                    
                 </div>
                 <!-- /.container-fluid -->
 
@@ -424,7 +390,27 @@ if (isset($_POST['btnSubmit'])){
 
     <!-- Page level custom scripts -->
     <script src="js/demo/datatables-demo.js"></script>
+    <script>
+    function togglePasswordVisibility() {
+        var passwordField = document.getElementById("txtPassword");
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            document.getElementById("showPassword").textContent = "Hide";
+        }
+        else {
+            passwordField.type = "password";
+            document.getElementById("showPassword").textContent = "Show";
+        }
+    }
+</script>
 
+<script>
+    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+    if (notificationMessage !== "") {
+        alert(notificationMessage);
+        window.location.href = "students-management.php";
+    }
+</script>
 </body>
 
 </html>

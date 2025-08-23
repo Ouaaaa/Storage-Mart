@@ -53,7 +53,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Accounts - Tables</title>
+    <title>Storage Mart Employee - Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -63,7 +63,7 @@
 
     <!-- Custom styles for this template -->
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+
     <!-- Custom styles for this page -->
     <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
@@ -78,11 +78,10 @@
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-                <div class="sidebar-brand-icon ">
-                    <img src="img/logo.png" alt="Logo" style="width:40px; height:auto;">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
+                <div class="sidebar-brand-icon rotate-n-15">
                 </div>
-                <div class="sidebar-brand-text mx-3">Storage Mart</div>
+                <div class="sidebar-brand-text mx-3">Unipath</div>
             </a>
 
             <!-- Divider -->
@@ -235,58 +234,57 @@
                     <!-- Main conctent -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Accounts</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">List of Employee</h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
+                                            <th>Employee ID</th>
 											<th>Account ID</th>
-                                            <th>Username</th>
-                                            <th>Password</th>
-                                            <th>Usertype</th>
-											<th>datecreated</th>
-											<th>Action</th>
+                                            <th>Last name</th>
+                                            <th>First name</th>
+                                            <th>Middle name</th>
+											<th>Department</th>
+											<th>Branch</th>
+                                            <th>Created by</th>
+                                            <th>Date created</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
                                         <tr>
-                                            <th>Account ID</th>
-                                            <th>Username</th>
-                                            <th>Password</th>
-                                            <th>Usertype</th>
-											<th>datecreated</th>
-											<th>Action</th>
+                                            <th>Employee ID</th>
+											<th>Account ID</th>
+                                            <th>Last name</th>
+                                            <th>First name</th>
+                                            <th>Middle name</th>
+											<th>Department</th>
+											<th>Branch</th>
+                                            <th>Created by</th>
+                                            <th>Date created</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
-                                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+                                        <?php while ($row = mysqli_fetch_assoc($res)) { ?>
                                         <tr>
+                                            <td><?= htmlspecialchars($row['employee_id']) ?></td>
                                             <td><?= htmlspecialchars($row['account_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['username']) ?></td>
-                                            <td><?= htmlspecialchars($row['password']) ?></td>
-                                            <td><?= htmlspecialchars($row['usertype']) ?></td>
+                                            <td><?= htmlspecialchars($row['lastname']) ?></td>
+                                            <td><?= htmlspecialchars($row['firstname']) ?></td>
+                                            <td><?= htmlspecialchars($row['middlename']) ?></td>
+                                            <td><?= htmlspecialchars($row['department']) ?></td>
+                                            <td><?= htmlspecialchars($row['branch']) ?></td>
+                                            <td><?= htmlspecialchars($row['createdby']) ?></td>
                                             <td><?= htmlspecialchars($row['datecreated']) ?></td>
-                                            <td>
-                                                <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
-                                                    <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Delete</button>
-                                                </form>
-                                            </td>
                                         </tr>
                                         <?php } ?>
                                     </tbody>
                                 </table>
                             </div>
                         </div>
-                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                            <a href="Add-Account.php" class="btn btn-primary">Add Account</a>
-                        </div>
                     </div>
+
                 </div>
         </div>
         </div>

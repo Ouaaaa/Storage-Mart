@@ -1926,13 +1926,13 @@
   }
   .btn-primary {
     color:#fff;
-    background-color:#4e73df;
-    border-color:#4e73df
+    background-color:#f26552;
+    border-color:#f26552;
   }
   .btn-primary:hover {
     color:#fff;
-    background-color:#2e59d9;
-    border-color:#2653d4
+    background-color:#ac4031;
+    border-color:#913023
   }
   .btn-primary.focus,.btn-primary:focus {
     color:#fff;
@@ -3819,8 +3819,8 @@
   .page-item.active .page-link {
     z-index:3;
     color:#fff;
-    background-color:#4e73df;
-    border-color:#4e73df
+    background-color:#f26552;
+    border-color:#f26552
   }
   .page-item.disabled .page-link {
     color:#858796;
