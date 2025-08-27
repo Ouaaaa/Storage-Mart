@@ -3,7 +3,7 @@
     include "session-checker.php";
 
     $accountID = $_SESSION['account_id'];
-    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
+    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
     $username = ''; // Initialize the variable to avoid undefined variable errors
 
     if ($stmt = mysqli_prepare($link, $sql)) {
@@ -35,10 +35,30 @@
         }
     }
 
-    $fetchQuery = "SELECT * FROM tblaccounts";
-    $fetchEmployee = "SELECT * FROM tblemployee";
-    $result = mysqli_query($link, $fetchQuery);
-    $res = mysqli_query($link, $fetchEmployee);
+$fetchQuery = "
+    SELECT t.ticket_id,
+           t.employee_id,
+           CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS fullname,
+           t.branch,
+           t.department,
+           t.ticket_assign,
+           t.technical_purpose,
+           t.concern_details,
+           t.action,
+           t.result,
+           t.status,
+           t.priority,
+           t.category,
+           t.created_by,
+           t.datecreated,
+           t.dateupdated,
+           t.duedate,
+           t.attachments,
+           t.remarks
+    FROM tbltickets t
+    JOIN tblemployee e ON t.employee_id = e.employee_id
+";
+$result = mysqli_query($link, $fetchQuery);
 
 
 ?>
@@ -53,7 +73,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Accounts - Tables</title>
+    <title>Storage Mart Tickets - Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -104,7 +124,7 @@
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item active">
+            <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -119,7 +139,7 @@
                 </div>
             </li>
 			
-			<li class="nav-item">
+			<li class="nav-item active">
                 <a class="nav-link" href="Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
@@ -240,45 +260,84 @@
                     <!-- Main conctent -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Accounts</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">List of Tickets</h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-											<th>Account ID</th>
-                                            <th>Username</th>
-                                            <th>Password</th>
-                                            <th>Usertype</th>
-											<th>datecreated</th>
-											<th>Action</th>
+                                            <th>Ticket ID</th>
+                                            <th>Employee ID</th>
+                                            <th>Customer Name</th>
+                                            <th>Branch</th>
+											<th>Department</th>
+											<th>Ticket Assign</th>
+                                            <th>Technical Purpose</th>
+                                            <th>Concern Details</th>
+                                            <th>Action Taken</th>
+                                            <th>Action Result</th>
+											<th>Status</th>
+											<th>Priority</th>
+                                            <th>Category</th>
+                                            <th>Created By</th>
+                                            <th>Date Created</th>
+											<th>Date Updated</th>
+											<th>Due Date</th>
+                                            <th>Attachments</th>
+											<th>Remarks</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
                                         <tr>
-                                            <th>Account ID</th>
-                                            <th>Username</th>
-                                            <th>Password</th>
-                                            <th>Usertype</th>
-											<th>datecreated</th>
-											<th>Action</th>
+                                            <th>Ticket ID</th>
+                                            <th>Employee ID</th>
+                                            <th>Customer Name</th>
+                                            <th>Branch</th>
+											<th>Department</th>
+											<th>Ticket Assign</th>
+                                            <th>Technical Purpose</th>
+                                            <th>Concern Details</th>
+                                            <th>Action Taken</th>
+                                            <th>Action Result</th>
+											<th>Status</th>
+											<th>Priority</th>
+                                            <th>Category</th>
+                                            <th>Created By</th>
+                                            <th>Date Created</th>
+											<th>Date Updated</th>
+											<th>Due Date</th>
+                                            <th>Attachments</th>
+											<th>Remarks</th>
+                                            <th>Action</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
                                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['account_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['username']) ?></td>
-                                            <td><?= htmlspecialchars($row['password']) ?></td>
-                                            <td><?= htmlspecialchars($row['usertype']) ?></td>
+                                            <td><?= htmlspecialchars($row['ticket_id']) ?></td>
+                                            <td><?= htmlspecialchars($row['employee_id']) ?></td>
+                                            <td><?= htmlspecialchars($row['fullname']) ?></td>
+                                            <td><?= htmlspecialchars($row['branch']) ?></td>
+                                            <td><?= htmlspecialchars($row['department']) ?></td>
+                                            <td><?= htmlspecialchars($row['ticket_assign']) ?></td>
+                                            <td><?= htmlspecialchars($row['technical_purpose']) ?></td>
+                                            <td><?= htmlspecialchars($row['concern_details']) ?></td>
+                                            <td><?= htmlspecialchars($row['action']) ?></td>
+                                            <td><?= htmlspecialchars($row['result']) ?></td>
+                                            <td><?= htmlspecialchars($row['status']) ?></td>
+                                            <td><?= htmlspecialchars($row['priority']) ?></td>
+                                            <td><?= htmlspecialchars($row['category']) ?></td>
+                                            <td><?= htmlspecialchars($row['created_by']) ?></td>
                                             <td><?= htmlspecialchars($row['datecreated']) ?></td>
+                                            <td><?= htmlspecialchars($row['dateupdated']) ?></td>
+                                            <td><?= htmlspecialchars($row['duedate']) ?></td>
+                                            <td><?= htmlspecialchars($row['attachments']) ?></td>
+                                            <td><?= htmlspecialchars($row['remarks']) ?></td>
                                             <td>
                                                 <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
-                                                    <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
+                                                    <input type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
                                                     <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Delete</button>
                                                 </form>
                                             </td>

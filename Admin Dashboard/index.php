@@ -120,17 +120,23 @@
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Account</a>
-                        <a class="collapse-item" href="Profiles.php">Profiles</a>
-                        <a class="collapse-item" href="Companies.php">Companies</a>
+                        <a class="collapse-item" href="Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
 			
 			<li class="nav-item">
-                <a class="nav-link" href="Jobs.php">
-                    <i class="fas fa-fw fa-briefcase"></i>
-                    <span>Jobs</span>
+                <a class="nav-link" href="Tickets.php">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Ticket</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="Assets.php">
+                    <i class="fas fa-archive"></i>
+                    <span>Asset</span>
+                </a>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider">
