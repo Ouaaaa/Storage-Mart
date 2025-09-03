@@ -17,15 +17,15 @@
     $_SESSION['username'] = $username;
 
     if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-        $job_id = $_POST['job_id'];
+        $ticket_id= $_POST['ticket_id'];
         $action = $_POST['action'];
 
         if ($action === 'Approve' || $action === 'Decline') {
             $newStatus = $action === 'Approve' ? 'Approved' : 'Declined';
 
-            $query = "UPDATE tbljobs SET status = ? WHERE job_id = ?";
+            $query = "UPDATE tbltickets SET status = ? WHERE ticket_id = ?";
             $stmt = mysqli_prepare($link, $query);
-            mysqli_stmt_bind_param($stmt, 'si', $newStatus, $job_id);
+            mysqli_stmt_bind_param($stmt, 'si', $newStatus, $ticket_id);
             mysqli_stmt_execute($stmt);
             mysqli_stmt_close($stmt);
 
@@ -34,16 +34,31 @@
             exit();
         }
     }
-
-    // Fetch pending jobs
     $fetchQuery = "
-    SELECT j.*, c.company_name 
-    FROM tbljobs j 
-    JOIN tblcompany c ON j.company_id = c.company_id 
-    WHERE j.status = 'Pending'
-    ";
+    SELECT t.ticket_id,
+           t.employee_id,
+           CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS fullname,
+           t.branch,
+           t.department,
+           t.ticket_assign,
+           t.technical_purpose,
+           t.concern_details,
+           t.action,
+           t.result,
+           t.status,
+           t.priority,
+           t.category,
+           t.created_by,
+           t.datecreated,
+           t.dateupdated,
+           t.attachments,
+           t.remarks
+    FROM tbltickets t
+    JOIN tblemployee e ON t.employee_id = e.employee_id
+    WHERE status ='On-going'
+";
+$result = mysqli_query($link, $fetchQuery);
 
-    $result = mysqli_query($link, $fetchQuery);
 ?>
 
 <html lang="en">
@@ -56,7 +71,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Unipath Admin Pending Jobs- Tables</title>
+    <title>Storage Mart Admin Pending Jobs- Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -66,6 +81,7 @@
 
     <!-- Custom styles for this template -->
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
+        <link rel="icon" href="img/favicon.ico" type="image/x-icon">
 
     <!-- Custom styles for this page -->
     <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
@@ -84,7 +100,7 @@
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
                 <div class="sidebar-brand-icon rotate-n-15">
                 </div>
-                <div class="sidebar-brand-text mx-3">Unipath</div>
+                <div class="sidebar-brand-text mx-3">Storage Mart</div>
             </a>
 
             <!-- Divider -->
@@ -106,7 +122,7 @@
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item">
+            <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -115,17 +131,23 @@
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Account</a>
-                        <a class="collapse-item" href="Profiles.php">Profiles</a>
-                        <a class="collapse-item" href="Companies.php">Companies</a>
+                        <a class="collapse-item" href="Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
 			
-			<li class="nav-item">
-                <a class="nav-link" href="Jobs.php">
-                    <i class="fas fa-fw fa-briefcase"></i>
-                    <span>Jobs</span>
+			<li class="nav-item active">
+                <a class="nav-link" href="Tickets.php">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Ticket</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="Assets.php">
+                    <i class="fas fa-archive"></i>
+                    <span>Asset</span>
+                </a>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -243,43 +265,77 @@
                                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-											<th>Job Application ID</th>
-                                            <th>Company</th>
-                                            <th>Job Title</th>
-                                            <th>Location</th>
-											<th>Worktype</th>
-                                            <th>Min Salary</th>
-											<th>Max Salary</th>
-											<th>Action</th>
+                                            <th>Ticket ID</th>
+                                            <th>Employee ID</th>
+                                            <th>Customer Name</th>
+                                            <th>Branch</th>
+											<th>Department</th>
+											<th>Ticket Assign</th>
+                                            <th>Technical Purpose</th>
+                                            <th>Concern Details</th>
+                                            <th>Action Taken</th>
+                                            <th>Action Result</th>
+											<th>Status</th>
+											<th>Priority</th>
+                                            <th>Category</th>
+                                            <th>Created By</th>
+                                            <th>Date Created</th>
+											<th>Date Updated</th>
+                                            <th>Attachments</th>
+											<th>Remarks</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
                                         <tr>
-											<th>Job Application ID</th>
-                                            <th>Company</th>
-                                            <th>Job Title</th>
-                                            <th>Location</th>
-											<th>Worktype</th>
-                                            <th>Min Salary</th>
-											<th>Max Salary</th>
-											<th>Action</th>
+                                            <th>Ticket ID</th>
+                                            <th>Employee ID</th>
+                                            <th>Customer Name</th>
+                                            <th>Branch</th>
+											<th>Department</th>
+											<th>Ticket Assign</th>
+                                            <th>Technical Purpose</th>
+                                            <th>Concern Details</th>
+                                            <th>Action Taken</th>
+                                            <th>Action Result</th>
+											<th>Status</th>
+											<th>Priority</th>
+                                            <th>Category</th>
+                                            <th>Created By</th>
+                                            <th>Date Created</th>
+											<th>Date Updated</th>
+                                            <th>Attachments</th>
+											<th>Remarks</th>
+                                            <th>Action</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
                                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['job_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['company_name']) ?></td>
-                                            <td><?= htmlspecialchars($row['job_name']) ?></td>
-                                            <td><?= htmlspecialchars($row['job_location']) ?></td>
-                                            <td><?= htmlspecialchars($row['job_type']) ?></td>
-                                            <td><?= htmlspecialchars($row['min_salary']) ?></td>
-                                            <td><?= htmlspecialchars($row['max_salary']) ?></td>
+                                            <td><?= htmlspecialchars($row['ticket_id']) ?></td>
+                                            <td><?= htmlspecialchars($row['employee_id']) ?></td>
+                                            <td><?= htmlspecialchars($row['fullname']) ?></td>
+                                            <td><?= htmlspecialchars($row['branch']) ?></td>
+                                            <td><?= htmlspecialchars($row['department']) ?></td>
+                                            <td><?= htmlspecialchars($row['ticket_assign']) ?></td>
+                                            <td><?= htmlspecialchars($row['technical_purpose']) ?></td>
+                                            <td><?= htmlspecialchars($row['concern_details']) ?></td>
+                                            <td><?= htmlspecialchars($row['action']) ?></td>
+                                            <td><?= htmlspecialchars($row['result']) ?></td>
+                                            <td><?= htmlspecialchars($row['status']) ?></td>
+                                            <td><?= htmlspecialchars($row['priority']) ?></td>
+                                            <td><?= htmlspecialchars($row['category']) ?></td>
+                                            <td><?= htmlspecialchars($row['created_by']) ?></td>
+                                            <td><?= htmlspecialchars($row['datecreated']) ?></td>
+                                            <td><?= htmlspecialchars($row['dateupdated']) ?></td>
+                                            <td><?= htmlspecialchars($row['attachments']) ?></td>
+                                            <td><?= htmlspecialchars($row['remarks']) ?></td>
                                             <td>
                                                 <form method="POST" style="display:inline;">
-                                                    <input type="hidden" name="job_id" value="<?= $row['job_id'] ?>">
+                                                    <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">
                                                     <button type="submit" name="action" value="Approve" class="btn btn-success btn-sm " style="width: 80px;">Approve</button>
                                                     <button type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Decline</button>
+                                                    <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">    
                                                 </form>
                                             </td>
                                         </tr>

@@ -24,6 +24,8 @@
     }
 
     // Store the result in session for reuse
+    
+    //sql for counting all the user 
     $userCount = 0;
     $sqlCountUsers = "SELECT COUNT(*) FROM tblaccounts";
     if ($result = mysqli_query($link, $sqlCountUsers)) {
@@ -32,27 +34,24 @@
     }
 
     $_SESSION['username'] = $username;
-    // Fetch number of pending jobs
-    $pendingJobs = 0;
-    $sqlPendingJobs = "SELECT COUNT(*) FROM tbljobs WHERE status = 'Pending'";
-    if ($result = mysqli_query($link, $sqlPendingJobs)) {
+    
+    //sql for counting all the tickets
+    $ticketCount = 0;
+    $sqlCountTickets = "SELECT COUNT(*) FROM tbltickets" ;
+    if ($result = mysqli_query($link, $sqlCountTickets)) {
         $row = mysqli_fetch_array($result);
-        $pendingJobs = $row[0];
+        $ticketCount = $row[0];
+    }
+    //sql for counting on going
+    $ticketOngoing = 0;
+    $sqlCountOngoing = "SELECT COUNT(*) FROM tbltickets WHERE status='On-going'";
+    if($result =mysqli_query($link, $sqlCountOngoing))
+    {
+        $row = mysqli_fetch_array($result);
+        $ticketOngoing =$row[0];
     }
 
-    $approvedJobs = 0;
-    $sqlApprovedJobs = "SELECT COUNT(*) FROM tbljobs WHERE status = 'Approved'";
-    if ($result = mysqli_query($link, $sqlApprovedJobs)) {
-        $row = mysqli_fetch_array($result);
-        $approvedJobs = $row[0];
-    }
 
-    $declinedJobs = 0;
-    $sqlDeclinedJobs = "SELECT COUNT(*) FROM tbljobs WHERE status = 'Declined'";
-    if ($result = mysqli_query($link, $sqlDeclinedJobs)) {
-        $row = mysqli_fetch_array($result);
-        $declinedJobs = $row[0];
-    }
     ?>
 <html lang="en">
 
@@ -214,7 +213,7 @@
                     <!-- Content Row -->
                     <div class="row">
 
-                        <!-- Earnings (Monthly) Card Example -->
+                        <!-- Users Card -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-primary shadow h-100 py-2">
                                 <div class="card-body">
@@ -229,33 +228,48 @@
                             </div>
                         </div>
 
-                        <!-- Approved Card  -->
+                        <!-- Ticket Card  -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-success shadow h-100 py-2">
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
                                             <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                                Approved Jobs</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $approvedJobs; ?></div>
+                                                Tickets</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $ticketCount; ?></div>
                                         </div>
                                         
                                     </div>
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Pendings Card Example -->
+                        <!-- Assets Card -->
+                        <div class="col-xl-3 col-md-6 mb-4">
+                            <div class="card border-left-success shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                                Asset</div>
+                                            <div class="h5 mb-0 font-weight-bold text-gray-800"></div>
+                                        </div>
+                                        
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- On-going Tickets Card -->
                         <div class="col-xl-3 col-md-6 mb-4">
                             <div class="card border-left-warning shadow h-100 py-2">
                                 <div class="card-body">
                                     <div class="row no-gutters align-items-center">
                                         <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Jobs
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">On-going Ticket
                                             </div>
                                             <div class="row no-gutters align-items-center">
                                                 <div class="col-auto">
-                                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800"><?php echo $pendingJobs; ?></div>
+                                                <div class="h5 mb-0 mr-3 font-weight-bold text-gray-800"><?php echo $ticketOngoing;?></div>
                                                 </div>
                                             </div>
                                         </div>
@@ -263,22 +277,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        <!-- Decline Card Example -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-danger shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="row no-gutters align-items-center">
-                                        <div class="col mr-2">
-                                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
-                                                Declined Jobs</div>
-                                            <div class="h5 mb-0 font-weight-bold text-gray-800"><?php echo $declinedJobs; ?></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
 
         </div>
         <!-- End of Content Wrapper -->

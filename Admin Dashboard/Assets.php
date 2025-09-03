@@ -72,7 +72,7 @@ $result = mysqli_query($link, $fetchQuery);
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Tickets - Tables</title>
+    <title>Storage Mart Assets - Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -138,13 +138,13 @@ $result = mysqli_query($link, $fetchQuery);
                 </div>
             </li>
 			
-			<li class="nav-item active">
+			<li class="nav-item">
                 <a class="nav-link" href="Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item active">
                 <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Asset</span>
@@ -259,7 +259,7 @@ $result = mysqli_query($link, $fetchQuery);
                     <!-- Main conctent -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Tickets</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">List of Assets</h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
@@ -333,7 +333,7 @@ $result = mysqli_query($link, $fetchQuery);
                                             <td><?= htmlspecialchars($row['remarks']) ?></td>
                                             <td>
                                                 <form method="POST" style="display:inline;">
-                                                    <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">
+                                                    <input type="hidden" name="asset_id" value="<?= $row['ticket_id'] ?>">
                                                     <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Delete</button>
                                                 </form>
                                             </td>
@@ -344,7 +344,7 @@ $result = mysqli_query($link, $fetchQuery);
                             </div>
                         </div>
                         <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                            <a href="Add-Ticket.php" class="btn btn-primary">Add Ticket</a>
+                            <a href="Add-Ticket.php" class="btn btn-primary">Add Asset</a>
                         </div>
                     </div>
                 </div>
