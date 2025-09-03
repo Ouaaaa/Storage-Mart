@@ -1,84 +1,83 @@
 <?php
 require_once "config.php";
-include ("session-checker.php");
+include("session-checker.php");
 
+    $accountID = $_SESSION['account_id'];
+    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
+    $username = '';
 if (isset($_POST['btnSubmit'])) {
-    // Check if the ticket is already existing
-    $sql = "SELECT * FROM tbltickets WHERE ticket_id = ?";
-    
+    // Insert into tbltickets
+   $sql = "INSERT INTO tbltickets (
+                employee_id, lastname, firstname, middlename, branch, department,
+                ticket_assign, technical_purpose, concern_details, action, result,
+                status, priority, category, created_by, datecreated, attachments, remarks
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )";
     if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "s", $_POST['ticket_id']);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            if (mysqli_num_rows($result) == 0) {    
-                $sql = "INSERT INTO tbltickets (ticket_id, employee_id, lastname, firstname, middlename, branch,departmenet, ticket_assign, technical_purpose, concern_details, action, result, status, priority, category, createdby_by, datecreated, dateupload, attachments, remarks)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'PENDING', ?, ?, ?, ?, ?, ?, ?)";
-                if ($stmt = mysqli_prepare($link, $sql)) {
-                    $lastname = $_POST['last-name'];
-                    $firstname = $_POST['first-name'];
-                    $middlename = $_POST['middle-name'];
-                    $branch = $_POST['branch'];
-                    $department = $_POST['department'];
-                    $ticket_assign = $_POST['ticket-assign'];
-                    $technical_purpose = $_POST['technical-purpose'];
-                    $concern_details = $_POST['concern-details'];
-                    $action = $_POST['action'];
-                    $result = $_POST['result'];
-                    $priority = $_POST['priority'];
-                    $category = $_POST['category'];
-                    $createdby = $_SESSION['username'];
-                    $datecreated = date("m/d/Y");
-                    $dateupload = date("m/d/Y");
-                    $attachments = ""; // Placeholder for attachments
-                    $remarks = ""; // Placeholder for remarks   
+        // Collect form values
+        $employee_id = $_POST['employee_id'];
+        $lastname = $_POST['lastname'];
+        $firstname = $_POST['firstname'];
+        $middlename = $_POST['middlename'];
+        $branch = $_POST['branch'];
+        $department = $_POST['department'];
+        $ticket_assign = $_POST['ticket_assign'];
+        $technical_purpose = $_POST['technical_purpose'];
+        $concern_details = $_POST['concern_details'];
+        $actionTaken = $_POST['action'];
+        $resultDetails = $_POST['result'];
+        $priority = $_POST['priority'];
+        $category = $_POST['category'];
+        $created_by = $_SESSION['account_id']; 
+        $datecreated = date('Y-m-d H:i:s');
+        $status = "PENDING";   
+        $attachments = "";
+        $remarks = $_POST['remarks'];
 
-                    mysqli_stmt_bind_param($stmt, "sssssssssssssssss", $lastname, $firstname, $middlename, $branch, $department, $ticket_assign,
-                        $technical_purpose, $concern_details, $action, $result, $priority, $category, $createdby, $datecreated, $dateupload, $attachments, $remarks);
-                    if (mysqli_stmt_execute($stmt)) {
-                        $account_id = mysqli_insert_id($link);
-                        if ($stmt = mysqli_prepare($link, $sql)) {
-                            mysqli_stmt_bind_param($stmt, "isssssss", $account_id,
-                                $_POST['last-name'], $_POST['first-name'], $_POST['middle-name'],
-                                $_POST['department'], $_POST['branch'], $createdby, $datecreated);
-                            if (mysqli_stmt_execute($stmt)) {
-                                $employee_id = mysqli_insert_id($link);
-                                // Insert into tbllogs
-                                $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) VALUES (?, ?, ?, ?, ?, ?)";
-                                if ($stmt = mysqli_prepare($link, $sql)) {
-                                    $date = date("m/d/Y");
-                                    $time = date("h:i:sa");
-                                    $action = "Create";
-                                    $module = "Ticket Management";
-                                    mysqli_stmt_bind_param($stmt, "ssssss", $date, $time, $action, $module, $employee_id, $_SESSION['username']);
-                                    if (mysqli_stmt_execute($stmt)) {
-                                        $notificationMessage = "New Student successfully created!";
-                                    } else {
-                                        echo "<font color='red'>Error on inserting into tbllogs.</font>";
-                                    }
-                                } else {
-                                    echo "<font color='red'>Error preparing statement for tbllogs.</font>";
-                                }
-                            } else {
-                                echo "<font color='red'>Error on inserting into tblaccounts.</font>";
-                            }
-                        } else {
-                            echo "<font color='red'>Error preparing statement for tblaccounts.</font>";
-                        }
-                    } else {
-                        echo "<font color='red'>Error on inserting into tblstudents.</font>";
-                    }
-                } else {
-                    echo "<font color='red'>Error preparing statement for tblstudents.</font>";
-                }
-            } else {
-                $errorMessage = "Student number already in use.";
+       
+       mysqli_stmt_bind_param(
+            $stmt,
+            "isssssssssssssssss",   // 1 int + 17 strings = 18 total
+            $employee_id, $lastname, $firstname, $middlename, $branch, $department,
+            $ticket_assign, $technical_purpose, $concern_details, $actionTaken, $resultDetails,
+            $status, $priority, $category, $created_by, $datecreated, $attachments, $remarks
+        );
+
+
+
+        if (mysqli_stmt_execute($stmt)) {
+            // Get the auto incremented ticket_id
+            $ticket_id = mysqli_insert_id($link);
+
+            // Insert into tbllogs
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                       VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                $date       = date("Y-m-d");
+                $time       = date("H:i:s");
+                $logAction  = "Create";
+                $module     = "Ticket Management";
+                $performedby = $_SESSION['username'];
+
+                mysqli_stmt_bind_param(
+                    $stmtLog,
+                    "ssssss",
+                    $date, $time, $logAction, $module, $ticket_id, $performedby
+                );
+                mysqli_stmt_execute($stmtLog);
             }
+
+            $notificationMessage = "New Ticket successfully created!";
         } else {
-            echo "<font color='red'>Error on select statement.</font>";
+            echo "<font color='red'>Error inserting into tbltickets: " . mysqli_error($link) . "</font>";
         }
+    } else {
+        echo "<font color='red'>Error preparing statement for tbltickets.</font>";
     }
 }
 ?>
+
 <html lang="en">
 
 <head>
@@ -114,10 +113,11 @@ if (isset($_POST['btnSubmit'])) {
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.html">
-                <div class="sidebar-brand-icon rotate-n-15">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
+                <div class="sidebar-brand-icon ">
+                    <img src="img/logo.png" alt="Logo" style="width:40px; height:auto;">
                 </div>
-                <div class="sidebar-brand-text mx-3">Unipath</div>
+                <div class="sidebar-brand-text mx-3">Storage Mart</div>
             </a>
 
             <!-- Divider -->
@@ -139,7 +139,7 @@ if (isset($_POST['btnSubmit'])) {
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item active">
+            <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -149,16 +149,22 @@ if (isset($_POST['btnSubmit'])) {
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
                         <a class="collapse-item" href="Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="Profiles.php">Profiles</a>
-                        <a class="collapse-item" href="Companies.php">Companies</a>
+                        <a class="collapse-item" href="Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
 			
-			<li class="nav-item">
-                <a class="nav-link" href="Jobs.php">
-                    <i class="fas fa-fw fa-briefcase"></i>
-                    <span>Jobs</span>
+			<li class="nav-item active">
+                <a class="nav-link" href="Tickets.php">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Ticket</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="Assets.php">
+                    <i class="fas fa-archive"></i>
+                    <span>Asset</span>
+                </a>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -267,67 +273,67 @@ if (isset($_POST['btnSubmit'])) {
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Add Account</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Ticket</h6>
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
                                 <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
-                                    <h1>Account Details</h1>
-                                    <div class ="row mb-5">
-                                        <div class = "col-md-6">
-                                            <label for="username" class="form-label">Username</label>
-                                            <input type="text" class ="form-control" id ="username" name="username" placeholder="Username" required>
-                                        </div>
-                                        <div class = "col-md-6">
-                                            <label for="password" class="form-label">Password</label>
-                                            <input type="text" class ="form-control" id ="password" name="password" placeholder="Password" required>
-                                            <span id = "showPassword" class = "show-password-toggle" onclick = "togglePasswordVisibility()">Show</span>
-                                        </div>
-
-                                    </div>
-
-                                    <div class="row mb-5">
+                                    
+                                <h1>Employee Details</h1>
+                                <div class="row mb-5">
                                     <div class="col-md-6">
-                                        <label for="user-type" class="form-label">User Type</label>
-                                        <select id="user-type" name="user-type" class="form-control" required>
-                                        <option value="">-- Select User Type --</option>
-                                        <option value="ADMIN">Admin</option>
-                                        <option value="HR">Human Resources</option>
-                                        <option value="ACCTNG">ACCOUNTING</option>
+                                        <label for="lastname" class="form-label">Employee ID</label>
+                                        <select id="employee_id" name="employee_id" class="form-control" required> 
+                                            <option value="">-- Select Employee --</option>
+                                            <?php
+                                            $sql = "SELECT employee_id, lastname, firstname, middlename, branch, department 
+                                                    FROM tblemployee ";
+                                            $result = mysqli_query($link, $sql);
+
+                                            if ($result && mysqli_num_rows($result) > 0) {
+                                                while ($row = mysqli_fetch_assoc($result)) {
+                                                    $displayText = $row['employee_id'] . " - " . $row['lastname'] . ", " . $row['firstname'];
+                                                    echo '<option value="'.$row['employee_id'].'" 
+                                                                data-lastname="'.$row['lastname'].'" 
+                                                                data-middlename="'.$row['middlename'].'" 
+                                                                data-firstname="'.$row['firstname'].'" 
+                                                                data-branch="'.$row['branch'].'" 
+                                                                data-department="'.$row['department'].'">'
+                                                            .$displayText.'</option>';
+                                                }
+                                            } else {
+                                                echo '<option value="">No employees found</option>';
+                                            }
+                                            ?>
                                         </select>
                                     </div>
-                                    </div>
-
-
-                                    <h1>Employee Details </h1>
-                                    <div class="row mb-5">
                                     <div class="col-md-6">
-                                        <label for="last-name" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="last-name" name="last-name" placeholder="Last name" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="first-name" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First name" required>
+                                        <label for="lastname" class="form-label">Last Name</label>
+                                        <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last name" required>
                                     </div>
                                     </div>
 
                                     <div class="row mb-5">
+                                        <div class="col-md-6">
+                                            <label for="firstname" class="form-label">First Name</label>
+                                            <input type="text" class="form-control" id="firstname" name="firstname" placeholder="First name" required>
+                                        </div>
                                     <div class="col-md-6">
-                                        <label for="middle-name" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name" required>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <label for="department" class="form-label">Department</label>
-                                        <select id="department" name="department" class="form-control" required>
-                                        <option value="">-- Select Department --</option>
-                                        <option value="IT">Information Technology</option>
-                                        <option value=""></option>
-                                        <option value=""></option>
-                                        </select>
+                                        <label for="middlename" class="form-label">Middle Name</label>
+                                        <input type="text" class="form-control" id="middlename" name="middlename" placeholder="Middle name" required>
                                     </div>
                                     </div>
 
                                     <div class ="row mb-5">
+                                        <div class="col-md-6">
+                                            <label for="department" class="form-label">Department</label>
+                                            <select id="department" name="department" class="form-control" required>
+                                            <option value="">-- Select Department --</option>
+                                            <option value="IT">Information Technology</option>
+                                            <option value=""></option>
+                                            <option value=""></option>
+                                            </select>
+                                        </div>
                                             <div class="col-md-6">
                                                 <label for="branch" class="form-label">Branch</label>
                                                 <select id="branch" name="branch" class="form-control" required>
@@ -338,11 +344,110 @@ if (isset($_POST['btnSubmit'])) {
                                                 </select>
                                             </div>
                                     </div>
+                                <hr></hr>
+                                <h1>Ticket Details</h1>
+                                    <div class="row mb-5">
+                                        <div class="col-md-6">
+                                            <label for="department" class="form-label">Assign to</label>
+                                                <select id="ticket_assign" name="ticket_assign" class="form-control" required> 
+                                                    <option value="">-- Select Assignee --</option>
+                                                    <?php
+                                                    // include DB config
+                                                    require_once "config.php"; 
+
+                                                    // query employees
+                                                    $sql = "SELECT
+                                                    employee_id, 
+                                                    CONCAT(lastname ,',',' ', firstname) AS fullname
+                                                    FROM tblemployee WHERE department = 'IT'";
+                                                    $result = mysqli_query($link, $sql);
+
+                                                    if ($result && mysqli_num_rows($result) > 0) {
+                                                        while ($row = mysqli_fetch_assoc($result)) {
+                                                            echo '<option value="'.$row['employee_id'].'">'.$row['fullname'].'</option>';
+                                                        }
+                                                    } else {
+                                                        echo '<option value="">No employees found</option>';
+                                                    }
+                                                    ?>
+                                                </select>
+                                        </div>
+                                    </div>
+                                    <div class ="row mb-5">
+                                            <div class ="col-md-6">
+                                                <label for="technical_purpose" class="form-label">Technical Purpose</label>
+                                                <select id="technical_purpose" name="technical_purpose" class="form-control" required>
+                                                <option value="">-- Select Purpose --</option>
+                                                <option value="CCTV & MAINTAINANCE">CCTV & MAINTAINANCE</option>
+                                                <option value=""></option>
+                                                <option value=""></option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "concern-details" class ="form-label">Concern Details</label>
+                                                <textarea id ="concern_details" name="concern_details"class="form-control" rows="6" maxlength="1000" required>
+
+                                                </textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "action" class ="form-label">Action Taken</label>
+                                                <textarea id ="action" name="action"class="form-control" rows="6" maxlength="1000" required>
+
+                                                </textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "result" class ="form-label">Result Details</label>
+                                                <textarea id ="result" name="result" class="form-control" rows="6" maxlength="1000" required>
+
+                                                </textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+
+                                    <div class ="row mb-5">
+                                        <div class ="col-md-6">
+                                            <label for ="priority" class ="form-label">Priority</label>
+                                                <select id="priority" name="priority" class="form-control" required>
+                                                <option value="">-- Select Priority level --</option>
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                                </select>
+                                        </div>
+
+                                        <div class ="col-md-6">
+                                            <label for ="category" class ="form-label">Category</label>
+                                                <select id="category" name="category" class="form-control" required>
+                                                <option value="">-- Select Category --</option>
+                                                <option value="Software,Hardware">Software & Hardware</option>
+                                                <option value=""></option>
+                                                <option value=""></option>
+                                                </select>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "remarks" class ="form-label">Remarks</label>
+                                                <textarea id ="remarks" name="remarks" class="form-control" rows="6" maxlength="1000" required>
+
+                                                </textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
 
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
                                     <a href="Accounts.php" class="btn btn-danger">Cancel</a>
                                     </form>
-                            </div>
+                                </div>
 
                         </div>
                     </div>
@@ -421,9 +526,29 @@ if (isset($_POST['btnSubmit'])) {
     var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
     if (notificationMessage !== "") {
         alert(notificationMessage);
-        window.location.href = "students-management.php";
+        window.location.href = "Tickets.php";
     }
 </script>
+
+<script>
+document.getElementById("employee_id").addEventListener("change", function() {
+    var selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value !== "") {
+        document.getElementById("lastname").value = selectedOption.getAttribute("data-lastname");
+        document.getElementById("firstname").value = selectedOption.getAttribute("data-firstname");
+        document.getElementById("middlename").value = selectedOption.getAttribute("data-middlename");
+        document.getElementById("branch").value = selectedOption.getAttribute("data-branch");
+        document.getElementById("department").value = selectedOption.getAttribute("data-department");
+    } else {
+        document.getElementById("lastname").value = "";
+        document.getElementById("firstname").value = "";
+        document.getElementById("middlename").value = "";
+        document.getElementById("branch").value = "";
+        document.getElementById("department").value = "";
+    }
+});
+</script>
+
 </body>
 
 </html>

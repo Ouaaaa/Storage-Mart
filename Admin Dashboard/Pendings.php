@@ -55,7 +55,7 @@
            t.remarks
     FROM tbltickets t
     JOIN tblemployee e ON t.employee_id = e.employee_id
-    WHERE status ='On-going'
+    WHERE status ='PENDING'
 ";
 $result = mysqli_query($link, $fetchQuery);
 
@@ -332,10 +332,10 @@ $result = mysqli_query($link, $fetchQuery);
                                             <td><?= htmlspecialchars($row['remarks']) ?></td>
                                             <td>
                                                 <form method="POST" style="display:inline;">
-                                                    <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">
-                                                    <button type="submit" name="action" value="Approve" class="btn btn-success btn-sm " style="width: 80px;">Approve</button>
-                                                    <button type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Decline</button>
-                                                    <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">    
+                                                            <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">
+                                                            <button type="submit" name="action" value="Approve" class="btn btn-success btn-sm " style="width: 80px; margin-bottom: 20px;">Approve</button>
+                                                        <button type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Decline</button>
+                                                        <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">  
                                                 </form>
                                             </td>
                                         </tr>
