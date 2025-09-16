@@ -107,6 +107,9 @@ $result = mysqli_query($link, $fetchQuery);
     <link rel="icon" href="img/favicon.ico" type="image/x-icon">
     <!-- Custom styles for this page -->
     <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <!-- Column Control CSS and JS -->
+    <link href="https://cdn.datatables.net/columncontrol/1.0.7/css/columnControl.dataTables.min.css" rel="stylesheet">
+  <script src="https://cdn.datatables.net/columncontrol/1.0.7/js/dataTables.columnControl.min.js"></script>
 
 </head>
 
@@ -331,33 +334,41 @@ $result = mysqli_query($link, $fetchQuery);
                                             <td><?= htmlspecialchars($row['attachments']) ?></td>
                                             <td>
                                                 <form method="POST" style="display:inline;">
-                                                    <button type="button" 
-                                                        class="btn btn-success btn-sm viewBtn" 
-                                                        style="width: 80px; margin-bottom: 20px;"
-                                                        data-toggle="modal" 
-                                                        data-target="#viewTicketModal"
-                                                        data-ticketid="<?= $row['ticket_id'] ?>"
-                                                        data-employeeid="<?= $row['employee_id'] ?>"
-                                                        data-employee="<?= htmlspecialchars($row['fullname']) ?>"
-                                                        data-branch="<?= htmlspecialchars($row['branch']) ?>"
-                                                        data-department="<?= htmlspecialchars($row['department']) ?>"
-                                                        data-assign="<?= htmlspecialchars($row['assign_name']) ?>"
-                                                        data-tech="<?= htmlspecialchars($row['technical_purpose']) ?>"
-                                                        data-concern="<?= htmlspecialchars($row['concern_details']) ?>"
-                                                        data-action="<?= htmlspecialchars($row['action']) ?>"
-                                                        data-result="<?= htmlspecialchars($row['result']) ?>"
-                                                        data-status="<?= htmlspecialchars($row['status']) ?>"
-                                                        data-priority="<?= htmlspecialchars($row['priority']) ?>"
-                                                        data-category="<?= htmlspecialchars($row['category']) ?>"
-                                                        data-createdby="<?= htmlspecialchars($row['created_by_usertype']) ?>"
-                                                        data-datecreated="<?= htmlspecialchars($row['datecreated']) ?>"
-                                                        data-dateupdated="<?= htmlspecialchars($row['dateupdated']) ?>"
-                                                        data-attachments="<?= htmlspecialchars($row['attachments']) ?>"
-                                                        data-remarks="<?= htmlspecialchars($row['remarks']) ?>">
-                                                    View
-                                                </button>
-                                                    <input type="hidden" name="ticket_id" value="<?= $row['ticket_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Delete</button>
+                                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
+                                                        Action</span>
+                                                    </a>
+                                                    <!-- Dropdown - User Information -->
+                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                                                        <a class="dropdown-item viewBtn"  data-toggle="modal" 
+                                                            data-target="#viewTicketModal"
+                                                            data-ticketid="<?= $row['ticket_id'] ?>"
+                                                            data-employeeid="<?= $row['employee_id'] ?>"
+                                                            data-employee="<?= htmlspecialchars($row['fullname']) ?>"
+                                                            data-branch="<?= htmlspecialchars($row['branch']) ?>"
+                                                            data-department="<?= htmlspecialchars($row['department']) ?>"
+                                                            data-assign="<?= htmlspecialchars($row['assign_name']) ?>"
+                                                            data-tech="<?= htmlspecialchars($row['technical_purpose']) ?>"
+                                                            data-concern="<?= htmlspecialchars($row['concern_details']) ?>"
+                                                            data-action="<?= htmlspecialchars($row['action']) ?>"
+                                                            data-result="<?= htmlspecialchars($row['result']) ?>"
+                                                            data-status="<?= htmlspecialchars($row['status']) ?>"
+                                                            data-priority="<?= htmlspecialchars($row['priority']) ?>"
+                                                            data-category="<?= htmlspecialchars($row['category']) ?>"
+                                                            data-createdby="<?= htmlspecialchars($row['created_by_usertype']) ?>"
+                                                            data-datecreated="<?= htmlspecialchars($row['datecreated']) ?>"
+                                                            data-dateupdated="<?= htmlspecialchars($row['dateupdated']) ?>"
+                                                            data-attachments="<?= htmlspecialchars($row['attachments']) ?>"
+                                                            data-remarks="<?= htmlspecialchars($row['remarks']) ?>">
+                                                            <i class="fas fa-solid fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
+                                                            View
+                                                        </a>
+                                                        <a class="dropdown-item">
+                                                            <i class="fas fa-trash fa-sm fa-fw mr-2 text-black-400"></i>
+                                                            Delete
+                                                        </a>
+                                                    </div>
                                                 </form>
                                             </td>
                                         </tr>
