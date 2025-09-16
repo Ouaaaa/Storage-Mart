@@ -534,7 +534,10 @@ $result = mysqli_query($link, $fetchQuery);
       
       <!-- Modal Footer -->
       <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+        <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
+            <i class="fas fa-download fa-sm text-white-50"></i> Generate Report
+        </a>
+        <button type="button" class="btn btn-secondary" data-dismiss="modal"s>Close</button>
       </div>
       
     </div>

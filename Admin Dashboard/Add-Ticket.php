@@ -445,7 +445,7 @@ if (isset($_POST['btnSubmit'])) {
                                     </div>
 
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Accounts.php" class="btn btn-danger">Cancel</a>
+                                    <a href="Tickets.php" class="btn btn-danger">Cancel</a>
                                     </form>
                                 </div>
 
