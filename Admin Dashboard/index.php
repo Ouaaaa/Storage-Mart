@@ -28,8 +28,8 @@
     //sql for counting all the user 
     $userCount = 0;
     $sqlCountUsers = "SELECT COUNT(*) FROM tblaccounts";
-    if ($result = mysqli_query($link, $sqlCountUsers)) {
-        $row = mysqli_fetch_array($result);
+    if ($result = mysqli_query(mysql: $link, query: $sqlCountUsers)) {
+        $row = mysqli_fetch_array(result: $result);
         $userCount = $row[0];
     }
 
@@ -52,6 +52,15 @@
     }
 
 
+<<<<<<< Updated upstream
+=======
+    $declinedJobs = 0;
+    $sqlDeclinedJobs = "SELECT COUNT(*) FROM tbljobs WHERE status = 'Declined'";
+    if ($result = mysqli_query(mysql: $link, query: $sqlDeclinedJobs)) {
+        $row = mysqli_fetch_array(result: $result);
+        $declinedJobs = $row[0];
+    }
+>>>>>>> Stashed changes
     ?>
 <html lang="en">
 
