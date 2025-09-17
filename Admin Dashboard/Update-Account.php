@@ -1,71 +1,100 @@
 <?php
 require_once "config.php";
-include ("session-checker.php");
+include("session-checker.php");
 
-if (isset($_POST['btnSubmit'])) {
-    // Check if the student is already existing
-    $sql = "SELECT * FROM tblaccounts WHERE username = ?";
-    
+$account = [];
+$employee = [];
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
+    // === Update tblaccounts ===
+    $sql = "UPDATE tblaccounts SET username = ?, password = ?, usertype = ?,status = ? WHERE account_id = ?";
     if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "s", $_POST['username']);
+        mysqli_stmt_bind_param($stmt, "ssssi", 
+            $_POST['username'], 
+            $_POST['password'], 
+            $_POST['usertype'],
+            $_POST['status'], 
+            $_POST['account_id']
+        );
+
         if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            if (mysqli_num_rows($result) == 0) {    
-                $sql = "INSERT INTO tblaccounts (username, password, usertype, status, createdby, datecreated)
-                        VALUES (?, ?, ?, 'ACTIVE', ?, ?)";
-                if ($stmt = mysqli_prepare($link, $sql)) {
-                    $password = $_POST['password'];
-                    $usertype = $_POST['user-type'];
-                    $createdby = $_SESSION['username'];
-                    $datecreated = date("m/d/Y");
-                    mysqli_stmt_bind_param($stmt, "sssss", $_POST['username'], $password, $usertype, $createdby, $datecreated);
-                    if (mysqli_stmt_execute($stmt)) {
-                        $account_id = mysqli_insert_id($link);
-                        $sql = "INSERT INTO tblemployee (employee_id, account_id, lastname, firstname, middlename, department, branch, email, createdby, datecreated)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
-                        if ($stmt = mysqli_prepare($link, $sql)) {
-                            mysqli_stmt_bind_param($stmt, "iissssssss",$_POST['employee-id'], $account_id,
-                                $_POST['last-name'], $_POST['first-name'], $_POST['middle-name'],
-                                $_POST['department'], $_POST['branch'], $_POST['email'], $createdby, $datecreated);
-                            if (mysqli_stmt_execute($stmt)) {   
-                                $employee_id = mysqli_insert_id($link);
-                                // Insert into tbllogs
-                                $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) VALUES (?, ?, ?, ?, ?, ?)";
-                                if ($stmt = mysqli_prepare($link, $sql)) {
-                                    $date = date("m/d/Y");
-                                    $time = date("h:i:sa");
-                                    $action = "Create";
-                                    $module = "Employee Management";
-                                    mysqli_stmt_bind_param($stmt, "ssssss", $date, $time, $action, $module, $employee_id, $_SESSION['username']);
-                                    if (mysqli_stmt_execute($stmt)) {
-                                        $notificationMessage = "New Account successfully created!";
-                                    } else {
-                                        echo "<font color='red'>Error on inserting into tbllogs.</font>";
-                                    }
-                                } else {
-                                    echo "<font color='red'>Error preparing statement for tbllogs.</font>";
-                                }
-                            } else {
-                                echo "<font color='red'>Error on inserting into tblaccounts.</font>";
-                            }
+            mysqli_stmt_close($stmt);
+
+            // === Update tblemployee ===
+            $empsql = "UPDATE tblemployee 
+                       SET lastname = ?, firstname = ?, middlename = ?, department = ?, branch = ?, email = ? 
+                       WHERE employee_id = ?";
+            if ($stmt = mysqli_prepare($link, $empsql)) {
+                mysqli_stmt_bind_param($stmt, "ssssssi", 
+                    $_POST['last-name'], 
+                    $_POST['first-name'], 
+                    $_POST['middle-name'], 
+                    $_POST['department'], 
+                    $_POST['branch'],
+                    $_POST['email'], 
+                    $_POST['employee_id']
+                );
+
+                if (mysqli_stmt_execute($stmt)) {
+                    mysqli_stmt_close($stmt);
+
+                    // === Insert into tbllogs ===
+                    $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                            VALUES (?, ?, ?, ?, ?, ?)";
+                    if ($stmt = mysqli_prepare($link, $sql)) {
+                        $date = date("Y-m-d");
+                        $time = date("h:i:sa");
+                        $action = "Updated an Account";
+                        $module = "Employee Management";
+                        $employee_id = $_POST['employee_id'];
+                        mysqli_stmt_bind_param($stmt, "ssssss", 
+                            $date, 
+                            $time, 
+                            $action, 
+                            $module, 
+                            $employee_id, 
+                            $_SESSION['username']
+                        );
+
+                        if (mysqli_stmt_execute($stmt)) {
+                            $notificationMessage = "Account successfully updated!";
                         } else {
-                            echo "<font color='red'>Error preparing statement for tblaccounts.</font>";
+                            echo "<font color='red'>Error inserting into tbllogs.</font>";
                         }
-                    } else {
-                        echo "<font color='red'>Error on inserting into tblstudents.</font>";
+                        mysqli_stmt_close($stmt);
                     }
                 } else {
-                    echo "<font color='red'>Error preparing statement for tblstudents.</font>";
+                    echo "<font color='red'>Error updating tblemployee: " . mysqli_error($link) . "</font>";
                 }
-            } else {
-                $errorMessage = "Account is already in use.";
             }
         } else {
-            echo "<font color='red'>Error on select statement.</font>";
+           echo "<font color='red'>Error updating tblaccounts: " . mysqli_error($link) . "</font>";
         }
     }
+
+} else {
+    // === Loading the data to the form ===
+    if (isset($_GET['account_id']) && !empty(trim($_GET['account_id']))) {
+    $sql = "SELECT a.*, e.* 
+            FROM tblaccounts a
+            JOIN tblemployee e ON a.account_id = e.account_id
+            WHERE a.account_id = ?";
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        mysqli_stmt_bind_param($stmt, "i", $_GET['account_id']);
+        if (mysqli_stmt_execute($stmt)) {
+            $result = mysqli_stmt_get_result($stmt);
+            $data = mysqli_fetch_array($result, MYSQLI_ASSOC);
+
+            $account  = $data;  // contains account fields
+            $employee = $data;  // contains employee fields
+        }
+        mysqli_stmt_close($stmt);
+    }
+}
+
 }
 ?>
+
+
 <html lang="en">
 
 <head>
@@ -267,7 +296,7 @@ if (isset($_POST['btnSubmit'])) {
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../JobSeeker/User/Login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -289,16 +318,18 @@ if (isset($_POST['btnSubmit'])) {
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Add Account</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Update Account</h6>
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
                                 <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    <input type="hidden" name="account_id" value="<?php echo htmlspecialchars($account['account_id']); ?>">
+                                    <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['employee_id']); ?>">
                                     <h1>Account Details</h1>
                                     <div class ="row mb-5">
                                         <div class = "col-md-6">
                                             <label for="username" class="form-label">Username</label>
-                                            <input type="text" class ="form-control" id ="username" name="username" placeholder="Username" required>
+                                            <input type="text" class ="form-control" id ="username" name="username" placeholder="Username" value="<?php echo htmlspecialchars($account['username'] ?? ''); ?>" required>
                                         </div>
                                     <div class="col-md-6 position-relative">
                                         <label for="password" class="form-label">Password</label>
@@ -311,32 +342,41 @@ if (isset($_POST['btnSubmit'])) {
                                         </div>
                                     </div>
 
+
                                     </div>
 
                                     <div class="row mb-5">
                                     <div class="col-md-6">
-                                        <label for="user-type" class="form-label">User Type</label>
-                                        <select id="user-type" name="user-type" class="form-control" required>
-                                        <option value="">-- Select User Type --</option>
-                                        <option value="ADMIN">Admin</option>
-                                        <option value="HR">Human Resources</option>
-                                        <option value="ACCTNG">ACCOUNTING</option>
+                                        <label for="usertype" class="form-label">User Type</label>
+                                        <select id="usertype" name="usertype" class="form-control" required>
+                                            <option value="">-- Select User Type --</option>
+                                            <option value="ADMIN" <?= (isset($account['usertype']) && $account['usertype'] === 'ADMIN') ? 'selected' : '' ?>>Admin</option>
+                                            <option value="HR" <?= (isset($account['usertype']) && $account['usertype'] === 'HR') ? 'selected' : '' ?>>Human Resources</option>
+                                            <option value="ACCTNG" <?= (isset($account['usertype']) && $account['usertype'] === 'ACCTNG') ? 'selected' : '' ?>>ACCOUNTING</option>
                                         </select>
                                     </div>
+                                        <div class="col-md-6">
+                                            <label for="status" class="form-label">Status</label>
+                                            <select id="status" name="status" class="form-control" required>
+                                            <option value="">-- Select Status --</option>
+                                            <option value="ACTIVE" <?= (isset($account['status']) && $account['status'] === 'ACTIVE') ? 'selected' : '' ?>>Active</option>
+                                            <option value="INACTIVE" <?= (isset($account['status']) && $account['status'] === 'INACTIVE') ? 'selected' : '' ?>>Inactive</option>
+                                            </select>
+                                        </div>
                                     </div>
 
 
                                     <h1>Employee Details </h1>
                                     <div class ="row mb-5">
                                             <div class= "col-md-6">
-                                                <label for="employee-id" class="form-label">Employee ID</label>
-                                                <input type="text" class="form-control" id="employee-id" name="employee-id" placeholder="Employee ID" required> 
+                                                <label for="employee_id" class="form-label">Employee ID</label>
+                                                <input type="text" class="form-control" id="employee_id" name="employee_id" placeholder="Employee ID" value="<?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?>" readonly> 
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="branch" class="form-label">Branch</label>
                                                 <select id="branch" name="branch" class="form-control" required>
                                                 <option value="">-- Select Branch --</option>
-                                                <option value="ERAN">Eran</option>
+                                                <option value="ERAN" <?= (isset($employee['branch']) && $employee['branch'] === 'ERAN') ? 'selected' : '' ?>>Eran</option>
                                                 <option value=""></option>
                                                 <option value=""></option>
                                                 </select>
@@ -345,24 +385,24 @@ if (isset($_POST['btnSubmit'])) {
                                     <div class="row mb-5">
                                     <div class="col-md-6">
                                         <label for="last-name" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="last-name" name="last-name" placeholder="Last name" required>
+                                        <input type="text" class="form-control" id="last-name" name="last-name" placeholder="Last name" value="<?php echo htmlspecialchars($employee['lastname'])?>" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="first-name" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First name" required>
+                                        <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First name" value="<?php echo htmlspecialchars($employee['firstname'])?>" required>
                                     </div>
                                     </div>
 
                                     <div class="row mb-5">
                                     <div class="col-md-6">
                                         <label for="middle-name" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name" required>
+                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name" value="<?php echo htmlspecialchars($employee['middlename'])?>" required>
                                     </div>
                                     <div class="col-md-6">
                                         <label for="department" class="form-label">Department</label>
                                         <select id="department" name="department" class="form-control" required>
                                         <option value="">-- Select Department --</option>
-                                        <option value="IT">Information Technology</option>
+                                        <option value="IT"<?= (isset($employee['department']) && $employee['department'] === 'IT') ? 'selected' : '' ?>>Information Technology</option>
                                         <option value=""></option>
                                         <option value=""></option>
                                         </select>
@@ -371,7 +411,7 @@ if (isset($_POST['btnSubmit'])) {
                                     <div class="row mb-5">
                                         <div class="col-md-6">
                                             <label for="email" class="form-label">Email</label>
-                                            <input type="text" class="form-control" id="email" name="email" placeholder="Email" required>
+                                            <input type="text" class="form-control" id="email" name="email" placeholder="Email" value="<?php echo htmlspecialchars($employee['email'])?>" required>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>

@@ -159,8 +159,22 @@ $result = mysqli_query($link, $fetchQuery);
                 <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Branch:</h6>
-                        <a class="collapse-item" href="Accounts.php">Head Office</a>
-                        <a class="collapse-item" href="Employee.php">Iran</a>
+                        <a class="collapse-item" href="Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="Iran.php">Iran</a>
+                        <a class="collapse-item" href="Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="Delta.php">Delta</a>
+                        <a class="collapse-item" href="Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="Caloocan.php">Caloocan</a>
+
                     </div>
                 </div>
             </li>
@@ -249,7 +263,7 @@ $result = mysqli_query($link, $fetchQuery);
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../JobSeeker/User/Login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -353,7 +367,7 @@ $result = mysqli_query($link, $fetchQuery);
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="login.html">Logout</a>
+                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
                 </div>
             </div>
         </div>

@@ -172,8 +172,36 @@ $result = mysqli_query($link, $fetchQuery);
             <li class="nav-item">
                 <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
-                    <span>Asset</span>
+                    <span>Assets Directory </span>
                 </a>
+            </li>
+            <li class="nav-item ">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
+                    aria-expanded="true" aria-controls="collapsethree">
+                    <i class="fas fa-fw fa-user"></i>
+                    <span>Asset Inventory</span>	
+                </a>
+                <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Branch:</h6>
+                        <a class="collapse-item" href="Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="Iran.php">Iran</a>
+                        <a class="collapse-item" href="Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="Delta.php">Delta</a>
+                        <a class="collapse-item" href="Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="Caloocan.php">Caloocan</a>
+
+                    </div>
+                </div>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -263,7 +291,7 @@ $result = mysqli_query($link, $fetchQuery);
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../JobSeeker/User/Login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -321,7 +349,17 @@ $result = mysqli_query($link, $fetchQuery);
                                         </tr>
                                     </tfoot>
                                     <tbody>
-                                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+                                            <?php while ($row = mysqli_fetch_assoc($result)) { 
+                                                // Set color based on priority
+                                                $priorityColor = '';
+                                                if (strtolower($row['priority']) === 'low') {
+                                                    $priorityColor = 'color: #FFD700; font-weight: bold;'; // Yellow
+                                                } elseif (strtolower($row['priority']) === 'medium') {
+                                                    $priorityColor = 'color: #FF8C00; font-weight: bold;'; // Orange
+                                                } elseif (strtolower($row['priority']) === 'high') {
+                                                    $priorityColor = 'color: #FF0000; font-weight: bold;'; // Red
+                                                }
+                                            ?>
                                         <tr>
                                             <td><?= htmlspecialchars($row['ticket_id']) ?></td>
                                             <td><?= htmlspecialchars($row['employee_id']) ?></td>
@@ -329,7 +367,7 @@ $result = mysqli_query($link, $fetchQuery);
                                             <td><?= htmlspecialchars($row['branch']) ?></td>
                                             <td><?= htmlspecialchars($row['department']) ?></td>
                                             <td><?= htmlspecialchars($row['concern_details']) ?></td>
-                                            <td><?= htmlspecialchars($row['priority']) ?></td>
+                                            <td style="<?= $priorityColor ?>"><?= htmlspecialchars($row['priority']) ?></td>
                                             <td><?= htmlspecialchars($row['category']) ?></td>
                                             <td><?= htmlspecialchars($row['attachments']) ?></td>
                                             <td>
@@ -419,7 +457,7 @@ $result = mysqli_query($link, $fetchQuery);
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="login.html">Logout</a>
+                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
@@ -517,8 +555,8 @@ $result = mysqli_query($link, $fetchQuery);
                     <input type="text" class="form-control" id="category" name="category" placeholder="Category" readonly>
                 </div>
                 <div class="col-md-6">
-                    <label for="created_by" class="form-label">Performed By</label>
-                    <input type="text" class="form-control" id="created_by" name="created_by" placeholder="Performed By" readonly>
+                    <label for="created_by_usertype" class="form-label">Performed By</label>
+                    <input type="text" class="form-control" id="created_by_usertype" name="created_by_usertype" placeholder="Performed By" readonly>
                 </div>
         </div>
 
@@ -587,7 +625,7 @@ $result = mysqli_query($link, $fetchQuery);
             $('#status').val($(this).data('status'));
             $('#priority').val($(this).data('priority'));
             $('#category').val($(this).data('category'));
-            $('#created_by').val($(this).data('createdby'));
+            $('#created_by_usertype').val($(this).data('createdby'));
             $('#datecreated').val($(this).data('datecreated'));
             $('#dateupdated').val($(this).data('dateupdated'));
             $('#remarks').val($(this).data('remarks'));

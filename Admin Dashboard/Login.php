@@ -1,4 +1,5 @@
 <?php
+session_start();
 if (isset($_POST['btnLogin'])) {
 	// require the config file
 	require_once "config.php";

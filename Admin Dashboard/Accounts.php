@@ -17,23 +17,62 @@
     $_SESSION['username'] = $username;
 
     // Handle delete request
-    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Decline') {
-        $accountToDelete = $_POST['account_id'];
+// Handle delete request
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Delete') {
+    $accountToDelete = $_POST['account_id'];
 
-        // Protect against SQL injection
-        $deleteSQL = "DELETE FROM tblaccounts WHERE account_id = ?";
-        if ($stmt = mysqli_prepare($link, $deleteSQL)) {
-            mysqli_stmt_bind_param($stmt, "i", $accountToDelete);
-            if (mysqli_stmt_execute($stmt)) {
-                // Optional: redirect to refresh the page
-                header("Location: " . $_SERVER['PHP_SELF']);
-                exit();
-            } else {
-                echo "<script>alert('Error deleting account.');</script>";
-            }
-            mysqli_stmt_close($stmt);
-        }
+    // Step 1: Get username of deleted account (for logging)
+    $deletedUsername = '';
+    $getUserSQL = "SELECT username FROM tblaccounts WHERE account_id = ?";
+    if ($stmt = mysqli_prepare($link, $getUserSQL)) {
+        mysqli_stmt_bind_param($stmt, "i", $accountToDelete);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $deletedUsername);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
     }
+
+    // Step 2: Delete from tblaccounts
+    $deleteSQL = "DELETE FROM tblaccounts WHERE account_id = ?";
+    if ($stmt = mysqli_prepare($link, $deleteSQL)) {
+        mysqli_stmt_bind_param($stmt, "i", $accountToDelete);
+        if (mysqli_stmt_execute($stmt)) {
+
+            // Step 3: Insert into tbllogs
+            $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                    VALUES (?, ?, ?, ?, ?, ?)";
+            if ($logStmt = mysqli_prepare($link, $sql)) {
+                $date = date("Y-m-d");
+                $time = date("h:i:sa");
+                $action = "Deleted an Account";
+                $module = "Employee Management";
+                $accountID = $accountToDelete; // ID of deleted account
+                $performedBy = $_SESSION['username']; // admin who deleted
+
+                mysqli_stmt_bind_param($logStmt, "ssssss", 
+                    $date, 
+                    $time, 
+                    $action, 
+                    $module, 
+                    $accountID, 
+                    $performedBy
+                );
+
+                mysqli_stmt_execute($logStmt);
+                mysqli_stmt_close($logStmt);
+            }
+
+            // Refresh page after delete
+            header("Location: " . $_SERVER['PHP_SELF']);
+            exit();
+        } else {
+            echo "<script>alert('Error deleting account.');</script>";
+        }
+        mysqli_stmt_close($stmt);
+    }
+}
+
+
 
     $fetchQuery = "SELECT * FROM tblaccounts";
     $fetchEmployee = "SELECT * FROM tblemployee";
@@ -128,8 +167,36 @@
             <li class="nav-item">
                 <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
-                    <span>Asset</span>
+                    <span>Assets Directory </span>
                 </a>
+            </li>
+            <li class="nav-item ">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
+                    aria-expanded="true" aria-controls="collapsethree">
+                    <i class="fas fa-fw fa-user"></i>
+                    <span>Asset Inventory</span>	
+                </a>
+                <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Branch:</h6>
+                        <a class="collapse-item" href="Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="Iran.php">Iran</a>
+                        <a class="collapse-item" href="Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="Delta.php">Delta</a>
+                        <a class="collapse-item" href="Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="Caloocan.php">Caloocan</a>
+
+                    </div>
+                </div>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -274,13 +341,30 @@
                                             <td><?= htmlspecialchars($row['usertype']) ?></td>
                                             <td><?= htmlspecialchars($row['datecreated']) ?></td>
                                             <td>
-                                                <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-update btn-sm" style="width: 80px;" >Update</button>
-                                                    <form method="POST" style="display:inline;">
-                                                    <nput type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
-                                                    <button onclick="return confirm('Are you sure you want to delete this account?')" type="submit" name="action" value="Decline" class="btn btn-danger btn-sm" style="width: 80px;" >Delete</button>
-                                                </form>
+                                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
+                                                        Action</span>
+                                                    </a>
+                                                    <!-- Dropdown - User Information -->
+                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                                                        <!-- Update -->
+                                                        <a class="dropdown-item" href="Update-Account.php?account_id=<?= $row['account_id']; ?>">
+                                                            <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>
+                                                            Update
+                                                        </a>
+
+                                                        <!-- Delete -->
+                                                        <form method="POST" style="display:inline;">
+                                                            <input type="hidden" name="account_id" value="<?= $row['account_id'] ?>">
+                                                            <button onclick="return confirm('Are you sure you want to delete this account?')" 
+                                                                    type="submit" name="action" value="Delete" 
+                                                                    class="dropdown-item text-danger">
+                                                                <i class="fas fa-trash fa-sm fa-fw mr-2 text-black-400"></i>
+                                                                Delete
+                                                            </button>
+                                                        </form>
+                                                    </div>
                                             </td>
                                         </tr>
                                         <?php } ?>
@@ -330,7 +414,7 @@
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="login.html">Logout</a>
+                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
                 </div>
             </div>
         </div>

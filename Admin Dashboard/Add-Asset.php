@@ -161,12 +161,12 @@ if (isset($_POST['btnSubmit'])) {
                     <span>Ticket</span>
                 </a>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
-            </li>
+            </li>            
             <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
                     aria-expanded="true" aria-controls="collapsethree">
@@ -176,8 +176,22 @@ if (isset($_POST['btnSubmit'])) {
                 <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Branch:</h6>
-                        <a class="collapse-item" href="Accounts.php">Head Office</a>
-                        <a class="collapse-item" href="Employee.php">Iran</a>
+                        <a class="collapse-item" href="Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="Iran.php">Iran</a>
+                        <a class="collapse-item" href="Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="Delta.php">Delta</a>
+                        <a class="collapse-item" href="Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="Caloocan.php">Caloocan</a>
+
                     </div>
                 </div>
             </li>
@@ -393,7 +407,7 @@ if (isset($_POST['btnSubmit'])) {
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="login.html">Logout</a>
+                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
