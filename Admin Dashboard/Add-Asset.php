@@ -1,65 +1,81 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
+require_once "config.php";
+include("session-checker.php");
 
     $accountID = $_SESSION['account_id'];
     $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
-
+    $username = '';
+if (isset($_POST['btnSubmit'])) {
+    // Insert into tbltickets
+   $sql = "INSERT INTO tbltickets (
+                employee_id, lastname, firstname, middlename, branch, department,
+                ticket_assign, technical_purpose, concern_details, action, result,
+                status, priority, category, created_by, datecreated, attachments, remarks
+            ) VALUES (
+                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
+            )";
     if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "i", $accountID);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $username);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
-    }
+        // Collect form values
+        $employee_id = $_POST['employee_id'];
+        $lastname = $_POST['lastname'];
+        $firstname = $_POST['firstname'];
+        $middlename = $_POST['middlename'];
+        $branch = $_POST['branch'];
+        $department = $_POST['department'];
+        $ticket_assign = $_POST['ticket_assign'];
+        $technical_purpose = $_POST['technical_purpose'];
+        $concern_details = $_POST['concern_details'];
+        $actionTaken = $_POST['action'];
+        $resultDetails = $_POST['result'];
+        $priority = $_POST['priority'];
+        $category = $_POST['category'];
+        $created_by = $_SESSION['account_id']; 
+        $datecreated = date('Y-m-d H:i:s');
+        $status = "PENDING";   
+        $attachments = "";
+        $remarks = $_POST['remarks'];
 
-    $_SESSION['username'] = $username;
+       
+       mysqli_stmt_bind_param(
+            $stmt,
+            "isssssssssssssssss",   // 1 int + 17 strings = 18 total
+            $employee_id, $lastname, $firstname, $middlename, $branch, $department,
+            $ticket_assign, $technical_purpose, $concern_details, $actionTaken, $resultDetails,
+            $status, $priority, $category, $created_by, $datecreated, $attachments, $remarks
+        );
 
-    // Handle delete request
-    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Decline') {
-        $accountToDelete = $_POST['account_id'];
 
-        // Protect against SQL injection
-        $deleteSQL = "DELETE FROM tblaccounts WHERE account_id = ?";
-        if ($stmt = mysqli_prepare($link, $deleteSQL)) {
-            mysqli_stmt_bind_param($stmt, "i", $accountToDelete);
-            if (mysqli_stmt_execute($stmt)) {
-                // Optional: redirect to refresh the page
-                header("Location: " . $_SERVER['PHP_SELF']);
-                exit();
-            } else {
-                echo "<script>alert('Error deleting account.');</script>";
+
+        if (mysqli_stmt_execute($stmt)) {
+            // Get the auto incremented ticket_id
+            $ticket_id = mysqli_insert_id($link);
+
+            // Insert into tbllogs
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                       VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                $date       = date("Y-m-d");
+                $time       = date("H:i:s");
+                $logAction  = "Create";
+                $module     = "Ticket Management";
+                $performedby = $_SESSION['username'];
+
+                mysqli_stmt_bind_param(
+                    $stmtLog,
+                    "ssssss",
+                    $date, $time, $logAction, $module, $ticket_id, $performedby
+                );
+                mysqli_stmt_execute($stmtLog);
             }
-            mysqli_stmt_close($stmt);
+
+            $notificationMessage = "New Ticket successfully created!";
+        } else {
+            echo "<font color='red'>Error inserting into tbltickets: " . mysqli_error($link) . "</font>";
         }
+    } else {
+        echo "<font color='red'>Error preparing statement for tbltickets.</font>";
     }
-
-$fetchQuery = "
-    SELECT t.ticket_id,
-           t.employee_id,
-           CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS fullname,
-           t.branch,
-           t.department,
-           t.ticket_assign,
-           t.technical_purpose,
-           t.concern_details,
-           t.action,
-           t.result,
-           t.status,
-           t.priority,
-           t.category,
-           t.created_by,
-           t.datecreated,
-           t.dateupdated,
-           t.attachments,
-           t.remarks
-    FROM tbltickets t
-    JOIN tblemployee e ON t.employee_id = e.employee_id
-";
-$result = mysqli_query($link, $fetchQuery);
-
-
+}
 ?>
 
 <html lang="en">
@@ -72,7 +88,7 @@ $result = mysqli_query($link, $fetchQuery);
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Assets Directory- Tables</title>
+    <title>Unipath Admin Accounts - Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -82,7 +98,7 @@ $result = mysqli_query($link, $fetchQuery);
 
     <!-- Custom styles for this template -->
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link href="css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
     <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
@@ -93,6 +109,7 @@ $result = mysqli_query($link, $fetchQuery);
     <!-- Page Wrapper -->
     <div id="wrapper">
 
+        <!-- Sidebar -->
         <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
@@ -265,60 +282,83 @@ $result = mysqli_query($link, $fetchQuery);
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800"></h1>
+                    <p class="mb-4">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
 
-                    <!-- Main conctent -->
+                    <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Assets</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Asset</h6>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>Item number</th>
-                                            <th>Item model</th>
-                                            <th>IC Code</th>
-                                            <th>Item general info </th>
-											<th>Item category</th>
-											<th>Item count</th>
-                                            <th>Year Purchased</th>
-                                            <th>Date created</th>
-                                            <th>Created by</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Item number</th>
-                                            <th>Item model</th>
-                                            <th>IC Code</th>
-                                            <th>Item general info </th>
-											<th>Item category</th>
-											<th>Item count</th>
-                                            <th>Year Purchased</th>
-                                            <th>Date created</th>
-                                            <th>Created by</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                    </tbody>
-                                </table>
-                            </div>
-                        </div>
-                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                            <a href="Add-Asset.php" class="btn btn-primary">Add Asset</a>
+                            <div class="container mt-4">
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    
+                                <h1>Asset Details</h1>
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "" class ="form-label">Item Code</label>
+                                                    <input type="text" class="form-control" required>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "model" class ="form-label">Item model</label>
+                                                    <input type="text" class="form-control" id="model" placeholder="Item model" required>
+                                            </div>
+                                    </div>
+
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "ic" class ="form-label">IC Code</label>
+                                                    <input type="text" class="form-control" id="ic" placeholder="IC Code" required>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "info" class ="form-label">Item general info</label>
+                                                <textarea id ="info" name="result" class="form-control" rows="6" maxlength="1000" required>
+
+                                                </textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+
+                                    <div class ="row mb-5">
+                                        <div class ="col-md-6">
+                                            <label for ="category" class ="form-label">Item Category</label>
+                                                <select id="category" name="category" class="form-control" required>
+                                                <option value="">-- Select Category level --</option>
+                                                <option value="attire">Company Attire</option>
+                                                <option value="equipment">Office Equipment</option>
+                                                <option value="fixture_furniture">Fixture & Furniture</option>
+                                                <option value="communication">Communications</option>
+                                                <option value="it_asset">IT Assets</option>
+                                                <option value="other_asset">Other Assets</option>
+                                                </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for = "ic" class ="form-label">IC Code</label>
+                                                <input type="text" class="form-control" id="ic" placeholder="IC Code" required>
+                                        </div>
+                                    </div>
+
+                                    <div class="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "remarks" class ="form-label">Remarks</label>
+                                                <textarea id ="remarks" name="remarks" class="form-control" rows="6" maxlength="1000" required>
+
+                                                </textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+
+                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                    <a href="Assets.php" class="btn btn-danger">Cancel</a>
+                                    </form>
+                                </div>
+
                         </div>
                     </div>
-                </div>
-        </div>
-        </div>
-        
+                    
                 </div>
                 <!-- /.container-fluid -->
 
@@ -375,6 +415,46 @@ $result = mysqli_query($link, $fetchQuery);
 
     <!-- Page level custom scripts -->
     <script src="js/demo/datatables-demo.js"></script>
+    <script>
+    function togglePasswordVisibility() {
+        var passwordField = document.getElementById("txtPassword");
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            document.getElementById("showPassword").textContent = "Hide";
+        }
+        else {
+            passwordField.type = "password";
+            document.getElementById("showPassword").textContent = "Show";
+        }
+    }
+</script>
+
+<script>
+    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+    if (notificationMessage !== "") {
+        alert(notificationMessage);
+        window.location.href = "Tickets.php";
+    }
+</script>
+
+<script>
+document.getElementById("employee_id").addEventListener("change", function() {
+    var selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value !== "") {
+        document.getElementById("lastname").value = selectedOption.getAttribute("data-lastname");
+        document.getElementById("firstname").value = selectedOption.getAttribute("data-firstname");
+        document.getElementById("middlename").value = selectedOption.getAttribute("data-middlename");
+        document.getElementById("branch").value = selectedOption.getAttribute("data-branch");
+        document.getElementById("department").value = selectedOption.getAttribute("data-department");
+    } else {
+        document.getElementById("lastname").value = "";
+        document.getElementById("firstname").value = "";
+        document.getElementById("middlename").value = "";
+        document.getElementById("branch").value = "";
+        document.getElementById("department").value = "";
+    }
+});
+</script>
 
 </body>
 
