@@ -7,7 +7,9 @@
     $username = ''; // Initialize the variable to avoid undefined variable errors
 
 
-$userQuery = "SELECT username, usertype FROM tblaccounts WHERE account_id = ?";
+$userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
+
+
 if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_bind_param($stmt, "i", $accountID);
     mysqli_stmt_execute($stmt);

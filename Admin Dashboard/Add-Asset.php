@@ -1,81 +1,102 @@
 <?php
 require_once "config.php";
 include("session-checker.php");
-
+    //Fetching username from the logged in user
     $accountID = $_SESSION['account_id'];
-    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = '';
-if (isset($_POST['btnSubmit'])) {
-    // Insert into tbltickets
-   $sql = "INSERT INTO tbltickets (
-                employee_id, lastname, firstname, middlename, branch, department,
-                ticket_assign, technical_purpose, concern_details, action, result,
-                status, priority, category, created_by, datecreated, attachments, remarks
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-            )";
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        // Collect form values
-        $employee_id = $_POST['employee_id'];
-        $lastname = $_POST['lastname'];
-        $firstname = $_POST['firstname'];
-        $middlename = $_POST['middlename'];
-        $branch = $_POST['branch'];
-        $department = $_POST['department'];
-        $ticket_assign = $_POST['ticket_assign'];
-        $technical_purpose = $_POST['technical_purpose'];
-        $concern_details = $_POST['concern_details'];
-        $actionTaken = $_POST['action'];
-        $resultDetails = $_POST['result'];
-        $priority = $_POST['priority'];
-        $category = $_POST['category'];
-        $created_by = $_SESSION['account_id']; 
-        $datecreated = date('Y-m-d H:i:s');
-        $status = "PENDING";   
-        $attachments = "";
-        $remarks = $_POST['remarks'];
+    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
+    if($stmtuser = mysqli_prepare($link, $sql)){
+        mysqli_stmt_bind_param($stmtuser, "i", $accountID);
+        mysqli_stmt_execute($stmtuser);
+        mysqli_stmt_bind_result($stmtuser, $dbUsername);
+        mysqli_stmt_fetch($stmtuser);
+        mysqli_stmt_close($stmtuser);   
+    
+        $_SESSION['username'] = $dbUsername; 
+    }
+    //Displaying off logged in user
+    $userQuery ="SELECT e.firstname , a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id WHERE a.account_id = ?";
+    if($stmt = mysqli_prepare($link, $userQuery)){
+        mysqli_stmt_bind_param($stmt , "i", $accountID);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+    }
+    //Inserting into tblassets_directory and tbllogs 
+    if( isset($_POST['btnSubmit'])){
+        $category_id = $_POST['categoryName'];
+        $ic_code = $_POST['ic_code'];
+        $itemInfo = $_POST['itemInfo'];
+        $itemModel = $_POST['itemModel'];
+        $year_purchased = $_POST['year_purchased'];
+        $createdby = $_SESSION['username'];
+        $datecreated = date("Y-m-d H:i:s");
 
-       
-       mysqli_stmt_bind_param(
-            $stmt,
-            "isssssssssssssssss",   // 1 int + 17 strings = 18 total
-            $employee_id, $lastname, $firstname, $middlename, $branch, $department,
-            $ticket_assign, $technical_purpose, $concern_details, $actionTaken, $resultDetails,
-            $status, $priority, $category, $created_by, $datecreated, $attachments, $remarks
-        );
+        $yearshort = substr($year_purchased, -2);
+        $sqlCount = "SELECT COUNT(*) AS itemCOUNT from tblassets_directory";
+        $stmt =mysqli_prepare($link, $sqlCount);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $total);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
 
+        $sqlIC = "SELECT ic_code FROM tblassets_category WHERE category_id = ?";
+        $stmt = mysqli_prepare($link, $sqlIC);
+        mysqli_stmt_bind_param($stmt, "i", $category_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $ic_code);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
 
+        $itemCount = $total + 1;
+        $itemCountPadded = str_pad($itemCount, 3, "0", STR_PAD_LEFT);
+
+        $itemNumber = $ic_code . "-" . $yearshort . "" . $itemCountPadded;
+
+        $sql = "INSERT INTO tblassets_directory 
+            (category_id, ic_code, itemNumber, itemInfo, itemModel, itemCount, status, year_purchased, datecreated, createdby) 
+            VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)";
+
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt,  "issssiiss",
+                $category_id, 
+                $ic_code, 
+                $itemNumber, 
+                $itemInfo, 
+                $itemModel, 
+                $itemCount, 
+                $year_purchased, 
+                $datecreated,
+                $createdby);
 
         if (mysqli_stmt_execute($stmt)) {
-            // Get the auto incremented ticket_id
-            $ticket_id = mysqli_insert_id($link);
-
+            $category_id = mysqli_insert_id($link);
             // Insert into tbllogs
             $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
                        VALUES (?, ?, ?, ?, ?, ?)";
             if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
                 $date       = date("Y-m-d");
                 $time       = date("H:i:s");
-                $logAction  = "Create";
-                $module     = "Ticket Management";
+                $logAction  = "Create Item";
+                $module     = "Asset Management";
                 $performedby = $_SESSION['username'];
 
                 mysqli_stmt_bind_param(
                     $stmtLog,
                     "ssssss",
-                    $date, $time, $logAction, $module, $ticket_id, $performedby
+                    $date, $time, $logAction, $module, $accountID, $_SESSION['username']
                 );
                 mysqli_stmt_execute($stmtLog);
             }
 
-            $notificationMessage = "New Ticket successfully created!";
+            $notificationMessage = "New Item Asset successfully created!";
         } else {
-            echo "<font color='red'>Error inserting into tbltickets: " . mysqli_error($link) . "</font>";
+            echo "<font color='red'>Error inserting into tblassets_directory: " . mysqli_error($link) . "</font>";
         }
-    } else {
-        echo "<font color='red'>Error preparing statement for tbltickets.</font>";
+
+
+
     }
-}
 ?>
 
 <html lang="en">
@@ -273,7 +294,9 @@ if (isset($_POST['btnSubmit'])) {
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
+                                    <?php echo htmlspecialchars($loggedFirstname);?> (<?php echo htmlspecialchars($loggedUsertype); ?>)
+                                </span>
                                 <img class="img-profile rounded-circle"
                                     src="img/undraw_profile.svg">
                             </a>
@@ -310,61 +333,56 @@ if (isset($_POST['btnSubmit'])) {
                                     
                                 <h1>Asset Details</h1>
                                     <div class ="row mb-5">
-                                            <div class="col-md-6">
-                                                <label for = "" class ="form-label">Item Code</label>
-                                                    <input type="text" class="form-control" required>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <label for = "model" class ="form-label">Item model</label>
-                                                    <input type="text" class="form-control" id="model" placeholder="Item model" required>
-                                            </div>
-                                    </div>
-
-                                    <div class ="row mb-5">
-                                            <div class="col-md-6">
-                                                <label for = "ic" class ="form-label">IC Code</label>
-                                                    <input type="text" class="form-control" id="ic" placeholder="IC Code" required>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <label for = "info" class ="form-label">Item general info</label>
-                                                <textarea id ="info" name="result" class="form-control" rows="6" maxlength="1000" required>
-
-                                                </textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
-                                    </div>
-
-                                    <div class ="row mb-5">
                                         <div class ="col-md-6">
-                                            <label for ="category" class ="form-label">Item Category</label>
-                                                <select id="category" name="category" class="form-control" required>
-                                                <option value="">-- Select Category level --</option>
-                                                <option value="attire">Company Attire</option>
-                                                <option value="equipment">Office Equipment</option>
-                                                <option value="fixture_furniture">Fixture & Furniture</option>
-                                                <option value="communication">Communications</option>
-                                                <option value="it_asset">IT Assets</option>
-                                                <option value="other_asset">Other Assets</option>
+                                            <label for ="categoryName" class ="form-label">Item Category</label>
+                                                <select id="categoryName" name="categoryName" class="form-control" required>
+                                                <option value="">-- Select Category --</option>
+                                                    <?php 
+                                                        $sql = "SELECT category_id, ic_code, categoryName FROM tblassets_category ORDER BY categoryName ASC";
+                                                        $result = mysqli_query($link, $sql);
+                                                        
+                                                        if($result && mysqli_num_rows($result) > 0){
+                                                            while($row = mysqli_fetch_assoc($result)){
+                                                                $displaytext = $row['ic_code'] . " - " . $row['categoryName'];
+                                                                echo '<option value="'.$row['category_id'].'"
+                                                                            data-categoryName="'.$row['categoryName'].'"
+                                                                            data-ic_code="'.$row['ic_code'].'">'
+                                                                            .$displaytext.
+                                                                    '</option>';
+                                                            }
+                                                            mysqli_free_result($result);
+                                                        } else {
+                                                            echo "<option value=''>No categories available</option>";
+                                                        }
+                                                    ?>
                                                 </select>
                                         </div>
                                         <div class="col-md-6">
-                                            <label for = "ic" class ="form-label">IC Code</label>
-                                                <input type="text" class="form-control" id="ic" placeholder="IC Code" required>
+                                            <label for = "ic_code" class ="form-label">IC Code</label>
+                                                <input type="text" name="ic_code" class="form-control" id="ic_code" placeholder="IC Code" readonly>
                                         </div>
                                     </div>
 
-                                    <div class="row mb-5">
+                                    <div class ="row mb-5">
                                             <div class="col-md-6">
-                                                <label for = "remarks" class ="form-label">Remarks</label>
-                                                <textarea id ="remarks" name="remarks" class="form-control" rows="6" maxlength="1000" required>
+                                                <label for = "itemInfo" class ="form-label">Item general info</label>
+                                                <textarea id ="itemInfo" name="itemInfo" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
 
-                                                </textarea>
+                                            <div class="col-md-6">
+                                                <label for = "itemModel" class ="form-label">Item Model</label>
+                                                <textarea id ="itemModel" name="itemModel" class="form-control" rows="6" maxlength="1000" required></textarea>
                                                 <small class="form-text text-muted">Maximum 1000 characters.</small>
                                             </div>
                                     </div>
 
+                                    <div class ="row mb-5">
+                                        <div class="col-md-6">
+                                            <label for = "year_purchased" class ="form-label">Year purchased</label>
+                                                <input type="text" name="year_purchased" class="form-control" id="year_purchased" placeholder="Year purchased" required>
+                                        </div>
+                                    </div>
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
                                     <a href="Assets.php" class="btn btn-danger">Cancel</a>
                                     </form>
@@ -447,28 +465,21 @@ if (isset($_POST['btnSubmit'])) {
     var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
     if (notificationMessage !== "") {
         alert(notificationMessage);
-        window.location.href = "Tickets.php";
+        window.location.href = "Assets.php";
     }
 </script>
 
 <script>
-document.getElementById("employee_id").addEventListener("change", function() {
+document.getElementById("categoryName").addEventListener("change", function() {
     var selectedOption = this.options[this.selectedIndex];
     if (selectedOption.value !== "") {
-        document.getElementById("lastname").value = selectedOption.getAttribute("data-lastname");
-        document.getElementById("firstname").value = selectedOption.getAttribute("data-firstname");
-        document.getElementById("middlename").value = selectedOption.getAttribute("data-middlename");
-        document.getElementById("branch").value = selectedOption.getAttribute("data-branch");
-        document.getElementById("department").value = selectedOption.getAttribute("data-department");
+        document.getElementById("ic_code").value = selectedOption.getAttribute("data-ic_code");
     } else {
-        document.getElementById("lastname").value = "";
-        document.getElementById("firstname").value = "";
-        document.getElementById("middlename").value = "";
-        document.getElementById("branch").value = "";
-        document.getElementById("department").value = "";
+        document.getElementById("ic_code").value = "";
     }
 });
 </script>
+
 
 </body>
 
