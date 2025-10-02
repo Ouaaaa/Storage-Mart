@@ -1,0 +1,65 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Accountability Form</title>
+    <style>
+        body { font-family: Arial, sans-serif; font-size: 12px; }
+        h2 { text-align: center; text-decoration: underline; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid black; padding: 6px; text-align: left; }
+        .header { margin-bottom: 30px; }
+        .section { margin-top: 20px; }
+        .signature { margin-top: 40px; display: flex; justify-content: space-between; }
+        .signature div { text-align: center; width: 30%; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <h2>ACCOUNTABILITY FORM</h2>
+    </div>
+
+    <div class="section">
+        <p><b>Employee Name:</b> <<EMPLOYEE_NAME>></p>
+        <p><b>Department:</b> <<DEPARTMENT>></p>
+        <p><b>Position:</b> <<POSITION>></p>
+        <p><b>Employee ID:</b> <<EMPLOYEE_ID>></p>
+        <p><b>Date Issued:</b> <<DATE_ISSUED>></p>
+    </div>
+
+    <div class="section">
+        <h3>Issued Items</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Item No.</th>
+                    <th>Description</th>
+                    <th>Serial/Asset Tag</th>
+                    <th>Remarks</th>
+                </tr>
+            </thead>
+            <tbody>
+                <<ITEM_ROWS>>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="signature">
+        <div>
+            ___________________________<br>
+            Employee Signature
+        </div>
+        <div>
+            ___________________________<br>
+            HR/Admin Signature
+        </div>
+        <div>
+            ___________________________<br>
+            Manager’s Approval
+        </div>
+    </div>
+
+</body>
+</html>

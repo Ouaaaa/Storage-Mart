@@ -1442,7 +1442,7 @@ pre code {
 .table {
   width: 100%;
   margin-bottom: 1rem;
-  color: #858796;
+  color: black;
 }
 .table td,
 .table th {
@@ -4472,7 +4472,7 @@ input[type="submit"].btn-block {
   z-index: 3;
   color: #fff;
   background-color: #f85f00;
-  border-color: #f85f00 ;
+  border-color: #f85f00;
 }
 .page-item.disabled .page-link {
   color: #858796;

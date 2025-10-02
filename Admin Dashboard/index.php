@@ -117,20 +117,20 @@
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="Employee.php">Employee</a>
+                        <a class="collapse-item" href="Account/Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="Account/Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
 			
 			<li class="nav-item">
-                <a class="nav-link" href="Tickets.php">
+                <a class="nav-link" href="Ticket/Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
             </li>
              <li class="nav-item">
-                <a class="nav-link" href="Assets.php">
+                <a class="nav-link" href="Assets Inventory/Directory/Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
@@ -144,21 +144,21 @@
                 <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Branch:</h6>
-                        <a class="collapse-item" href="Head-office.php">Head Office</a>
-                        <a class="collapse-item" href="Iran.php">Iran</a>
-                        <a class="collapse-item" href="Don-roces.php">Don Roces</a>
-                        <a class="collapse-item" href="Sucat.php">Sucat</a>
-                        <a class="collapse-item" href="Banawe.php">Sucat</a>
-                        <a class="collapse-item" href="Santolan.php">Santolan</a>
-                        <a class="collapse-item" href="Pasig.php">Pasig</a>
-                        <a class="collapse-item" href="Bangkal.php">Bangkal</a>
-                        <a class="collapse-item" href="Delta.php">Delta</a>
-                        <a class="collapse-item" href="Binondo.php">Binondo</a>
-                        <a class="collapse-item" href="Katipunan.php">Katipunan</a>
-                        <a class="collapse-item" href="Fairview.php">Fairview</a>
-                        <a class="collapse-item" href="Jabad.php">Jabad</a>
-                        <a class="collapse-item" href="Yakal.php">Yakal</a>
-                        <a class="collapse-item" href="Caloocan.php">Caloocan</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Iran.php">Iran</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Delta.php">Delta</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="Assets Inventory/Inventory/Caloocan.php">Caloocan</a>
 
                     </div>
                 </div>
