@@ -1,9 +1,7 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
-
-
-    // For Displaying the logged in user
+require_once "config.php";
+include("session-checker.php");
+    //Fetching username from the logged in user
     $accountID = $_SESSION['account_id'];
     $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
     $username = ''; // Initialize the variable to avoid undefined variable errors
@@ -21,33 +19,56 @@
     $_SESSION['username'] = $username;
 
 
-    // Displaying the table
-    $fetchQuery = "
-        SELECT 
-        i.inventory_id,
-        i.branch,
-        i.assetNumber,
-        i.assetCode,
-        d.item_id,
-        d.itemInfo,
-        d.itemModel,
-        d.serialNumber,
-        e.employee_id, 
-        CONCAT(e.lastname, ' ', e.firstname) AS fullName,
-        a.assignedTo,
-        a.dateIssued,
-        a.transferDetails
-        FROM tblassets_inventory i 
-        LEFT JOIN tblassets_assignment a ON i.assignment_id = a.assignment_id 
-        LEFT JOIN tblassets_directory d ON i.item_id = d.item_id
-        LEFT JOIN tblemployee e ON a.employee_id = e.employee_id 
-        ORDER by i.assetCode ASC";
+
+    //Inserting into tblassets_directory and tbllogs 
+    if( isset($_POST['btnSubmit'])){
+        $branchName = $_POST['branchName'];
+        $branchCode = $_POST['branchCode'];
+        $branchAddress = $_POST['branchAddress'];
+        $createdby = $_SESSION['username'];
+        $datecreated = date("Y-m-d");
     
-    
-    
-        $result = mysqli_query($link, $fetchQuery);
+        $sql = "INSERT INTO tblbranch 
+            (branchName, branchCode, branchAddress, datecreated, createdby) 
+            VALUES (?, ?, ?, ?, ?)";
+
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt,  "sssss",
+                $branchName,
+                $branchCode,
+                $branchAddress,
+                $datecreated,
+                $createdby    
+            );
+
+        if (mysqli_stmt_execute($stmt)) {
+            $branch_id = mysqli_insert_id($link);
+            // Insert into tbllogs
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                       VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                $date       = date("Y-m-d");
+                $time       = date("H:i:s");
+                $logAction  = "Create Branch";
+                $module     = "Branch Management";
+                $performedby = $_SESSION['username'];
+
+                mysqli_stmt_bind_param(
+                    $stmtLog,
+                    "ssssss",
+                    $date, $time, $logAction, $module, $accountID, $_SESSION['username']
+                );
+                mysqli_stmt_execute($stmtLog);
+            }
+
+            $notificationMessage = "New Branch successfully created!";
+        } else {
+            echo "<font color='red'>Error inserting into tblassets_directory: " . mysqli_error($link) . "</font>";
+        }
 
 
+
+    }
 ?>
 
 <html lang="en">
@@ -60,7 +81,7 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Assets Inventory - Table</title>
+    <title>Unipath Admin Accounts - Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -70,9 +91,9 @@
 
     <!-- Custom styles for this template -->
     <link href="../../css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="icon" href="../../img/favicon.ico" type="image/x-icon">
+    <link href="../../css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
-    <link href="../../vendor/datatables/dataTables.min.css" rel="stylesheet">
+    <link href="../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
@@ -81,6 +102,7 @@
     <!-- Page Wrapper -->
     <div id="wrapper">
 
+        <!-- Sidebar -->
         <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
@@ -133,12 +155,12 @@
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="../Directory/Assets.php">
+                <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
-            </li>
-            <li class="nav-item active">
+            </li>            
+            <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
                     aria-expanded="true" aria-controls="collapsethree">
                     <i class="fas fa-fw fa-user"></i>
@@ -176,7 +198,7 @@
 			
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="Pendings.php">
+                <a class="nav-link" href="../../Pendings.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Pendings</span></a>
             </li>
@@ -245,7 +267,7 @@
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    <?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?>
+                                    <?php echo htmlspecialchars($loggedFirstname);?> (<?php echo htmlspecialchars($loggedUsertype); ?>)
                                 </span>
                                 <img class="img-profile rounded-circle"
                                     src="../../img/undraw_profile.svg">
@@ -269,102 +291,45 @@
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800"></h1>
+                    <p class="mb-4">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
 
-                    <!-- Main conctent -->
+                    <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Item Assets</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Branch</h6>
                         </div>
-                            <div class ="row mb-2">
-                                <div class="row">    
-                                    <div class="col" style="margin-bottom:20px; margin-left:40px;">
-                                        <a href="Add-Asset.php" class="btn btn-primary " style="width:120px";>Add Asset</a>
-                                    </div>
-                                    
-                                </div>
-                                <div class="row">    
-                                    <div class="col" style="margin-bottom:20px; margin-left:40px;">
-                                        <a href="Add-Branch.php" class="btn btn-primary " style="width:120px";>Add Branch</a>
-                                    </div>
-                                </div>
-                            </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="asset_inventory" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>BRANCH</th>
-                                            <th>ITEM NUMBER</th>
-                                            <th>ASSET CODE</th>
-                                            <th>ITEM GENERAL INFO</th>
-											<th>ITEM MODEL</th>
-                                            <th>SERIAL NUMBER</th>
-                                            <th>EMPLOYEE NUMBER</th>
-                                            <th>ASSIGNED TO</th>
-                                            <th>DATE ISSUED</th>
-                                            <th>TRANSFER DETAILS</th>
-                                            <th>ACTION</th>
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>BRANCH</th>
-                                            <th>ITEM NUMBER</th>
-                                            <th>ASSET CODE</th>
-                                            <th>ITEM GENERAL INFO</th>
-											<th>ITEM MODEL</th>
-                                            <th>SERIAL NUMBER</th>
-                                            <th>EMPLOYEE NUMBER</th>
-                                            <th>ASSIGNED TO</th>
-                                            <th>DATE ISSUED</th>
-                                            <th>TRANSFER DETAILS</th>
-                                            <th>ACTION</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['branch']); ?></td>
-                                            <td><?= htmlspecialchars($row['assetNumber']); ?></td>
-                                            <td><?= htmlspecialchars($row['assetCode']); ?></td>
-                                            <td><?= htmlspecialchars($row['itemInfo']); ?></td>
-                                            <td><?= htmlspecialchars($row['itemModel']); ?></td>
-                                            <td><?= htmlspecialchars($row['serialNumber']); ?></td>
-                                            <td><?= htmlspecialchars($row['employee_id']); ?></td>
-                                            <td><?= htmlspecialchars($row['assignedTo']); ?></td>
-                                            <td><?= htmlspecialchars($row['dateIssued']); ?></td>
-                                            <td><?= htmlspecialchars($row['transferDetails']); ?></td>
-                                            <td>
-                                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
-                                                        Action</span>
-                                                    </a>
-                                                    <!-- Dropdown - User Information -->
-                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-                                                        <!-- Update -->
-                                                        <a class="dropdown-item" href="Update-Asset-Directory.php?item_id=<?= $row['inventory_id']; ?>">
-                                                            <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            Update
-                                                        </a>
-                                                    </div>
-                                            </td>
+                            <div class="container mt-4">
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    
+                                <h1>Branch Details</h1>
+                                    <div class ="row mb-5">
+                                        <div class="col-md-6">
+                                            <label for = "brancName" class ="form-label">Branch Name</label>
+                                                <input type="text" name="branchName" class="form-control" id="BranchName" placeholder="Branch Name" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for = "branchCode" class ="form-label">Branch Code</label>
+                                                <input type="text" name="branchCode" class="form-control" id="branchCode" placeholder="Branch Code" required>
+                                        </div>
+                                    </div>
 
-                                        </tr>
-                                        <?php } ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "branchAddress" class ="form-label">Address</label>
+                                                <textarea id ="branchAddress" name="branchAddress" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                    <a href="Assets.php" class="btn btn-danger">Cancel</a>
+                                    </form>
+                                </div>
+
                         </div>
                     </div>
-                </div>
-        </div>
-        </div>
-        
+                    
                 </div>
                 <!-- /.container-fluid -->
 
@@ -417,10 +382,32 @@
 
     <!-- Page level plugins -->
     <script src="../../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../../vendor/datatables/dataTables.min.js"></script>
+    <script src="../../vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="../../js/demo/datatables-demo.js"></script>
+    <script>
+    function togglePasswordVisibility() {
+        var passwordField = document.getElementById("txtPassword");
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            document.getElementById("showPassword").textContent = "Hide";
+        }
+        else {
+            passwordField.type = "password";
+            document.getElementById("showPassword").textContent = "Show";
+        }
+    }
+</script>
+
+<script>
+    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+    if (notificationMessage !== "") {
+        alert(notificationMessage);
+        window.location.href = "Head-office.php";
+    }
+</script>
+
 
 </body>
 

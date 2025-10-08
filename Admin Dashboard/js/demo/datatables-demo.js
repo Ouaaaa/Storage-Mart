@@ -9,7 +9,7 @@ new DataTable("#asset", {
   ],
   columnDefs: [
     {
-      targets: [1, 2, 7],
+      targets: [2, 7],
       columnControl: [
         "order",
         ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
@@ -21,3 +21,26 @@ new DataTable("#asset", {
     handler: false,
   },
 });
+
+//ColumnControl for Aseset Inventory
+new DataTable("#asset_inventory", {
+  columnControl: [
+    "order",
+    ["search", "spacer", "orderAsc", "orderDesc", "orderClear"],
+  ],
+  columnDefs: [
+    {
+      targets: [0],
+      columnControl: [
+        "order",
+        ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
+      ],
+    },
+  ],
+  ordering: {
+    indicators: false,
+    handler: false,
+  },
+});
+
+new DataTable();
