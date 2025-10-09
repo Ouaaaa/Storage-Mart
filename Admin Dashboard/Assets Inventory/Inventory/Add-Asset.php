@@ -363,7 +363,33 @@ include("session-checker.php");
                                                 <input type="text" name="branchCode" class="form-control" id="branchCode" placeholder="Branch Code" readonly>
                                         </div>
                                     </div>
-
+                                    
+                                    <div class ="row mb-5">
+                                        <div class = "col-md-6">
+                                            <label for ="branchName" class ="form-label">Item Number</label>
+                                                <select id="branchName" name="branchName" class="form-control" required>
+                                                <option value="">- Select Branch --</option>
+                                                    <?php 
+                                                        $sql = "SELECT branch_id, branchCode, branchName FROM tblbranch ORDER BY branchName ASC";
+                                                        $result = mysqli_query($link, $sql);
+                                                        
+                                                        if($result && mysqli_num_rows($result) > 0){
+                                                            while($row = mysqli_fetch_assoc($result)){
+                                                                $displaytext = $row['branchCode'] . " - " . $row['branchName'];
+                                                                echo '<option value="'.$row['branch_id'].'"
+                                                                            data-branchName="'.$row['branchName'].'"
+                                                                            data-branchCode="'.$row['branchCode'].'">'
+                                                                            .$displaytext.
+                                                                    '</option>';
+                                                            }
+                                                            mysqli_free_result($result);
+                                                        } else {
+                                                            echo "<option value=''>No Branch available</option>";
+                                                        }
+                                                    ?>
+                                                </select>
+                                        </div>
+                                    </div>
                                     <div class ="row mb-5">
                                             <div class="col-md-6">
                                                 <label for = "itemInfo" class ="form-label">Item general info</label>
