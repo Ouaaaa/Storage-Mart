@@ -366,9 +366,9 @@ include("session-checker.php");
                                     
                                     <div class ="row mb-5">
                                         <div class = "col-md-6">
-                                            <label for ="branchName" class ="form-label">Item Number</label>
-                                                <select id="branchName" name="branchName" class="form-control" required>
-                                                <option value="">- Select Branch --</option>
+                                            <label for ="itemNumber" class ="form-label">Item Number</label>
+                                                <select id="itemNumber" name="itemNumber" class="form-control" required>
+                                                <option value="">- Select  --</option>
                                                     <?php 
                                                         $sql = "SELECT branch_id, branchCode, branchName FROM tblbranch ORDER BY branchName ASC";
                                                         $result = mysqli_query($link, $sql);
