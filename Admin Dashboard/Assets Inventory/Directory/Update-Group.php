@@ -1,11 +1,22 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
-    //For Displaying the User
-    $accountID = $_SESSION['account_id'];
-    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = ''; // Initialize to avoid Errors
+require_once "config.php";
+include("session-checker.php");
 
+$assets = [];
+$category = [];
+$username = '';
+    $accountID = $_SESSION['account_id'];
+    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
+    if($stmtuser = mysqli_prepare($link, $sql)){
+        mysqli_stmt_bind_param($stmtuser, "i", $accountID);
+        mysqli_stmt_execute($stmtuser);
+        mysqli_stmt_bind_result($stmtuser, $dbUsername);
+        mysqli_stmt_fetch($stmtuser);
+        mysqli_stmt_close($stmtuser);   
+    
+        $_SESSION['username'] = $dbUsername; 
+    }
+// For displaying logged in user info
     $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
 
 
@@ -16,78 +27,73 @@
         mysqli_stmt_fetch($stmt);
         mysqli_stmt_close($stmt);
     }
-    $_SESSION['username'] = $username;
 
-//     // For fetching the count of the inventory that is in the group 
-//     $fetchInventory = "
-//     SELECT 
-//         g.group_id,
-//         COUNT(i.inventory_id) AS totalItems,
-//         SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) AS assigned,
-//         SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) AS unassigned
-//     FROM tblassets_group g
-//     LEFT JOIN tblassets_inventory i 
-//         ON g.group_id = i.group_id
-//         AND i.status NOT IN ('DISPOSE', 'LOST')
-//     GROUP BY g.group_id;
-//     ";
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
+    // === Update tblassets_group ===
+    $sql = "UPDATE tblassets_group SET groupName = ?, description = ? WHERE group_id = ?";
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        mysqli_stmt_bind_param($stmt, "ssi", 
+            $_POST['groupName'],
+            $_POST['description'],
+            $_POST['group_id'] 
+        );
 
+        if (mysqli_stmt_execute($stmt)) {
+            mysqli_stmt_close($stmt);
+                    // === Insert into tbllogs ===
+                    $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                            VALUES (?, ?, ?, ?, ?, ?)";
+                    if ($stmt = mysqli_prepare($link, $sql)) {
+                        $date = date("Y-m-d");
+                        $time = date("h:i:sa");
+                        $action = "Update Asset Group";
+                        $module = "Group Asset Management";
+                        $performedby = $_SESSION['username'];
+                        mysqli_stmt_bind_param($stmt, "ssssss", 
+                            $date, 
+                            $time, 
+                            $action, 
+                            $module, 
+                            $accountID, 
+                            $_SESSION['username']
+                        );
 
-//     $count = mysqli_query($link, $fetchInventory);
-//     //For Defining the count Items
-//     $countrow = mysqli_fetch_assoc($count);
-//     $totalItem = $countrow['totalItems'];
-//     $assigned = $countrow['assigned'];
-//     $unassigned = $countrow['unassigned'];
-//     if (!$count) {
-//     die("SQL Error (Inventory): " . mysqli_error($link));
-// }
+                        if (mysqli_stmt_execute($stmt)) {
+                            $notificationMessage = "Group Asset successfully updated!";
+                        } else {
+                            echo "<font color='red'>Error inserting into tbllogs.</font>";
+                        }
+                        mysqli_stmt_close($stmt);
+                    }
+        } else {
+           echo "<font color='red'>Error updating tblassets_directory: " . mysqli_error($link) . "</font>";
+        }
+        
+    }
 
-    // for fetching the Group of an Item
-$fetchModel = "
-    SELECT 
-        g.group_id,
-        g.groupName,
-        g.description,
-        c.categoryName,
-        COUNT(i.group_id) AS totalItems,
-        SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) AS assigned,
-        SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) AS unassigned
-    FROM tblassets_group g
-    JOIN tblassets_category c 
-        ON g.category_id = c.category_id
-    LEFT JOIN tblassets_inventory i 
-        ON g.group_id = i.group_id 
-        AND i.status NOT IN ('DISPOSE','LOST') 
-    GROUP BY g.group_id, g.groupName, g.description, c.categoryName
-    ORDER BY g.group_id ASC;
-";
+} else {
+    // === Loading the data to the form ===
+    if (isset($_GET['group_id']) && !empty(trim($_GET['group_id']))) {
+    $sql = "SELECT g.*, c.* 
+            FROM tblassets_group g
+            JOIN tblassets_category c ON g.category_id = c.category_id
+            WHERE g.group_id = ?";
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        mysqli_stmt_bind_param($stmt, "i", $_GET['group_id']);
+        if (mysqli_stmt_execute($stmt)) {
+            $result = mysqli_stmt_get_result($stmt);
+            $data = mysqli_fetch_array($result, MYSQLI_ASSOC);
 
-$result = mysqli_query($link, $fetchModel);
-if (!$result) {
-    die("SQL Error: " . mysqli_error($link));
+            $assets  = $data;  // contains account fields
+            $category = $data;  // contains employee fields
+        }
+        mysqli_stmt_close($stmt);
+    }
 }
 
-// $fetchQuery = "
-//     SELECT 
-//     d.item_id,
-//     d.itemCount, 
-//     d.itemNumber, 
-//     c.categoryName, 
-//     c.ic_code, 
-//     d.itemInfo, 
-//     d.itemModel, 
-//     d.year_purchased, 
-//     d.status,
-//     d.datecreated, 
-//     d.createdby 
-//     FROM tblassets_directory d 
-//     JOIN tblassets_category c 
-//     ON d.category_id = c.category_id ORDER by d.itemCount ASC";
-//$result = mysqli_query($link, $fetchQuery);
-
-
+}
 ?>
+
 
 <html lang="en">
 
@@ -99,7 +105,7 @@ if (!$result) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Assets Directory- Tables</title>
+    <title>StorageMart | Update Group</title>
 
     <!-- Custom fonts for this template -->
     <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -109,9 +115,9 @@ if (!$result) {
 
     <!-- Custom styles for this template -->
     <link href="../../css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="icon" href="../../img/favicon.ico" type="image/x-icon">
+    <link href="../../css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
-    <link href="../../vendor/datatables/dataTables.min.css" rel="stylesheet">
+    <link href="../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
@@ -150,7 +156,7 @@ if (!$result) {
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item ">
+            <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -215,7 +221,7 @@ if (!$result) {
 			
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="Pendings.php">
+                <a class="nav-link" href="../../Pendings.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Pendings</span></a>
             </li>
@@ -283,9 +289,7 @@ if (!$result) {
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    <?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?>
-                                </span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?></span>
                                 <img class="img-profile rounded-circle"
                                     src="../../img/undraw_profile.svg">
                             </a>
@@ -308,98 +312,50 @@ if (!$result) {
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800"></h1>
+                    <p class="mb-4">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
 
-                    <!-- Main conctent -->
+                    <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Item Assets</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Update Group Asset</h6>
                         </div>
-                            <!-- <div class="col-sm-9" style="margin-top:40px; margin-left: 40px;">
-                                <div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
-                                    <div class="btn-group me-2" role="group" aria-label="First group">
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                    </div>
-                                </div>
-                            </div> -->
-                        <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
-                            <a href="Add-Asset.php" class="btn btn-primary" style="width:160px;">Add Asset</a>
-                            <a href="Add-Category.php" class="btn btn-primary" style="width:160px;">Add Category</a>
-                            <a href="Add-Group.php" class="btn btn-primary" style="width:160px;">Add Group</a>
-                        </div>
-
-
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="asset" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>Model</th>
-                                            <th>Description</th>
-                                            <th>Category</th>
-                                            <th>Quantity</th>
-                                            <th>Assigned</th>
-											<th>Unassigned</th>
-                                            <th>ACTION</th>
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Model</th>
-                                            <th>Description</th>
-                                            <th>Category</th>
-                                            <th>Quantity</th>
-                                            <th>Assigned</th>
-											<th>Unassigned</th>
-                                            <th>ACTION</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['groupName']);?> </td>
-                                            <td><?= htmlspecialchars($row['description']);?> </td>
-                                            <td><?= htmlspecialchars($row['categoryName']);?> </td>
-                                            <td><?= htmlspecialchars($row['totalItems']); ?></td>
-                                            <td><?= htmlspecialchars($row['assigned']);?> </td>
-                                            <td><?= htmlspecialchars($row['unassigned']); ?></td>
-                                            <td>
-                                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
-                                                        Action</span>
-                                                </a>
-                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-                                                        <!-- Update -->
-                                                        <a class="dropdown-item" href="Update-Group.php?group_id=<?= $row['group_id']; ?>">
-                                                            <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            Update
-                                                        </a>
-                                                        <!-- View -->
-                                                        <a class="dropdown-item" href="Assets-item.php?group_id=<?= $row['group_id']; ?>">
-                                                            <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            View
-                                                        </a>
-                                                    </div>
-                                            </td>
+                            <div class="container mt-4">
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    <input type="hidden" name="group_id" value="<?php echo htmlspecialchars($assets['group_id']); ?>">
+                                    <h1>Update Group Asset Details</h1>
+                                    <div class ="row mb-5">
+                                        <div class = "col-md-6">
+                                            <label for="ic_code" class="form-label">IC CODE</label>
+                                            <input type="text" class ="form-control" id ="ic_code" name="ic_code" placeholder="IC CODE" value="<?php echo htmlspecialchars($category['ic_code'] ?? ''); ?>" readonly>
+                                        </div>
+                                        <div class = "col-md-6">
+                                            <label for="categoryName" class="form-label">Category Name</label>
+                                            <input type="text" class ="form-control" id ="categoryName" name="categoryName" placeholder="Category Name" value="<?php echo htmlspecialchars($category['categoryName'] ?? ''); ?>" readonly>
+                                        </div>
+                                    </div>
 
-                                        </tr>
-                                        <?php } ?>
-                                    </tbody>
-                                </table>
+
+                                    <div class ="row mb-5">
+                                            <div class = "col-md-6">
+                                                <label for="groupName" class="groupName">Group Asset Name</label>
+                                                <input type="text" class ="form-control" id ="groupName" name="groupName" placeholder="Group Asset Name" value="<?php echo htmlspecialchars($assets['groupName'] ?? ''); ?>" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                                <label for = "description" class ="form-label">Description</label>
+                                                <textarea id ="description" name="description" class="form-control" rows="6" maxlength="1000" required><?php echo htmlspecialchars($assets['description'] ?? ''); ?></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                    <a href="Assets.php" class="btn btn-danger">Cancel</a>
+                                    </form>
                             </div>
+
                         </div>
                     </div>
-                </div>
-        </div>
-        </div>
-        
+                    
                 </div>
                 <!-- /.container-fluid -->
 
@@ -452,11 +408,18 @@ if (!$result) {
 
     <!-- Page level plugins -->
     <script src="../../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../../vendor/datatables/dataTables.min.js"></script>
+    <script src="../../vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="../../js/demo/datatables-demo.js"></script>
 
+<script>
+    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+    if (notificationMessage !== "") {
+        alert(notificationMessage);
+        window.location.href = "Assets.php";
+    }
+</script>
 </body>
 
 </html>

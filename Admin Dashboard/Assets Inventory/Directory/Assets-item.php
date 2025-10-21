@@ -333,8 +333,6 @@ if (!$result) {
                             <a href="Add-Category.php" class="btn btn-primary" style="width:160px;">Add Category</a>
                             <a href="Add-Group.php" class="btn btn-primary" style="width:160px;">Add Group</a>
                         </div>
-
-
                         <div class="card-body">
                             <div class="table-responsive">
                                 <table class="table table-bordered" id="asset" width="100%" cellspacing="0">
@@ -382,7 +380,7 @@ if (!$result) {
                                                             Update
                                                         </a>
                                                         <!-- View -->
-                                                        <a class="dropdown-item" href="Assets-item.php?group_id=<?= $row['group_id']; ?>">
+                                                        <a class="dropdown-item" href="Inventory-Assets.php?group_id=<?= $row['group_id']; ?>">
                                                             <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
                                                             View
                                                         </a>

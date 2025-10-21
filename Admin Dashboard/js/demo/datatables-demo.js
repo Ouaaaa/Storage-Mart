@@ -3,10 +3,9 @@ $(document).ready(function () {
   $("#dataTable").DataTable();
 });
 new DataTable("#asset", {
-  columnControl: [
-    "order",
-    ["search", "spacer", "orderAsc", "orderDesc", "orderClear"],
-  ],
+  fixedHeader: {
+        header: true,
+    },
   columnDefs: [
     {
       targets: [2],
@@ -14,10 +13,6 @@ new DataTable("#asset", {
         "order",
         ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
       ],
-    },
-    {
-      targets: [6], // Exclude the "Action" column
-      columnControl: false,
     },
   ],
   ordering: {
