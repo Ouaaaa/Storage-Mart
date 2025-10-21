@@ -1,89 +1,87 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
-    //For Displaying the User
+require_once "config.php";
+include("session-checker.php");
+    //Fetching username from the logged in user
     $accountID = $_SESSION['account_id'];
-    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = ''; // Initialize to avoid Errors
-
-    $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
-
-
-    if ($stmt = mysqli_prepare($link, $userQuery)) {
-        mysqli_stmt_bind_param($stmt, "i", $accountID);
+    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
+    if($stmtuser = mysqli_prepare($link, $sql)){
+        mysqli_stmt_bind_param($stmtuser, "i", $accountID);
+        mysqli_stmt_execute($stmtuser);
+        mysqli_stmt_bind_result($stmtuser, $dbUsername);
+        mysqli_stmt_fetch($stmtuser);
+        mysqli_stmt_close($stmtuser);   
+    
+        $_SESSION['username'] = $dbUsername; 
+    }
+    //Displaying off logged in user
+    $userQuery ="SELECT e.firstname , a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id WHERE a.account_id = ?";
+    if($stmt = mysqli_prepare($link, $userQuery)){
+        mysqli_stmt_bind_param($stmt , "i", $accountID);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
         mysqli_stmt_fetch($stmt);
         mysqli_stmt_close($stmt);
     }
-    $_SESSION['username'] = $username;
-
-//     // For fetching the count of the inventory that is in the group 
-//     $fetchInventory = "
-//     SELECT 
-//         g.group_id,
-//         COUNT(i.inventory_id) AS totalItems,
-//         SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) AS assigned,
-//         SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) AS unassigned
-//     FROM tblassets_group g
-//     LEFT JOIN tblassets_inventory i 
-//         ON g.group_id = i.group_id
-//         AND i.status NOT IN ('DISPOSE', 'LOST')
-//     GROUP BY g.group_id;
-//     ";
+    //Inserting into tblassets_directory and tbllogs 
+    if( isset($_POST['btnSubmit'])){
+        $category_id = $_POST['categoryName'];
+        $ic_code = $_POST['ic_code'];
+        $description = $_POST['description'];
+        $groupName = $_POST['groupName'];
+        $createdby = $_SESSION['username'];
+        $datecreated = date("Y-m-d H:i:s");
 
 
-//     $count = mysqli_query($link, $fetchInventory);
-//     //For Defining the count Items
-//     $countrow = mysqli_fetch_assoc($count);
-//     $totalItem = $countrow['totalItems'];
-//     $assigned = $countrow['assigned'];
-//     $unassigned = $countrow['unassigned'];
-//     if (!$count) {
-//     die("SQL Error (Inventory): " . mysqli_error($link));
-// }
+        //Displaying of Category in Dropdown
+        $sqlIC = "SELECT ic_code FROM tblassets_category WHERE category_id = ?";
+        $stmt = mysqli_prepare($link, $sqlIC);
+        mysqli_stmt_bind_param($stmt, "i", $category_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $ic_code);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
 
-    // for fetching the Group of an Item
-$fetchModel = "
-    SELECT 
-    g.group_id,
-    g.groupName,
-    g.description,
-    c.categoryName,
-    COUNT(i.group_id) AS totalItems,
-    SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) As assigned,
-    SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) As unassigned
-    FROM tblassets_group g
-    JOIN tblassets_category c 
-    ON g.category_id = c.category_id
-    LEFT JOIN tblassets_inventory i 
-    ON g.group_id = i.group_id 
-        AND i.status NOT IN ('DISPOSE','LOST') 
-    ORDER by g.group_id ASC";
-$result = mysqli_query($link, $fetchModel);
-if (!$result) {
-    die("SQL Error: " . mysqli_error($link));
-}
+        $sql = "INSERT INTO tblassets_group 
+            (category_id, ic_code, groupName, description, datecreated, createdby)
+            VALUES (?, ?, ?, ?, ?, ?)";
 
-// $fetchQuery = "
-//     SELECT 
-//     d.item_id,
-//     d.itemCount, 
-//     d.itemNumber, 
-//     c.categoryName, 
-//     c.ic_code, 
-//     d.itemInfo, 
-//     d.itemModel, 
-//     d.year_purchased, 
-//     d.status,
-//     d.datecreated, 
-//     d.createdby 
-//     FROM tblassets_directory d 
-//     JOIN tblassets_category c 
-//     ON d.category_id = c.category_id ORDER by d.itemCount ASC";
-//$result = mysqli_query($link, $fetchQuery);
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt,  "isssss",
+                $category_id, 
+                $ic_code, 
+                $groupName, 
+                $description, 
+                $datecreated,
+                $createdby);
+
+        if (mysqli_stmt_execute($stmt)) {
+            $category_id = mysqli_insert_id($link);
+            // Insert into tbllogs
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                       VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                $date       = date("Y-m-d");
+                $time       = date("H:i:s");
+                $logAction  = "Create Group";
+                $module     = "Group Asset Management";
+                $performedby = $_SESSION['username'];
+
+                mysqli_stmt_bind_param(
+                    $stmtLog,
+                    "ssssss",
+                    $date, $time, $logAction, $module, $accountID, $_SESSION['username']
+                );
+                mysqli_stmt_execute($stmtLog);
+            }
+
+            $notificationMessage = "New Group Asset successfully created!";
+        } else {
+            echo "<font color='red'>Error inserting into tblassets_group: " . mysqli_error($link) . "</font>";
+        }
 
 
+
+    }
 ?>
 
 <html lang="en">
@@ -96,7 +94,7 @@ if (!$result) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Assets Directory- Tables</title>
+    <title>Storage Mart | Add Group</title>
 
     <!-- Custom fonts for this template -->
     <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -106,9 +104,9 @@ if (!$result) {
 
     <!-- Custom styles for this template -->
     <link href="../../css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="icon" href="../../img/favicon.ico" type="image/x-icon">
+    <link href="../../css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
-    <link href="../../vendor/datatables/dataTables.min.css" rel="stylesheet">
+    <link href="../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
@@ -117,6 +115,7 @@ if (!$result) {
     <!-- Page Wrapper -->
     <div id="wrapper">
 
+        <!-- Sidebar -->
         <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
@@ -168,12 +167,12 @@ if (!$result) {
                     <span>Ticket</span>
                 </a>
             </li>
-            <li class="nav-item active">
+            <li class="nav-item">
                 <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
-            </li>
+            </li>            
             <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
                     aria-expanded="true" aria-controls="collapsethree">
@@ -212,7 +211,7 @@ if (!$result) {
 			
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="Pendings.php">
+                <a class="nav-link" href="../../Pendings.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Pendings</span></a>
             </li>
@@ -281,7 +280,7 @@ if (!$result) {
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    <?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?>
+                                    <?php echo htmlspecialchars($loggedFirstname);?> (<?php echo htmlspecialchars($loggedUsertype); ?>)
                                 </span>
                                 <img class="img-profile rounded-circle"
                                     src="../../img/undraw_profile.svg">
@@ -305,110 +304,70 @@ if (!$result) {
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800"></h1>
+                    <p class="mb-4">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
 
-                    <!-- Main conctent -->
+                    <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Item Assets</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Group</h6>
                         </div>
-                            <!-- <div class="col-sm-9" style="margin-top:40px; margin-left: 40px;">
-                                <div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
-                                    <div class="btn-group me-2" role="group" aria-label="First group">
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                    </div>
-                                </div>
-                            </div> -->
-                            <div class="col-sm-9" style="margin-top:40px;">
-                                <div class ="row mb-2">
-                                    <div class=".col-8 .col-sm-6">    
-                                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                                            <a href="Add-Asset.php" class="btn btn-primary " style="width:120px";>Add Asset</a>
-                                        </div>
-                                    </div>
-                                    <div class=".col-4 .col-sm-6">
-                                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                                            <a href="Add-Category.php" class="btn btn-primary " style="width:150px";>Add Category</a>
-                                        </div>
-                                    </div>
-                                    <div class=".col-4 .col-sm-6">
-                                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                                            <a href="Add-Group.php" class="btn btn-primary " style="width:150px";>Add Group</a>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="asset" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>Model</th>
-                                            <th>Description</th>
-                                            <th>Category</th>
-                                            <th>Quantity</th>
-                                            <th>Assigned</th>
-											<th>Unassigned</th>
-                                            <th>ACTION</th>
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Model</th>
-                                            <th>Description</th>
-                                            <th>Category</th>
-                                            <th>Quantity</th>
-                                            <th>Assigned</th>
-											<th>Unassigned</th>
-                                            <th>ACTION</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['groupName']);?> </td>
-                                            <td><?= htmlspecialchars($row['description']);?> </td>
-                                            <td><?= htmlspecialchars($row['categoryName']);?> </td>
-                                            <td><?= htmlspecialchars($row['totalItems']); ?></td>
-                                            <td><?= htmlspecialchars($row['assigned']);?> </td>
-                                            <td><?= htmlspecialchars($row['unassigned']); ?></td>
-                                            <td>
-                                                <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
-                                                        Action</span>
-                                                </a>
-                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-                                                        <!-- Update -->
-                                                        <a class="dropdown-item" href="Update-Asset-Directory.php?group_id=<?= $row['group_id']; ?>">
-                                                            <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            Update
-                                                        </a>
-                                                        <!-- View -->
-                                                        <a class="dropdown-item" href="Inventory-Assets.php?group_id=<?= $row['group_id']; ?>">
-                                                            <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            View
-                                                        </a>
-                                                    </div>
-                                            </td>
+                            <div class="container mt-4">
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    
+                                <h1>Group Details</h1>
+                                    <div class ="row mb-5">
+                                        <div class ="col-md-6">
+                                            <label for ="categoryName" class ="form-label">Item Category</label>
+                                                <select id="categoryName" name="categoryName" class="form-control" required>
+                                                <option value="">-- Select Category --</option>
+                                                    <?php 
+                                                        $sql = "SELECT category_id, ic_code, categoryName FROM tblassets_category ORDER BY categoryName ASC";
+                                                        $result = mysqli_query($link, $sql);
+                                                        
+                                                        if($result && mysqli_num_rows($result) > 0){
+                                                            while($row = mysqli_fetch_assoc($result)){
+                                                                $displaytext = $row['ic_code'] . " - " . $row['categoryName'];
+                                                                echo '<option value="'.$row['category_id'].'"
+                                                                            data-categoryName="'.$row['categoryName'].'"
+                                                                            data-ic_code="'.$row['ic_code'].'">'
+                                                                            .$displaytext.
+                                                                    '</option>';
+                                                            }
+                                                            mysqli_free_result($result);
+                                                        } else {
+                                                            echo "<option value=''>No categories available</option>";
+                                                        }
+                                                    ?>
+                                                </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for = "ic_code" class ="form-label">IC Code</label>
+                                                <input type="text" name="ic_code" class="form-control" id="ic_code" placeholder="IC Code" readonly>
+                                        </div>
+                                    </div>
 
-                                        </tr>
-                                        <?php } ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "groupName" class ="form-label">Group Asset Name</label>
+                                                    <input type="text" name="groupName" class="form-control" id="groupName" placeholder="Group Asset Name" required>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "description" class ="form-label">Description</label>
+                                                <textarea id ="description" name="description" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                    <a href="Assets.php" class="btn btn-danger">Cancel</a>
+                                    </form>
+                                </div>
+
                         </div>
                     </div>
-                </div>
-        </div>
-        </div>
-        
+                    
                 </div>
                 <!-- /.container-fluid -->
 
@@ -461,10 +420,30 @@ if (!$result) {
 
     <!-- Page level plugins -->
     <script src="../../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../../vendor/datatables/dataTables.min.js"></script>
+    <script src="../../vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="../../js/demo/datatables-demo.js"></script>
+
+<script>
+    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+    if (notificationMessage !== "") {
+        alert(notificationMessage);
+        window.location.href = "Assets.php";
+    }
+</script>
+
+<script>
+document.getElementById("categoryName").addEventListener("change", function() {
+    var selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value !== "") {
+        document.getElementById("ic_code").value = selectedOption.getAttribute("data-ic_code");
+    } else {
+        document.getElementById("ic_code").value = "";
+    }
+});
+</script>
+
 
 </body>
 
