@@ -9,11 +9,15 @@ new DataTable("#asset", {
   ],
   columnDefs: [
     {
-      targets: [2, 7],
+      targets: [2],
       columnControl: [
         "order",
         ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
       ],
+    },
+    {
+      targets: [6], // Exclude the "Action" column
+      columnControl: false,
     },
   ],
   ordering: {

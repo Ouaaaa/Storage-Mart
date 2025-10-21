@@ -1,10 +1,10 @@
 <?php
     require_once "config.php";
     include "session-checker.php";
-
+    //For Displaying the User
     $accountID = $_SESSION['account_id'];
     $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
+    $username = ''; // Initialize to avoid Errors
 
     $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
 
@@ -18,23 +18,70 @@
     }
     $_SESSION['username'] = $username;
 
-$fetchQuery = "
+//     // For fetching the count of the inventory that is in the group 
+//     $fetchInventory = "
+//     SELECT 
+//         g.group_id,
+//         COUNT(i.inventory_id) AS totalItems,
+//         SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) AS assigned,
+//         SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) AS unassigned
+//     FROM tblassets_group g
+//     LEFT JOIN tblassets_inventory i 
+//         ON g.group_id = i.group_id
+//         AND i.status NOT IN ('DISPOSE', 'LOST')
+//     GROUP BY g.group_id;
+//     ";
+
+
+//     $count = mysqli_query($link, $fetchInventory);
+//     //For Defining the count Items
+//     $countrow = mysqli_fetch_assoc($count);
+//     $totalItem = $countrow['totalItems'];
+//     $assigned = $countrow['assigned'];
+//     $unassigned = $countrow['unassigned'];
+//     if (!$count) {
+//     die("SQL Error (Inventory): " . mysqli_error($link));
+// }
+
+    // for fetching the Group of an Item
+$fetchModel = "
     SELECT 
-    d.item_id,
-    d.itemCount, 
-    d.itemNumber, 
-    c.categoryName, 
-    c.ic_code, 
-    d.itemInfo, 
-    d.itemModel, 
-    d.year_purchased, 
-    d.status,
-    d.datecreated, 
-    d.createdby 
-    FROM tblassets_directory d 
+    g.group_id,
+    g.groupName,
+    g.description,
+    c.categoryName,
+    COUNT(i.inventory_id) AS totalItems,
+    SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) As assigned,
+    SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) As unassigned
+    FROM tblassets_group g
     JOIN tblassets_category c 
-    ON d.category_id = c.category_id ORDER by d.itemCount ASC";
-$result = mysqli_query($link, $fetchQuery);
+    ON g.category_id = c.category_id
+    LEFT JOIN tblassets_inventory i 
+    ON g.group_id = i.group_id 
+        AND i.status NOT IN ('DISPOSE','LOST') 
+    ORDER by g.group_id ASC";
+$result = mysqli_query($link, $fetchModel);
+if (!$result) {
+    die("SQL Error: " . mysqli_error($link));
+}
+
+// $fetchQuery = "
+//     SELECT 
+//     d.item_id,
+//     d.itemCount, 
+//     d.itemNumber, 
+//     c.categoryName, 
+//     c.ic_code, 
+//     d.itemInfo, 
+//     d.itemModel, 
+//     d.year_purchased, 
+//     d.status,
+//     d.datecreated, 
+//     d.createdby 
+//     FROM tblassets_directory d 
+//     JOIN tblassets_category c 
+//     ON d.category_id = c.category_id ORDER by d.itemCount ASC";
+//$result = mysqli_query($link, $fetchQuery);
 
 
 ?>
@@ -285,59 +332,51 @@ $result = mysqli_query($link, $fetchQuery);
                                 <table class="table table-bordered" id="asset" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-                                            <th>ITEM COUNT</th>
-                                            <th>ITEM NUMBER</th>
-                                            <th>ITEM CATEGORY</th>
-                                            <th>IC CODE</th>
-                                            <th>ITEM GENERAL INFO</th>
-											<th>ITEM MODEL</th>
-                                            <th>YEAR PURCHASED</th>
-                                            <th>STATUS</th>
-                                            <th>DATE CREATED</th>
-                                            <th>CREATED BY</th>
+                                            <th>Model</th>
+                                            <th>Description</th>
+                                            <th>Category</th>
+                                            <th>Quantity</th>
+                                            <th>Assigned</th>
+											<th>Unassigned</th>
                                             <th>ACTION</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
                                         <tr>
-                                            <th>ITEM COUNT</th>
-                                            <th>ITEM NUMBER</th>
-                                            <th>ITEM CATEGORY</th>
-                                            <th>IC CODE</th>
-                                            <th>ITEM GENERAL INFO</th>
-											<th>ITEM MODEL</th>
-                                            <th>YEAR PURCHASED</th>
-                                            <th>STATUS</th>
-                                            <th>DATE CREATED</th>
-                                            <th>CREATED BY</th>
+                                            <th>Model</th>
+                                            <th>Description</th>
+                                            <th>Category</th>
+                                            <th>Quantity</th>
+                                            <th>Assigned</th>
+											<th>Unassigned</th>
                                             <th>ACTION</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
                                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
                                         <tr>
-                                            <td><?php echo htmlspecialchars($row['itemCount']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['itemNumber']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['categoryName']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['ic_code']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['itemInfo']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['itemModel']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['year_purchased']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['status']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['datecreated']) ?></td>
-                                            <td><?php echo htmlspecialchars($row['createdby']) ?></td>
+                                            <td><?= htmlspecialchars($row['groupName']);?> </td>
+                                            <td><?= htmlspecialchars($row['description']);?> </td>
+                                            <td><?= htmlspecialchars($row['categoryName']);?> </td>
+                                            <td><?= htmlspecialchars($row['totalItems']); ?></td>
+                                            <td><?= htmlspecialchars($row['assigned']);?> </td>
+                                            <td><?= htmlspecialchars($row['unassigned']); ?></td>
                                             <td>
                                                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                                     <span class="mr-2 d-none d-lg-inline text-gray-600 ">
                                                         Action</span>
-                                                    </a>
-                                                    <!-- Dropdown - User Information -->
+                                                </a>
                                                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
                                                         <!-- Update -->
-                                                        <a class="dropdown-item" href="Update-Asset-Directory.php?item_id=<?= $row['item_id']; ?>">
+                                                        <a class="dropdown-item" href="Update-Asset-Directory.php?group_id=<?= $row['group_id']; ?>">
                                                             <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>
                                                             Update
+                                                        </a>
+                                                        <!-- View -->
+                                                        <a class="dropdown-item" href="Inventory-Assets.php?group_id=<?= $row['group_id']; ?>">
+                                                            <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
+                                                            View
                                                         </a>
                                                     </div>
                                             </td>
