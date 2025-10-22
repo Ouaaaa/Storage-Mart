@@ -6,7 +6,7 @@ new DataTable("#asset", {
   fixedHeader: { header: true },
   columnDefs: [
     {
-      targets: [1, 2, 3, 4, 5], // apply to columns you want
+      targets: [1, 2],
       columnControl: [
         "order",
         ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
@@ -19,16 +19,12 @@ new DataTable("#asset", {
   },
 });
 
-
 //ColumnControl for Aseset Inventory
 new DataTable("#asset_inventory", {
-  columnControl: [
-    "order",
-    ["search", "spacer", "orderAsc", "orderDesc", "orderClear"],
-  ],
+  fixedHeader: { header: true },
   columnDefs: [
     {
-      targets: [0],
+      targets: [1, 2, 3, 4, 5],
       columnControl: [
         "order",
         ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],

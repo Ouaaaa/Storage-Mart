@@ -21,12 +21,13 @@ if (isset($_POST['btnSubmit'])) {
                     mysqli_stmt_bind_param($stmt, "sssss", $_POST['username'], $password, $usertype, $createdby, $datecreated);
                     if (mysqli_stmt_execute($stmt)) {
                         $account_id = mysqli_insert_id($link);
-                        $sql = "INSERT INTO tblemployee (employee_id, account_id, lastname, firstname, middlename, department, branch, email, createdby, datecreated)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
+
+                        $sql = "INSERT INTO tblemployee (employee_id, account_id,branch_id, lastname, firstname, middlename, department, email,position, createdby, datecreated)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
                         if ($stmt = mysqli_prepare($link, $sql)) {
-                            mysqli_stmt_bind_param($stmt, "iissssssss",$_POST['employee-id'], $account_id,
+                            mysqli_stmt_bind_param($stmt, "iiissssssss",$_POST['employee-id'], $account_id,$_POST['branch_id'],
                                 $_POST['last-name'], $_POST['first-name'], $_POST['middle-name'],
-                                $_POST['department'], $_POST['branch'], $_POST['email'], $createdby, $datecreated);
+                                $_POST['department'], $_POST['email'],$_POST['position'], $createdby, $datecreated);
                             if (mysqli_stmt_execute($stmt)) {   
                                 $employee_id = mysqli_insert_id($link);
                                 // Insert into tbllogs
@@ -334,11 +335,26 @@ if (isset($_POST['btnSubmit'])) {
                                             </div>
                                             <div class="col-md-6">
                                                 <label for="branch" class="form-label">Branch</label>
-                                                <select id="branch" name="branch" class="form-control" required>
+                                                <select id="branch_id" name="branch_id" class="form-control" required>
                                                 <option value="">-- Select Branch --</option>
-                                                <option value="ERAN">Eran</option>
-                                                <option value=""></option>
-                                                <option value=""></option>
+                                                    <?php 
+                                                        $sql = "SELECT branch_id,branchCode, branchName FROM tblbranch ORDER BY branchName ASC";
+                                                        $result = mysqli_query($link, $sql);
+                                                        
+                                                        if($result && mysqli_num_rows($result) > 0){
+                                                            while($row = mysqli_fetch_assoc($result)){
+                                                                $displaytext = $row['branchCode'] . " - " . $row['branchName'];
+                                                                echo '<option value="'.$row['branch_id'].'"
+                                                                            data-branchName="'.$row['branchName'].'"
+                                                                            data-branchCode="'.$row['branchCode'].'">'
+                                                                            .$displaytext.
+                                                                    '</option>';
+                                                            }
+                                                            mysqli_free_result($result);
+                                                        } else {
+                                                            echo "<option value=''>No categories available</option>";
+                                                        }
+                                                    ?>
                                                 </select>
                                             </div>
                                     </div>
@@ -372,6 +388,10 @@ if (isset($_POST['btnSubmit'])) {
                                         <div class="col-md-6">
                                             <label for="email" class="form-label">Email</label>
                                             <input type="text" class="form-control" id="email" name="email" placeholder="Email" required>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="position" class="form-label">Position</label>
+                                            <input type="text" class="form-control" id="position" name="position" placeholder="Position" required>
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
@@ -464,6 +484,16 @@ document.getElementById("showPassword").addEventListener("click", togglePassword
         alert(notificationMessage);
         window.location.href = "Accounts.php";
     }
+</script>
+<script>
+document.getElementById("branchName").addEventListener("change", function() {
+    var selectedOption = this.options[this.selectedIndex];
+    if (selectedOption.value !== "") {
+        document.getElementById("branchCode").value = selectedOption.getAttribute("data-branchCode");
+    } else {
+        document.getElementById("branchCode").value = "";
+    }
+});
 </script>
 </body>
 

@@ -2,8 +2,11 @@
 require_once "config.php";
 include("session-checker.php");
 
-// Get logged-in username
+$assets = [];
+$username = '';
 $accountID = $_SESSION['account_id'];
+
+// 🔹 Fetch current user info
 $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
 if ($stmtuser = mysqli_prepare($link, $sql)) {
     mysqli_stmt_bind_param($stmtuser, "i", $accountID);
@@ -14,9 +17,10 @@ if ($stmtuser = mysqli_prepare($link, $sql)) {
     $_SESSION['username'] = $dbUsername;
 }
 
-// Display logged-in user info
-$userQuery = "SELECT e.firstname, a.usertype FROM tblaccounts a 
-              JOIN tblemployee e ON a.account_id = e.employee_id 
+// 🔹 Get logged user display info
+$userQuery = "SELECT e.firstname, a.usertype 
+              FROM tblaccounts a 
+              JOIN tblemployee e ON a.account_id = e.employee_id  
               WHERE a.account_id = ?";
 if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_bind_param($stmt, "i", $accountID);
@@ -26,81 +30,139 @@ if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_close($stmt);
 }
 
-// ========== INSERT INTO tblassets_inventory ==========
-if (isset($_POST['btnSubmit'])) {
-    $group_id = isset($_GET['group_id']) ? intval($_GET['group_id']) : 0;
-    $serialNumber = $_POST['serialNumber'];
-    $itemInfo = $_POST['itemInfo'];
-    $year_purchased = $_POST['year_purchased'];
+// 🔹 Get asset info based on inventory_id from URL
+if (isset($_GET['inventory_id'])) {
+    $inventory_id = intval($_GET['inventory_id']);
+
+    $sqlAsset = "SELECT * FROM tblassets_inventory WHERE inventory_id = ?";
+    $stmt = mysqli_prepare($link, $sqlAsset);
+    mysqli_stmt_bind_param($stmt, "i", $inventory_id);
+    mysqli_stmt_execute($stmt);
+    $result = mysqli_stmt_get_result($stmt);
+    $assets = mysqli_fetch_assoc($result);
+    mysqli_stmt_close($stmt);
+} else {
+    $inventory_id = 0;
+}
+
+// 🔹 When form submitted
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+
+    $inventory_id = isset($_POST['item_id']) ? intval($_POST['item_id']) : 0;
+    $new_employee = $_POST['employee_id'];
+    $transferDetails = $_POST['transferDetails'];
     $createdby = $_SESSION['username'];
+    $dateIssued = date("Y-m-d");
     $datecreated = date("Y-m-d H:i:s");
 
-    if ($group_id <= 0) {
-        echo "<font color='red'>Invalid group ID.</font>";
+    if ($inventory_id <= 0) {
+        echo "<script>alert('Error: Missing inventory ID!'); window.history.back();</script>";
         exit;
     }
 
-    // Get ic_code from category based on group
-    $sqlIC = "
-        SELECT c.ic_code 
-        FROM tblassets_group g
-        JOIN tblassets_category c ON g.category_id = c.category_id
-        WHERE g.group_id = ?
-    ";
-    $stmt = mysqli_prepare($link, $sqlIC);
-    mysqli_stmt_bind_param($stmt, "i", $group_id);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $ic_code);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    // Generate Asset Code
-    $sqlCount = "SELECT COUNT(*) FROM tblassets_inventory";
-    $stmt = mysqli_prepare($link, $sqlCount);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $total);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    $assetCode = $total + 1;
-    $assetCodePadded = str_pad($assetCode, 3, "0", STR_PAD_LEFT);
-    $yearshort = substr($year_purchased, -2);
-    $assetNumber = $ic_code . "-" . $yearshort . $assetCodePadded;
-
-    // Insert into tblassets_inventory
-    $sql = "INSERT INTO tblassets_inventory 
-            (group_id, serialNumber, itemInfo, status, assetCode, assetNumber, year_purchased, datecreated, createdby)
-            VALUES (?, ?, ?, 'UNASSIGNED', ?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "ississss",
-        $group_id,
-        $serialNumber,
-        $itemInfo,
-        $assetCode,
-        $assetNumber,
-        $year_purchased,
-        $datecreated,
-        $createdby
-    );
-    if (mysqli_stmt_execute($stmt)) {
-        // Log creation
-        $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
-                   VALUES (?, ?, ?, ?, ?, ?)";
-        $stmtLog = mysqli_prepare($link, $sqlLog);
-        $date = date("Y-m-d");
-        $time = date("H:i:s");
-        $logAction = "Added new asset: $assetNumber";
-        $module = "Asset Inventory";
-        mysqli_stmt_bind_param($stmtLog, "ssssss", $date, $time, $logAction, $module, $accountID, $_SESSION['username']);
-        mysqli_stmt_execute($stmtLog);
-
-        $notificationMessage = "New Asset successfully added!";
-    } else {
-        echo "<font color='red'>Error inserting into tblassets_inventory: " . mysqli_error($link) . "</font>";
+    if (empty($new_employee)) {
+        echo "<script>alert('Please select an employee before submitting.'); window.history.back();</script>";
+        exit;
     }
-}
 
+    // 1️⃣ Get current asset info
+    $sqlOld = "SELECT assetNumber, group_id, status FROM tblassets_inventory WHERE inventory_id = ?";
+    $stmt = mysqli_prepare($link, $sqlOld);
+    mysqli_stmt_bind_param($stmt, "i", $inventory_id);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $oldAssetNumber, $group_id, $currentStatus);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+
+    // 2️⃣ Extract the base asset (e.g. OE-24001 from OE-24001-HOS001)
+    $baseAsset = explode('-', $oldAssetNumber);
+    if (count($baseAsset) >= 2) {
+        $baseAssetNumber = $baseAsset[0] . "-" . $baseAsset[1];
+    } else {
+        $baseAssetNumber = $oldAssetNumber;
+    }
+
+    // 3️⃣ Get branchCode and branch_id from employee
+    $sqlBranch = "
+        SELECT b.branchCode, b.branch_id
+        FROM tblemployee e
+        JOIN tblbranch b ON e.branch_id = b.branch_id
+        WHERE e.employee_id = ?
+    ";
+    $stmt = mysqli_prepare($link, $sqlBranch);
+    mysqli_stmt_bind_param($stmt, "i", $new_employee);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $branchCode, $branch_id);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+
+    // 4️⃣ Count how many times this assetNumber base has been assigned (for suffix)
+    $sqlCount = "SELECT COUNT(*) FROM tblassets_inventory WHERE assetNumber LIKE CONCAT(?, '%')";
+    $stmt = mysqli_prepare($link, $sqlCount);
+    mysqli_stmt_bind_param($stmt, "s", $baseAssetNumber);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $totalCount);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+
+    $suffix = str_pad($totalCount, 3, "0", STR_PAD_LEFT);
+
+    // 5️⃣ Generate new asset number (base + branch code + suffix)
+    $newAssetNumber = $baseAssetNumber . "-" . $branchCode . $suffix;
+
+    // 6️⃣ Get employee’s full name for assignment log
+    $sqlEmp = "SELECT CONCAT(lastname, ', ', firstname, ' ', IFNULL(middlename, '')) AS full_name 
+               FROM tblemployee WHERE employee_id = ?";
+    $stmt = mysqli_prepare($link, $sqlEmp);
+    mysqli_stmt_bind_param($stmt, "i", $new_employee);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $assignedTo);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+
+    // 7️⃣ Record transfer in tblassets_assignment
+    $insert = "INSERT INTO tblassets_assignment 
+                (employee_id, assignedTo, dateIssued, transferDetails, datecreated, createdby)
+                VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($link, $insert);
+    mysqli_stmt_bind_param($stmt, "isssss", 
+        $new_employee, $assignedTo, $dateIssued, $transferDetails, $datecreated, $createdby
+    );
+    mysqli_stmt_execute($stmt);
+    $assignment_id = mysqli_insert_id($link);
+    mysqli_stmt_close($stmt);
+
+    // 8️⃣ Update inventory record (mark as assigned)
+    $newStatus = ($new_employee > 0) ? 'ASSIGNED' : 'UNASSIGNED';
+    $update = "UPDATE tblassets_inventory 
+               SET assignment_id = ?, employee_id = ?, branch_id = ?, assetNumber = ?, status = ?
+               WHERE inventory_id = ?";
+    $stmt = mysqli_prepare($link, $update);
+    mysqli_stmt_bind_param($stmt, "iiissi", 
+        $assignment_id, $new_employee, $branch_id, $newAssetNumber, $newStatus, $inventory_id
+    );
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
+    // 9️⃣ Log transfer
+    $date = date("Y-m-d");
+    $time = date("H:i:s");
+    $action = "Transferred asset $oldAssetNumber to $assignedTo ($branchCode)";
+    $module = "Asset Inventory";
+
+    $log = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
+            VALUES (?, ?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($link, $log);
+    mysqli_stmt_bind_param($stmt, "ssssss", 
+        $date, $time, $action, $module, $inventory_id, $createdby
+    );
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_close($stmt);
+
+    echo "<script>alert('Asset successfully transferred!\\nNew Asset Number: $newAssetNumber'); window.location.href='Assets.php';</script>";
+}
 ?>
+
 
 
 <html lang="en">
@@ -113,7 +175,7 @@ if (isset($_POST['btnSubmit'])) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart | Add Asset</title>
+    <title>StorageMart | Admin Transfer Details</title>
 
     <!-- Custom fonts for this template -->
     <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -134,7 +196,6 @@ if (isset($_POST['btnSubmit'])) {
     <!-- Page Wrapper -->
     <div id="wrapper">
 
-        <!-- Sidebar -->
         <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
@@ -165,7 +226,7 @@ if (isset($_POST['btnSubmit'])) {
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item ">
+            <li class="nav-item">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -186,12 +247,12 @@ if (isset($_POST['btnSubmit'])) {
                     <span>Ticket</span>
                 </a>
             </li>
-            <li class="nav-item">
+            <li class="nav-item active">
                 <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
-            </li>            
+            </li>
             <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
                     aria-expanded="true" aria-controls="collapsethree">
@@ -255,23 +316,7 @@ if (isset($_POST['btnSubmit'])) {
 
                 <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                        <?php
-                                // Fetch group name to display
-                                $group_name = '';
-                                if (isset($_GET['group_id'])) {
-                                    $gid = intval($_GET['group_id']);
-                                    $gstmt = mysqli_prepare($link, "SELECT groupName FROM tblassets_group WHERE group_id = ?");
-                                    mysqli_stmt_bind_param($gstmt, "i", $gid);
-                                    mysqli_stmt_execute($gstmt);
-                                    mysqli_stmt_bind_result($gstmt, $group_name);
-                                    mysqli_stmt_fetch($gstmt);
-                                    mysqli_stmt_close($gstmt);
-                                }
-                                ?>
-                               <h5 class="m-0 font-weight-bold text-primary">
-                                    <span class="text-dark">Add Asset to Group:</span>
-                                    <?php echo htmlspecialchars($group_name); ?>
-                                </h5>
+
                     <!-- Sidebar Toggle (Topbar) -->
                     <form class="form-inline">
                         <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
@@ -314,9 +359,7 @@ if (isset($_POST['btnSubmit'])) {
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    <?php echo htmlspecialchars($loggedFirstname);?> (<?php echo htmlspecialchars($loggedUsertype); ?>)
-                                </span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?></span>
                                 <img class="img-profile rounded-circle"
                                     src="../../img/undraw_profile.svg">
                             </a>
@@ -345,36 +388,65 @@ if (isset($_POST['btnSubmit'])) {
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Add Asset</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Transfer Asset</h6>
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
-                        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . '?group_id=' . intval($_GET['group_id']); ?>" method="POST">
-
-                                    
-                                <h1>Asset Details</h1>
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    <input type="hidden" name="item_id" value="<?php echo htmlspecialchars($assets['inventory_id']); ?>">
+                                    <h1>Transfer Details</h1>
                                     <div class ="row mb-5">
-                                            <div class="col-md-6">
-                                                <label for = "itemInfo" class ="form-label">Item general info</label>
-                                                <textarea id ="itemInfo" name="itemInfo" class="form-control" rows="6" maxlength="1000" required></textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
-                                            <div class="col-md-6">
-                                            <label for = "serialNumber" class ="form-label">Serial Number</label>
-                                                <input type="text" name="serialNumber" class="form-control" id="serialNumber" placeholder="Serial Number" required>
-                                            </div>
-                                    </div>
+                                        <div class = "col-md-6">
+                                            <label for="assignedTo" class="form-label">Transfer to</label>
+                                                <select id="employee_id" name="employee_id" class="form-control" required>
+                                                <option value="">-- Select Employee --</option>
+                                                    <?php 
+                                                        $sql = "
+                                                            SELECT e.employee_id,
+                                                                CONCAT(e.lastname, ', ', e.firstname, ' ', IFNULL(e.middlename, '')) AS full_name,
+                                                                b.branchName,
+                                                                b.branchCode
+                                                            FROM tblemployee e
+                                                            LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
+                                                            ORDER BY e.lastname ASC
+                                                        ";
 
-                                    <div class ="row mb-5">
-                                        <div class="col-md-6">
-                                            <label for = "year_purchased" class ="form-label">Year purchased</label>
-                                                <input type="text" name="year_purchased" class="form-control" id="year_purchased" placeholder="Year purchased" required>
+                                                        $result = mysqli_query($link, $sql);
+                                                        
+                                                        if($result && mysqli_num_rows($result) > 0){
+                                                            while ($row = mysqli_fetch_assoc($result)) {
+                                                                $displaytext = $row['employee_id'] . " - " . $row['full_name'];
+                                                                echo '<option value="'.$row['employee_id'].'"
+                                                                            data-branchName="'.$row['branchName'].'"
+                                                                            data-branchCode="'.$row['branchCode'].'">'
+                                                                            .$displaytext.
+                                                                    '</option>';
+                                                            }
+
+                                                            mysqli_free_result($result);
+                                                        } else {
+                                                            echo "<option value=''>No categories available</option>";
+                                                        }
+                                                    ?>
+                                                </select>
+                                        </div>
+                                        <div class = "col-md-6">
+                                            <label for="branchName" class="form-label">Employee Branch</label>
+                                            <input type="text" class ="form-control" id ="branchName" name="branchName" placeholder="Employee Branch" value="<?php echo htmlspecialchars($branch['branchName'] ?? ''); ?>" readonly>
                                         </div>
                                     </div>
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "transferDetails" class ="form-label">Transfer Details</label>
+                                                <textarea id ="transferDetails" name="transferDetails" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
+
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
                                     <a href="Assets.php" class="btn btn-danger">Cancel</a>
                                     </form>
-                                </div>
+                            </div>
 
                         </div>
                     </div>
@@ -437,16 +509,22 @@ if (isset($_POST['btnSubmit'])) {
     <script src="../../js/demo/datatables-demo.js"></script>
     <script>
     function togglePasswordVisibility() {
-        var passwordField = document.getElementById("txtPassword");
-        if (passwordField.type === "password") {
-            passwordField.type = "text";
-            document.getElementById("showPassword").textContent = "Hide";
-        }
-        else {
-            passwordField.type = "password";
-            document.getElementById("showPassword").textContent = "Show";
-        }
+    var passwordField = document.getElementById("password");
+    var icon = document.querySelector("#showPassword i");
+
+    if (passwordField.type === "password") {
+        passwordField.type = "text";
+        icon.classList.remove("fa-eye");
+        icon.classList.add("fa-eye-slash");
+    } else {
+        passwordField.type = "password";
+        icon.classList.remove("fa-eye-slash");
+        icon.classList.add("fa-eye");
     }
+}
+
+document.getElementById("showPassword").addEventListener("click", togglePasswordVisibility);
+
 </script>
 
 <script>
@@ -456,19 +534,14 @@ if (isset($_POST['btnSubmit'])) {
         window.location.href = "Assets.php";
     }
 </script>
-
 <script>
-document.getElementById("categoryName").addEventListener("change", function() {
+document.getElementById("employee_id").addEventListener("change", function() {
     var selectedOption = this.options[this.selectedIndex];
-    if (selectedOption.value !== "") {
-        document.getElementById("ic_code").value = selectedOption.getAttribute("data-ic_code");
-    } else {
-        document.getElementById("ic_code").value = "";
-    }
+    var branchName = selectedOption.getAttribute("data-branchName") || "";
+    document.getElementById("branchName").value = branchName;
 });
+
 </script>
-
-
 </body>
 
 </html>

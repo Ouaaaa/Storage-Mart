@@ -1,107 +1,103 @@
 <?php
 require_once "config.php";
 include("session-checker.php");
-
-// Get logged-in username
-$accountID = $_SESSION['account_id'];
-$sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-if ($stmtuser = mysqli_prepare($link, $sql)) {
-    mysqli_stmt_bind_param($stmtuser, "i", $accountID);
-    mysqli_stmt_execute($stmtuser);
-    mysqli_stmt_bind_result($stmtuser, $dbUsername);
-    mysqli_stmt_fetch($stmtuser);
-    mysqli_stmt_close($stmtuser);
-    $_SESSION['username'] = $dbUsername;
-}
-
-// Display logged-in user info
-$userQuery = "SELECT e.firstname, a.usertype FROM tblaccounts a 
-              JOIN tblemployee e ON a.account_id = e.employee_id 
-              WHERE a.account_id = ?";
-if ($stmt = mysqli_prepare($link, $userQuery)) {
-    mysqli_stmt_bind_param($stmt, "i", $accountID);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-}
-
-// ========== INSERT INTO tblassets_inventory ==========
-if (isset($_POST['btnSubmit'])) {
-    $group_id = isset($_GET['group_id']) ? intval($_GET['group_id']) : 0;
-    $serialNumber = $_POST['serialNumber'];
-    $itemInfo = $_POST['itemInfo'];
-    $year_purchased = $_POST['year_purchased'];
-    $createdby = $_SESSION['username'];
-    $datecreated = date("Y-m-d H:i:s");
-
-    if ($group_id <= 0) {
-        echo "<font color='red'>Invalid group ID.</font>";
-        exit;
+    //Fetching username from the logged in user
+    $accountID = $_SESSION['account_id'];
+    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
+    if($stmtuser = mysqli_prepare($link, $sql)){
+        mysqli_stmt_bind_param($stmtuser, "i", $accountID);
+        mysqli_stmt_execute($stmtuser);
+        mysqli_stmt_bind_result($stmtuser, $dbUsername);
+        mysqli_stmt_fetch($stmtuser);
+        mysqli_stmt_close($stmtuser);   
+    
+        $_SESSION['username'] = $dbUsername; 
     }
-
-    // Get ic_code from category based on group
-    $sqlIC = "
-        SELECT c.ic_code 
-        FROM tblassets_group g
-        JOIN tblassets_category c ON g.category_id = c.category_id
-        WHERE g.group_id = ?
-    ";
-    $stmt = mysqli_prepare($link, $sqlIC);
-    mysqli_stmt_bind_param($stmt, "i", $group_id);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $ic_code);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    // Generate Asset Code
-    $sqlCount = "SELECT COUNT(*) FROM tblassets_inventory";
-    $stmt = mysqli_prepare($link, $sqlCount);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $total);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    $assetCode = $total + 1;
-    $assetCodePadded = str_pad($assetCode, 3, "0", STR_PAD_LEFT);
-    $yearshort = substr($year_purchased, -2);
-    $assetNumber = $ic_code . "-" . $yearshort . $assetCodePadded;
-
-    // Insert into tblassets_inventory
-    $sql = "INSERT INTO tblassets_inventory 
-            (group_id, serialNumber, itemInfo, status, assetCode, assetNumber, year_purchased, datecreated, createdby)
-            VALUES (?, ?, ?, 'UNASSIGNED', ?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($link, $sql);
-    mysqli_stmt_bind_param($stmt, "ississss",
-        $group_id,
-        $serialNumber,
-        $itemInfo,
-        $assetCode,
-        $assetNumber,
-        $year_purchased,
-        $datecreated,
-        $createdby
-    );
-    if (mysqli_stmt_execute($stmt)) {
-        // Log creation
-        $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
-                   VALUES (?, ?, ?, ?, ?, ?)";
-        $stmtLog = mysqli_prepare($link, $sqlLog);
-        $date = date("Y-m-d");
-        $time = date("H:i:s");
-        $logAction = "Added new asset: $assetNumber";
-        $module = "Asset Inventory";
-        mysqli_stmt_bind_param($stmtLog, "ssssss", $date, $time, $logAction, $module, $accountID, $_SESSION['username']);
-        mysqli_stmt_execute($stmtLog);
-
-        $notificationMessage = "New Asset successfully added!";
-    } else {
-        echo "<font color='red'>Error inserting into tblassets_inventory: " . mysqli_error($link) . "</font>";
+    //Displaying off logged in user
+    $userQuery ="SELECT e.firstname , a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id WHERE a.account_id = ?";
+    if($stmt = mysqli_prepare($link, $userQuery)){
+        mysqli_stmt_bind_param($stmt , "i", $accountID);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
     }
-}
+    //Inserting into tblassets_directory and tbllogs 
+    if( isset($_POST['btnSubmit'])){
+        $category_id = $_POST['categoryName'];
+        $ic_code = $_POST['ic_code'];
+        $itemInfo = $_POST['itemInfo'];
+        $itemModel = $_POST['itemModel'];
+        $year_purchased = $_POST['year_purchased'];
+        $createdby = $_SESSION['username'];
+        $datecreated = date("Y-m-d H:i:s");
 
+        $yearshort = substr($year_purchased, -2);
+        $sqlCount = "SELECT COUNT(*) AS itemCOUNT from tblassets_directory";
+        $stmt =mysqli_prepare($link, $sqlCount);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $total);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+
+        $sqlIC = "SELECT ic_code FROM tblassets_category WHERE category_id = ?";
+        $stmt = mysqli_prepare($link, $sqlIC);
+        mysqli_stmt_bind_param($stmt, "i", $category_id);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $ic_code);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+
+        $itemCount = $total + 1;
+        $itemCountPadded = str_pad($itemCount, 3, "0", STR_PAD_LEFT);
+
+        $itemNumber = $ic_code . "-" . $yearshort . "" . $itemCountPadded;
+
+        $sql = "INSERT INTO tblassets_directory 
+            (category_id, ic_code, itemNumber, itemInfo, itemModel, itemCount, status, year_purchased, datecreated, createdby) 
+            VALUES (?, ?, ?, ?, ?, ?, 'ACTIVE', ?, ?, ?)";
+
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt,  "issssiiss",
+                $category_id, 
+                $ic_code, 
+                $itemNumber, 
+                $itemInfo, 
+                $itemModel, 
+                $itemCount, 
+                $year_purchased, 
+                $datecreated,
+                $createdby);
+
+        if (mysqli_stmt_execute($stmt)) {
+            $category_id = mysqli_insert_id($link);
+            // Insert into tbllogs
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                       VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                $date       = date("Y-m-d");
+                $time       = date("H:i:s");
+                $logAction  = "Create Item";
+                $module     = "Asset Management";
+                $performedby = $_SESSION['username'];
+
+                mysqli_stmt_bind_param(
+                    $stmtLog,
+                    "ssssss",
+                    $date, $time, $logAction, $module, $accountID, $_SESSION['username']
+                );
+                mysqli_stmt_execute($stmtLog);
+            }
+
+            $notificationMessage = "New Item Asset successfully created!";
+        } else {
+            echo "<font color='red'>Error inserting into tblassets_directory: " . mysqli_error($link) . "</font>";
+        }
+
+
+
+    }
 ?>
-
 
 <html lang="en">
 
@@ -113,7 +109,7 @@ if (isset($_POST['btnSubmit'])) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart | Add Asset</title>
+    <title>Unipath Admin Accounts - Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -255,23 +251,7 @@ if (isset($_POST['btnSubmit'])) {
 
                 <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-                        <?php
-                                // Fetch group name to display
-                                $group_name = '';
-                                if (isset($_GET['group_id'])) {
-                                    $gid = intval($_GET['group_id']);
-                                    $gstmt = mysqli_prepare($link, "SELECT groupName FROM tblassets_group WHERE group_id = ?");
-                                    mysqli_stmt_bind_param($gstmt, "i", $gid);
-                                    mysqli_stmt_execute($gstmt);
-                                    mysqli_stmt_bind_result($gstmt, $group_name);
-                                    mysqli_stmt_fetch($gstmt);
-                                    mysqli_stmt_close($gstmt);
-                                }
-                                ?>
-                               <h5 class="m-0 font-weight-bold text-primary">
-                                    <span class="text-dark">Add Asset to Group:</span>
-                                    <?php echo htmlspecialchars($group_name); ?>
-                                </h5>
+
                     <!-- Sidebar Toggle (Topbar) -->
                     <form class="form-inline">
                         <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
@@ -349,19 +329,51 @@ if (isset($_POST['btnSubmit'])) {
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
-                        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]) . '?group_id=' . intval($_GET['group_id']); ?>" method="POST">
-
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
                                     
                                 <h1>Asset Details</h1>
+                                    <div class ="row mb-5">
+                                        <div class ="col-md-6">
+                                            <label for ="categoryName" class ="form-label">Item Category</label>
+                                                <select id="categoryName" name="categoryName" class="form-control" required>
+                                                <option value="">-- Select Category --</option>
+                                                    <?php 
+                                                        $sql = "SELECT category_id, ic_code, categoryName FROM tblassets_category ORDER BY categoryName ASC";
+                                                        $result = mysqli_query($link, $sql);
+                                                        
+                                                        if($result && mysqli_num_rows($result) > 0){
+                                                            while($row = mysqli_fetch_assoc($result)){
+                                                                $displaytext = $row['ic_code'] . " - " . $row['categoryName'];
+                                                                echo '<option value="'.$row['category_id'].'"
+                                                                            data-categoryName="'.$row['categoryName'].'"
+                                                                            data-ic_code="'.$row['ic_code'].'">'
+                                                                            .$displaytext.
+                                                                    '</option>';
+                                                            }
+                                                            mysqli_free_result($result);
+                                                        } else {
+                                                            echo "<option value=''>No categories available</option>";
+                                                        }
+                                                    ?>
+                                                </select>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for = "ic_code" class ="form-label">IC Code</label>
+                                                <input type="text" name="ic_code" class="form-control" id="ic_code" placeholder="IC Code" readonly>
+                                        </div>
+                                    </div>
+
                                     <div class ="row mb-5">
                                             <div class="col-md-6">
                                                 <label for = "itemInfo" class ="form-label">Item general info</label>
                                                 <textarea id ="itemInfo" name="itemInfo" class="form-control" rows="6" maxlength="1000" required></textarea>
                                                 <small class="form-text text-muted">Maximum 1000 characters.</small>
                                             </div>
+
                                             <div class="col-md-6">
-                                            <label for = "serialNumber" class ="form-label">Serial Number</label>
-                                                <input type="text" name="serialNumber" class="form-control" id="serialNumber" placeholder="Serial Number" required>
+                                                <label for = "itemModel" class ="form-label">Item Model</label>
+                                                <textarea id ="itemModel" name="itemModel" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
                                             </div>
                                     </div>
 

@@ -104,7 +104,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Unipath Admin Assets - Update</title>
+    <title>StorageMart | Update Asset Directory</title>
 
     <!-- Custom fonts for this template -->
     <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">

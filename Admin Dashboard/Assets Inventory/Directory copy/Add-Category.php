@@ -1,53 +1,73 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
+require_once "config.php";
+include("session-checker.php");
 
     $accountID = $_SESSION['account_id'];
     $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
+    if ($stmtUser = mysqli_prepare($link, $sql)) {
+    mysqli_stmt_bind_param($stmtUser, "i", $accountID);
+    mysqli_stmt_execute($stmtUser);
+    mysqli_stmt_bind_result($stmtUser, $dbUsername);
+    mysqli_stmt_fetch($stmtUser);
+    mysqli_stmt_close($stmtUser);
 
-    if ($stmt = mysqli_prepare($link, $sql)) {
+    $_SESSION['username'] = $dbUsername; 
+}
+    $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
+    if ($stmt = mysqli_prepare($link, $userQuery)) {
         mysqli_stmt_bind_param($stmt, "i", $accountID);
         mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $username);
+        mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
         mysqli_stmt_fetch($stmt);
         mysqli_stmt_close($stmt);
     }
+if (isset($_POST['btnSubmit'])) {
+    // Insert into tblassets_category
+   $sql = "INSERT INTO tblassets_category (
+                categoryName, ic_code, createdby, datecreated
+            ) VALUES (
+                ?, ?, ?, ?
+            )";
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        // Collect form values
+        $category_name = $_POST['categoryName'];
+        $ic_code = $_POST['ic_code'];
+        $created_by = $_SESSION['username'];
+        $datecreated = date("Y-m-d H:i:s");
+        
+        mysqli_stmt_bind_param(
+            $stmt,
+            "ssss",
+            $category_name, $ic_code, $created_by, $datecreated
+        );
+        if (mysqli_stmt_execute($stmt)) {
+            $category_id = mysqli_insert_id($link);
+            // Insert into tbllogs
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                       VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                $date       = date("Y-m-d");
+                $time       = date("H:i:s");
+                $logAction  = "Create Category";
+                $module     = "Asset Management";
+                $performedby = $_SESSION['username'];
 
-    $_SESSION['username'] = $username;
-
-    // Handle delete request
-    if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Decline') {
-        $accountToDelete = $_POST['account_id'];
-
-        // Protect against SQL injection
-        $deleteSQL = "DELETE FROM tblaccounts WHERE account_id = ?";
-        if ($stmt = mysqli_prepare($link, $deleteSQL)) {
-            mysqli_stmt_bind_param($stmt, "i", $accountToDelete);
-            if (mysqli_stmt_execute($stmt)) {
-                // Optional: redirect to refresh the page
-                header("Location: " . $_SERVER['PHP_SELF']);
-                exit();
-            } else {
-                echo "<script>alert('Error deleting account.');</script>";
+                mysqli_stmt_bind_param(
+                    $stmtLog,
+                    "ssssss",
+                    $date, $time, $logAction, $module, $accountID, $_SESSION['username']
+                );
+                mysqli_stmt_execute($stmtLog);
             }
-            mysqli_stmt_close($stmt);
+
+            $notificationMessage = "New Category successfully created!";
+        } else {
+            echo "<font color='red'>Error inserting into tblassets_category: " . mysqli_error($link) . "</font>";
         }
+    } else {
+        echo "<font color='red'>Error preparing statement for tbltickets.</font>";
     }
-
-    $fetchQuery = "SELECT * FROM tblaccounts";
-    $result = mysqli_query($link, $fetchQuery);
-    $fetchEmployee = "
-    SELECT e.employee_id, e.account_id, e.lastname, e.firstname, e.middlename,
-           e.department, e.email, e.createdby, e.datecreated,
-           b.branchName
-    FROM tblemployee e
-    LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
-";
-    $res = mysqli_query($link, $fetchEmployee);
-
-
-
+}
 ?>
 
 <html lang="en">
@@ -60,19 +80,19 @@
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Employee - Tables</title>
+    <title>Unipath Admin Add Category</title>
 
     <!-- Custom fonts for this template -->
-    <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="../css/sb-admin-2.min.css" rel="stylesheet">
-
+    <link href="../../css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="../../css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
-    <link href="../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
@@ -82,13 +102,15 @@
     <div id="wrapper">
 
         <!-- Sidebar -->
+        <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../index.html">
-                <div class="sidebar-brand-icon rotate-n-15">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../../index.php">
+                <div class="sidebar-brand-icon ">
+                    <img src="../../img/logo.png" alt="Logo" style="width:40px; height:auto;">
                 </div>
-                <div class="sidebar-brand-text mx-3">Unipath</div>
+                <div class="sidebar-brand-text mx-3">Storage Mart</div>
             </a>
 
             <!-- Divider -->
@@ -96,7 +118,7 @@
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item">
-                <a class="nav-link" href="../index.php">
+                <a class="nav-link" href="../../index.php">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -110,7 +132,7 @@
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item active">
+            <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -119,24 +141,24 @@
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="Employee.php">Employee</a>
+                        <a class="collapse-item" href="../../Account/Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="../../Account/Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
 			
 			<li class="nav-item">
-                <a class="nav-link" href="../Ticket/Tickets.php">
+                <a class="nav-link" href="Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
             </li>
-            <li class="nav-item">
-                <a class="nav-link" href="../Assets Inventory/Directory/Assets.php">
+            <li class="nav-item active">
+                <a class="nav-link" href="Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
-            </li>
+            </li>            
             <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
                     aria-expanded="true" aria-controls="collapsethree">
@@ -146,21 +168,21 @@
                 <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Branch:</h6>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Head-office.php">Head Office</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Iran.php">Iran</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Don-roces.php">Don Roces</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Sucat.php">Sucat</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Banawe.php">Sucat</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Santolan.php">Santolan</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Pasig.php">Pasig</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Bangkal.php">Bangkal</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Delta.php">Delta</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Binondo.php">Binondo</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Katipunan.php">Katipunan</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Fairview.php">Fairview</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Jabad.php">Jabad</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Yakal.php">Yakal</a>
-                        <a class="collapse-item" href="../Assets Inventory/Inventory/Caloocan.php">Caloocan</a>
+                        <a class="collapse-item" href="../Inventory/Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="../Inventory/Iran.php">Iran</a>
+                        <a class="collapse-item" href="../Inventory/Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="../Inventory/Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="../Inventory/Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="../Inventory/Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="../Inventory/Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="../Inventory/Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="../Inventory/Delta.php">Delta</a>
+                        <a class="collapse-item" href="../Inventory/Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="../Inventory/Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="../Inventory/Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="../Inventory/Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="../Inventory/Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="../Inventory/Caloocan.php">Caloocan</a>
 
                     </div>
                 </div>
@@ -175,7 +197,7 @@
 			
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="../Pendings.php">
+                <a class="nav-link" href="Pendings.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Pendings</span></a>
             </li>
@@ -243,14 +265,16 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
+                                    <?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?>
+                                </span>
                                 <img class="img-profile rounded-circle"
-                                    src="../img/undraw_profile.svg">
+                                    src="../../img/undraw_profile.svg">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../../public/login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../JobSeeker/User/Login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -266,72 +290,38 @@
                 <div class="container-fluid">
 
                     <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
+                    <h1 class="h3 mb-2 text-gray-800"></h1>
+                    <p class="mb-4">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
 
-                    <!-- Main conctent -->
+                    <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Employee</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Category</h6>
                         </div>
                         <div class="card-body">
-                            <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
-                                    <thead>
-                                        <tr>
-                                            <th>Employee ID</th>
-											<th>Account ID</th>
-                                            <th>Last name</th>
-                                            <th>First name</th>
-                                            <th>Middle name</th>
-											<th>Department</th>
-											<th>Branch</th>
-                                            <th>Email</th>
-                                            <th>Created by</th>
-                                            <th>Date created</th>
-                                        </tr>
-                                    </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Employee ID</th>
-											<th>Account ID</th>
-                                            <th>Last name</th>
-                                            <th>First name</th>
-                                            <th>Middle name</th>
-											<th>Department</th>
-											<th>Branch</th>
-                                            <th>Email</th>
-                                            <th>Created by</th>
-                                            <th>Date created</th>
-                                        </tr>
-                                    </tfoot>
-                                    <tbody>
-                                        <?php while ($row = mysqli_fetch_assoc($res)) { ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['employee_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['account_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['lastname']) ?></td>
-                                            <td><?= htmlspecialchars($row['firstname']) ?></td>
-                                            <td><?= htmlspecialchars($row['middlename']) ?></td>
-                                            <td><?= htmlspecialchars($row['department']) ?></td>
-                                            <td><?= htmlspecialchars($row['branchName']) ?></td>
-                                            <td><?= htmlspecialchars($row['email']) ?></td>
-                                            <td><?= htmlspecialchars($row['createdby']) ?></td>
-                                            <td><?= htmlspecialchars($row['datecreated']) ?></td>
-                                        </tr>
-                                        <?php } ?>
-                                    </tbody>
-                                </table>
-                            </div>
+                            <div class="container mt-4">
+                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                    
+                                <h1>Category Details</h1>
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "categoryName" class ="form-label">Category name</label>
+                                                    <input type="text" name="categoryName"class="form-control" id="categoryName" placeholder="Category name"  required>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "ic_code" class ="form-label">IC Code</label>
+                                                    <input type="text" name="ic_code" class="form-control" id="ic_code" placeholder="IC CODE" required>
+                                            </div>
+                                    </div>
+                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                    <a href="Assets.php" class="btn btn-danger">Cancel</a>
+                                    </form>
+                                </div>
+
                         </div>
                     </div>
-
-                </div>
-        </div>
-        </div>
-        
+                    
                 </div>
                 <!-- /.container-fluid -->
 
@@ -366,28 +356,37 @@
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="../vendor/jquery/jquery.min.js"></script>
-    <script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../../vendor/jquery/jquery.min.js"></script>
+    <script src="../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="../vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="../../vendor/jquery-easing/jquery.easing.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="../js/sb-admin-2.min.js"></script>
+    <script src="../../js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../../vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="../../vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
     <!-- Page level custom scripts -->
-    <script src="../js/demo/datatables-demo.js"></script>
+    <script src="../../js/demo/datatables-demo.js"></script>
+
+<script>
+    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+    if (notificationMessage !== "") {
+        alert(notificationMessage);
+        window.location.href = "Assets.php";
+    }
+</script>
+
 
 </body>
 

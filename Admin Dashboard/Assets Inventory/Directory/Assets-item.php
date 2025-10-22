@@ -1,6 +1,9 @@
 <?php
     require_once "config.php";
     include "session-checker.php";
+    //Get the group_id from the URL parameter
+    $group_id = isset($_GET['group_id']) ? intval($_GET['group_id']) : 0;
+
     //For Displaying the User
     $accountID = $_SESSION['account_id'];
     $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
@@ -18,30 +21,45 @@
     }
     $_SESSION['username'] = $username;
 
-    // for fetching the Group of an Item
-$fetchModel = "
+
+    //For Fetching the Asset Inventory
+$query = "
     SELECT 
+        i.inventory_id,
+        i.assetNumber,
+        i.serialNumber,
+        i.itemInfo,
+        i.status,
+        b.branch_id,
+        b.branchName,
+        e.employee_id,
+        CONCAT(e.firstname, ' ', e.lastname) AS employeeName,
         g.group_id,
         g.groupName,
-        g.description,
-        c.categoryName,
-        COUNT(i.group_id) AS totalItems,
-        SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) AS assigned,
-        SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) AS unassigned
-    FROM tblassets_group g
-    JOIN tblassets_category c 
-        ON g.category_id = c.category_id
-    LEFT JOIN tblassets_inventory i 
-        ON g.group_id = i.group_id 
-        AND i.status NOT IN ('DISPOSE','LOST') 
-    GROUP BY g.group_id, g.groupName, g.description, c.categoryName
-    ORDER BY g.group_id ASC;
+        a.assignment_id,
+        a.transferDetails
+    FROM tblassets_inventory i 
+    LEFT JOIN tblassets_assignment a 
+        ON i.assignment_id = a.assignment_id
+    LEFT JOIN tblbranch b 
+        ON i.branch_id = b.branch_id
+    LEFT JOIN tblemployee e
+        ON i.employee_id = e.employee_id
+    JOIN tblassets_group g 
+        ON i.group_id = g.group_id
+    WHERE i.group_id = ?
+    ORDER BY i.inventory_id ASC;
 ";
 
-$result = mysqli_query($link, $fetchModel);
+$stmt = mysqli_prepare($link, $query);
+mysqli_stmt_bind_param($stmt, "i", $group_id);
+mysqli_stmt_execute($stmt);
+$result = mysqli_stmt_get_result($stmt);
+
 if (!$result) {
     die("SQL Error: " . mysqli_error($link));
 }
+
 ?>
 
 <html lang="en">
@@ -58,6 +76,8 @@ if (!$result) {
 
     <!-- Custom fonts for this template -->
     <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+
     <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
@@ -274,44 +294,48 @@ if (!$result) {
                             <h6 class="m-0 font-weight-bold text-primary">List of Item Assets</h6>
                         </div>
                         <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
-                            <a href="Add-Asset.php" class="btn btn-primary" style="width:160px;">Add Asset</a>
-                            <a href="Add-Category.php" class="btn btn-primary" style="width:160px;">Add Category</a>
-                            <a href="Add-Group.php" class="btn btn-primary" style="width:160px;">Add Group</a>
+                            <a href="Add-Asset.php?group_id=<?= $group_id; ?>" class="btn btn-primary" style="width:160px;">
+                                <i class="fas fa-plus"></i> Add Asset
+                            </a>
+
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="asset" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="asset_inventory" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-                                            <th>Model</th>
-                                            <th>Description</th>
-                                            <th>Category</th>
-                                            <th>Quantity</th>
-                                            <th>Assigned</th>
-											<th>Unassigned</th>
-                                            <th>ACTION</th>
+                                            <th>Item Info</th>
+                                            <th>Asset Number</th>
+                                            <th>Serial Number</th>
+                                            <th>Branch</th>
+                                            <th>Status</th>
+											<th>Employee</th>
+                                            <th>Transfer Info</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
                                         <tr>
-                                            <th>Model</th>
-                                            <th>Description</th>
-                                            <th>Category</th>
-                                            <th>Quantity</th>
-                                            <th>Assigned</th>
-											<th>Unassigned</th>
-                                            <th>ACTION</th>
+                                            <th>Item Info</th>
+                                            <th>Asset Number</th>
+                                            <th>Serial Number</th>
+                                            <th>Branch</th>
+                                            <th>Status</th>
+											<th>Employee</th>
+                                            <th>Transfer Info</th>
+                                            <th>Action</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
                                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['groupName']);?> </td>
-                                            <td><?= htmlspecialchars($row['description']);?> </td>
-                                            <td><?= htmlspecialchars($row['categoryName']);?> </td>
-                                            <td><?= htmlspecialchars($row['totalItems']); ?></td>
-                                            <td><?= htmlspecialchars($row['assigned']);?> </td>
-                                            <td><?= htmlspecialchars($row['unassigned']); ?></td>
+                                            <td><?= htmlspecialchars($row['itemInfo']);?> </td>
+                                            <td><?= htmlspecialchars($row['assetNumber']);?> </td>
+                                            <td><?= htmlspecialchars($row['serialNumber']);?> </td>
+                                            <td><?= htmlspecialchars($row['branchName']); ?></td>
+                                            <td><?= htmlspecialchars($row['status']);?> </td>
+                                            <td><?= htmlspecialchars($row['employeeName']); ?></td>
+                                            <td><?= htmlspecialchars($row['transferDetails']); ?></td>
                                             <td>
                                                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
@@ -320,14 +344,18 @@ if (!$result) {
                                                 </a>
                                                     <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
                                                         <!-- Update -->
-                                                        <a class="dropdown-item" href="Update-Group.php?group_id=<?= $row['group_id']; ?>">
+                                                        <a class="dropdown-item" href="Update-Item.php?inventory_id=<?= $row['inventory_id']; ?>">
                                                             <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>
                                                             Update
                                                         </a>
                                                         <!-- View -->
-                                                        <a class="dropdown-item" href="Inventory-Assets.php?group_id=<?= $row['group_id']; ?>">
-                                                            <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            View
+                                                        <a class="dropdown-item" href="Transfer-Asset.php?inventory_id=<?= $row['inventory_id']; ?>">
+                                                            <i class="fa-solid fa-right-left  fa-sm fa-fw mr-2 text-black-400"></i>
+                                                            Transfer
+                                                        </a>
+                                                        <a class="dropdown-item" href="Transfer-Asset.php?inventory_id=<?= $row['inventory_id']; ?>">
+                                                            <i class="fas fa-history fa-sm fa-fw mr-2 text-black-400"></i>
+                                                            Transfer History
                                                         </a>
                                                     </div>
                                             </td>
