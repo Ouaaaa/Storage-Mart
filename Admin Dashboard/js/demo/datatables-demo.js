@@ -3,12 +3,10 @@ $(document).ready(function () {
   $("#dataTable").DataTable();
 });
 new DataTable("#asset", {
-  fixedHeader: {
-        header: true,
-    },
+  fixedHeader: { header: true },
   columnDefs: [
     {
-      targets: [2],
+      targets: [1, 2, 3, 4, 5], // apply to columns you want
       columnControl: [
         "order",
         ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
@@ -20,6 +18,7 @@ new DataTable("#asset", {
     handler: false,
   },
 });
+
 
 //ColumnControl for Aseset Inventory
 new DataTable("#asset_inventory", {

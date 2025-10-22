@@ -18,31 +18,6 @@
     }
     $_SESSION['username'] = $username;
 
-//     // For fetching the count of the inventory that is in the group 
-//     $fetchInventory = "
-//     SELECT 
-//         g.group_id,
-//         COUNT(i.inventory_id) AS totalItems,
-//         SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) AS assigned,
-//         SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) AS unassigned
-//     FROM tblassets_group g
-//     LEFT JOIN tblassets_inventory i 
-//         ON g.group_id = i.group_id
-//         AND i.status NOT IN ('DISPOSE', 'LOST')
-//     GROUP BY g.group_id;
-//     ";
-
-
-//     $count = mysqli_query($link, $fetchInventory);
-//     //For Defining the count Items
-//     $countrow = mysqli_fetch_assoc($count);
-//     $totalItem = $countrow['totalItems'];
-//     $assigned = $countrow['assigned'];
-//     $unassigned = $countrow['unassigned'];
-//     if (!$count) {
-//     die("SQL Error (Inventory): " . mysqli_error($link));
-// }
-
     // for fetching the Group of an Item
 $fetchModel = "
     SELECT 
@@ -67,26 +42,6 @@ $result = mysqli_query($link, $fetchModel);
 if (!$result) {
     die("SQL Error: " . mysqli_error($link));
 }
-
-// $fetchQuery = "
-//     SELECT 
-//     d.item_id,
-//     d.itemCount, 
-//     d.itemNumber, 
-//     c.categoryName, 
-//     c.ic_code, 
-//     d.itemInfo, 
-//     d.itemModel, 
-//     d.year_purchased, 
-//     d.status,
-//     d.datecreated, 
-//     d.createdby 
-//     FROM tblassets_directory d 
-//     JOIN tblassets_category c 
-//     ON d.category_id = c.category_id ORDER by d.itemCount ASC";
-//$result = mysqli_query($link, $fetchQuery);
-
-
 ?>
 
 <html lang="en">
@@ -318,16 +273,6 @@ if (!$result) {
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">List of Item Assets</h6>
                         </div>
-                            <!-- <div class="col-sm-9" style="margin-top:40px; margin-left: 40px;">
-                                <div class="btn-toolbar mb-3" role="toolbar" aria-label="Toolbar with button groups">
-                                    <div class="btn-group me-2" role="group" aria-label="First group">
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                        <button type="button" class="btn btn-outline-secondary"><i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i></button>
-                                    </div>
-                                </div>
-                            </div> -->
                         <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
                             <a href="Add-Asset.php" class="btn btn-primary" style="width:160px;">Add Asset</a>
                             <a href="Add-Category.php" class="btn btn-primary" style="width:160px;">Add Category</a>
