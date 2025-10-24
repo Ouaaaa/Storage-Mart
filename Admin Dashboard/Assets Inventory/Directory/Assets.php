@@ -329,9 +329,9 @@ if (!$result) {
                                 </div>
                             </div> -->
                         <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
-                            <a href="Add-Asset.php" class="btn btn-primary" style="width:160px;">Add Asset</a>
-                            <a href="Add-Category.php" class="btn btn-primary" style="width:160px;">Add Category</a>
-                            <a href="Add-Group.php" class="btn btn-primary" style="width:160px;">Add Group</a>
+                            <a href="../../Branch/Add-Branch.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Branch</a>
+                            <a href="Add-Category.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Category</a>
+                            <a href="Add-Group.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Group</a>
                         </div>
 
 

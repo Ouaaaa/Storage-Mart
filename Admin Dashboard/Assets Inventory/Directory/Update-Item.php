@@ -2,94 +2,156 @@
 require_once "config.php";
 include("session-checker.php");
 
+// --- SESSION: get logged user info ---
 $inventory = [];
 $username = '';
-    $accountID = $_SESSION['account_id'];
-    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-    if($stmtuser = mysqli_prepare($link, $sql)){
-        mysqli_stmt_bind_param($stmtuser, "i", $accountID);
-        mysqli_stmt_execute($stmtuser);
-        mysqli_stmt_bind_result($stmtuser, $dbUsername);
-        mysqli_stmt_fetch($stmtuser);
-        mysqli_stmt_close($stmtuser);   
-    
-        $_SESSION['username'] = $dbUsername; 
-    }
-// For displaying logged in user info
-    $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
+$accountID = $_SESSION['account_id'] ?? 0;
 
+// Fetch username
+$sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
+if ($stmtuser = mysqli_prepare($link, $sql)) {
+    mysqli_stmt_bind_param($stmtuser, "i", $accountID);
+    mysqli_stmt_execute($stmtuser);
+    mysqli_stmt_bind_result($stmtuser, $dbUsername);
+    mysqli_stmt_fetch($stmtuser);
+    mysqli_stmt_close($stmtuser);
+    $_SESSION['username'] = $dbUsername;
+}
 
-    if ($stmt = mysqli_prepare($link, $userQuery)) {
-        mysqli_stmt_bind_param($stmt, "i", $accountID);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
-    }
+// Fetch firstname & usertype for display
+$userQuery = "SELECT e.firstname, a.usertype 
+              FROM tblaccounts a 
+              JOIN tblemployee e ON a.account_id = e.employee_id  
+              WHERE a.account_id = ?";
+if ($stmt = mysqli_prepare($link, $userQuery)) {
+    mysqli_stmt_bind_param($stmt, "i", $accountID);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+}
 
+// --- FORM SUBMISSION ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
-    $group_id = isset($_GET['inventory_id']) ? intval($_GET['inventory_id']) : 0;
-    // === Update tblassets_inventory ===
-    $sql = "UPDATE tblassets_inventory SET itemInfo = ?, serialNumber = ?, year_purchased = ? WHERE inventory_id = ?";
+    $inventoryID = intval($_POST['inventory']);
+    $itemInfo = trim($_POST['itemInfo']);
+    $serialNumber = trim($_POST['serialNumber']);
+    $yearPurchased = trim($_POST['year_purchased']);
+    $status = isset($_POST['status']) ? trim($_POST['status']) : '';
+    $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
+    $createdby = $_SESSION['username'] ?? 'System';
+
+    // ✅ 1. Update tblassets_inventory (set status, info, serial, year)
+    $sql = "UPDATE tblassets_inventory 
+            SET itemInfo = ?, serialNumber = ?, year_purchased = ?, status = ? 
+            WHERE inventory_id = ?";
     if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "sssi", 
-            $_POST['itemInfo'],
-            $_POST['serialNumber'],
-            $_POST['year_purchased'],
-            $_POST['inventory'] 
+        mysqli_stmt_bind_param($stmt, "ssssi",
+            $itemInfo,
+            $serialNumber,
+            $yearPurchased,
+            $status,
+            $inventoryID
         );
 
         if (mysqli_stmt_execute($stmt)) {
-            mysqli_stmt_close($stmt);
-                    // === Insert into tbllogs ===
-                    $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
-                            VALUES (?, ?, ?, ?, ?, ?)";
-                    if ($stmt = mysqli_prepare($link, $sql)) {
-                        $date = date("Y-m-d");
-                        $time = date("h:i:sa");
-                        $action = "Update Asset Group";
-                        $module = "Item Asset Management";
-                        $performedby = $_SESSION['username'];
-                        mysqli_stmt_bind_param($stmt, "ssssss", 
-                            $date, 
-                            $time, 
-                            $action, 
-                            $module, 
-                            $accountID, 
-                            $_SESSION['username']
-                        );
 
-                        if (mysqli_stmt_execute($stmt)) {
-                            $notificationMessage = "Item Asset successfully updated!";
-                        } else {
-                            echo "<font color='red'>Error inserting into tbllogs.</font>";
-                        }
-                        mysqli_stmt_close($stmt);
+            // ✅ 2. If status is RETURNED, insert record in tblassets_assignment
+            if ($status === 'RETURNED' && !empty($reason)) {
+                $transferDetails = "Reason for RETURNED: $reason";
+                $dateIssued = date("Y-m-d");
+                $dateReturned = date("Y-m-d");
+                $datecreated = date("Y-m-d H:i:s");
+
+                // Try to get employee info (based on current assignment if exists)
+                $employee_id = null;
+                $assignedTo = "";
+
+                $sqlFetch = "SELECT a.employee_id, CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS assignedTo
+                             FROM tblassets_inventory i
+                             JOIN tblassets_assignment a ON i.assignment_id = a.assignment_id
+                             JOIN tblemployee e ON a.employee_id = e.employee_id
+                             WHERE i.inventory_id = ? LIMIT 1";
+                if ($stmtFetch = mysqli_prepare($link, $sqlFetch)) {
+                    mysqli_stmt_bind_param($stmtFetch, "i", $inventoryID);
+                    mysqli_stmt_execute($stmtFetch);
+                    mysqli_stmt_bind_result($stmtFetch, $employee_id, $assignedTo);
+                    mysqli_stmt_fetch($stmtFetch);
+                    mysqli_stmt_close($stmtFetch);
+                }
+
+                // ✅ If no previous assignment found, mark as unassigned return
+                if (empty($employee_id)) {
+                    $employee_id = 0;
+                    $assignedTo = "Unassigned / Returned";
+                }
+
+                // Insert return record
+                $sqlInsert = "INSERT INTO tblassets_assignment 
+                              (employee_id, assignedTo, dateIssued, transferDetails, dateReturned, datecreated, createdby)
+                              VALUES (?, ?, ?, ?, ?, ?, ?)";
+                if ($stmtInsert = mysqli_prepare($link, $sqlInsert)) {
+                    mysqli_stmt_bind_param($stmtInsert, "issssss",
+                        $employee_id,
+                        $assignedTo,
+                        $dateIssued,
+                        $transferDetails,
+                        $dateReturned,
+                        $datecreated,
+                        $createdby
+                    );
+
+                    if (!mysqli_stmt_execute($stmtInsert)) {
+                        echo "<font color='red'>Error inserting return record: " . mysqli_error($link) . "</font>";
                     }
+                    mysqli_stmt_close($stmtInsert);
+                }
+            }
+
+            // ✅ 3. Insert into tbllogs
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
+                       VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmt3 = mysqli_prepare($link, $sqlLog)) {
+                $date = date("Y-m-d");
+                $time = date("h:i:sa");
+                $action = "Updated Item Asset ($inventoryID)";
+                $module = "Item Asset Management";
+                mysqli_stmt_bind_param($stmt3, "ssssss",
+                    $date,
+                    $time,
+                    $action,
+                    $module,
+                    $inventoryID,
+                    $createdby
+                );
+                mysqli_stmt_execute($stmt3);
+                mysqli_stmt_close($stmt3);
+            }
+
+            $notificationMessage = "Item Asset successfully updated!";
         } else {
-           echo "<font color='red'>Error updating tblassets_directory: " . mysqli_error($link) . "</font>";
-        }
-        
-    }
-
-} else {
-    // === Loading the data to the form ===
-    if (isset($_GET['inventory_id']) && !empty(trim($_GET['inventory_id']))) {
-    $sql = "SELECT * FROM tblassets_inventory WHERE inventory_id = ?";
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "i", $_GET['inventory_id']);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            $data = mysqli_fetch_array($result, MYSQLI_ASSOC);
-
-            $inventory  = $data;  // contains account fields
+            echo "<font color='red'>Error updating tblassets_inventory: " . mysqli_error($link) . "</font>";
         }
         mysqli_stmt_close($stmt);
     }
-}
-
+} 
+// --- LOAD INVENTORY DATA ---
+else {
+    if (isset($_GET['inventory_id']) && !empty(trim($_GET['inventory_id']))) {
+        $sql = "SELECT * FROM tblassets_inventory WHERE inventory_id = ?";
+        if ($stmt = mysqli_prepare($link, $sql)) {
+            mysqli_stmt_bind_param($stmt, "i", $_GET['inventory_id']);
+            if (mysqli_stmt_execute($stmt)) {
+                $result = mysqli_stmt_get_result($stmt);
+                $data = mysqli_fetch_array($result, MYSQLI_ASSOC);
+                $inventory = $data;
+            }
+            mysqli_stmt_close($stmt);
+        }
+    }
 }
 ?>
+
 
 
 <html lang="en">
@@ -334,7 +396,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                                             </div>
                                             <div class = "col-md-6">
                                                 <label for="status" class="form-label">Status</label>
-                                                <input type="text" class ="form-control" id ="status" name="status" placeholder="Status" value="<?php echo htmlspecialchars($inventory['status'] ?? ''); ?>" readonly>
+                                                <select id="status" name="status" class="form-control" required>
+                                                    <option value="UNASSIGNED" <?= ($inventory['status'] === 'UNASSIGNED') ? 'selected' : ''; ?>>Unassigned</option>
+                                                    <option value="ASSIGNED" <?= ($inventory['status'] === 'ASSIGNED') ? 'selected' : ''; ?>>Assigned</option>
+                                                    <option value="DISPOSED" <?= ($inventory['status'] === 'DISPOSED') ? 'selected' : ''; ?>>Disposed</option>
+                                                    <option value="LOST" <?= ($inventory['status'] === 'LOST') ? 'selected' : ''; ?>>Lost</option>
+                                                    <option value="RETURNED" <?= ($inventory['status'] === 'RETURNED') ? 'selected' : ''; ?>>Returned</option>
+                                                </select>
+
                                             </div>
                                         </div>
                                      <div class ="row mb-5">
@@ -355,8 +424,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                                                 <input type="text" name="year_purchased" class="form-control" id="year_purchased" placeholder="Year purchased" value="<?php echo htmlspecialchars(($inventory['year_purchased'] ?? ''));?>" required>
                                         </div>
                                     </div>
+                                    <div class="row mb-5" id="reasonRow" style="display: none;">
+                                        <div class="col-md-12">
+                                            <label for="reason" class="form-label">Reason</label>
+                                            <textarea class="form-control" id="reason" name="reason" rows="4" maxlength="1000"
+                                                    placeholder="Enter reason for Disposed or Lost"></textarea>
+                                            <small class="form-text text-muted">This reason will be stored in transfer history.</small>
+                                        </div>
+                                    </div>
+
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Assets-Item.php" class="btn btn-danger">Cancel</a>
+                                    <a href="Assets-item.php?group_id=<?= htmlspecialchars($inventory['group_id']); ?>" 
+                                    class="btn btn-danger"
+                                    onclick="return confirm('Cancel transfer and return to the previous list?');">
+                                    Cancel
+                                    </a>
                                     </form>
                             </div>
 
@@ -427,6 +509,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
         window.location.href = "Assets-item.php";
     }
 </script>
+<script>
+document.getElementById("status").addEventListener("change", function() {
+    var status = this.value;
+    var reasonRow = document.getElementById("reasonRow");
+
+    if (status === "DISPOSED" || status === "LOST" || status ==="RETURNED") {
+        reasonRow.style.display = "block";
+        document.getElementById("reason").setAttribute("required", "required");
+    } else {
+        reasonRow.style.display = "none";
+        document.getElementById("reason").removeAttribute("required");
+        document.getElementById("reason").value = "";
+    }
+});
+</script>
+
 </body>
 
 </html>

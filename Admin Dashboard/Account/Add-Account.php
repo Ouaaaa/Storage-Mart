@@ -372,7 +372,7 @@ if (isset($_POST['btnSubmit'])) {
                                     <div class="row mb-5">
                                     <div class="col-md-6">
                                         <label for="middle-name" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name" required>
+                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name">
                                     </div>
                                     <div class="col-md-6">
                                         <label for="department" class="form-label">Department</label>

@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 24, 2025 at 06:40 AM
+-- Generation Time: Oct 21, 2025 at 10:20 AM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -44,13 +44,7 @@ CREATE TABLE `tblaccounts` (
 INSERT INTO `tblaccounts` (`account_id`, `username`, `password`, `usertype`, `status`, `createdby`, `datecreated`) VALUES
 (1, 'admin', '123', 'ADMIN', 'ACTIVE', 'ADMIN', '8/19/2025'),
 (8, 'Lester', '123', 'ADMIN', 'INACTIVE', 'admin', '09/17/2025'),
-(11, 'sales', '123', 'HR', 'ACTIVE', 'admin', '09/24/2025'),
-(12, 'Test1', 'Test2', 'HR', 'ACTIVE', 'admin', '10/22/2025'),
-(13, 'test', 'asda', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
-(14, 'brjricafort30', 'asdas', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
-(15, 'sac', 'ads', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
-(16, 'a', 'sasad', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
-(17, 'sdasdsadsa', 'sadasdsad', 'HR', 'ACTIVE', 'admin', '10/24/2025');
+(11, 'sales', '123', 'HR', 'ACTIVE', 'admin', '09/24/2025');
 
 -- --------------------------------------------------------
 
@@ -74,25 +68,7 @@ CREATE TABLE `tblassets_assignment` (
 --
 
 INSERT INTO `tblassets_assignment` (`assignment_id`, `employee_id`, `assignedTo`, `dateIssued`, `transferDetails`, `dateReturned`, `datecreated`, `createdby`) VALUES
-(1, 230005109, 'Ricafort, Roland Josh M.', '08/10/2025', 'From Abueva to Ricafort ', '', '08/10/2025', 'admin'),
-(2, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasdas', '', '2025-10-22 18:05:28', 'admin'),
-(3, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasdas', '', '2025-10-22 18:05:28', 'admin'),
-(4, 1, 'Ricafort, Roland Josh Manalo', '2025-10-22', 'adasdsa', '', '2025-10-22 18:09:29', 'admin'),
-(5, 1, 'Ricafort, Roland Josh Manalo', '2025-10-22', 'asdasdasd', '', '2025-10-22 18:10:02', 'admin'),
-(6, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasd', '', '2025-10-22 18:11:40', 'admin'),
-(7, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'sadasd', '', '2025-10-24 08:50:03', 'admin'),
-(8, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asdasd', '', '2025-10-24 08:50:31', 'admin'),
-(9, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'asdas', '', '2025-10-24 08:52:01', 'admin'),
-(10, 123123, '123, 213 213', '2025-10-24', '132', '', '2025-10-24 08:55:41', 'admin'),
-(11, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'sdasdsa', '', '2025-10-24 11:25:22', 'admin'),
-(12, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'sadad', '', '2025-10-24 11:25:46', 'admin'),
-(13, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asdasdsa', '', '2025-10-24 11:33:59', 'admin'),
-(14, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asdsad', '', '2025-10-24 11:34:15', 'admin'),
-(15, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asds', '', '2025-10-24 11:34:27', 'admin'),
-(16, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asdsad', '', '2025-10-24 11:34:39', 'admin'),
-(17, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'sads', '', '2025-10-24 11:34:58', 'admin'),
-(18, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asds', '', '2025-10-24 11:36:18', 'admin'),
-(19, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'asd', '', '2025-10-24 11:59:42', 'admin');
+(1, 230005109, 'Ricafort, Roland Josh M.', '08/10/2025', 'From Abueva to Ricafort ', '', '08/10/2025', 'admin');
 
 -- --------------------------------------------------------
 
@@ -200,16 +176,15 @@ INSERT INTO `tblassets_group` (`group_id`, `category_id`, `ic_code`, `groupName`
 
 CREATE TABLE `tblassets_inventory` (
   `inventory_id` int(11) NOT NULL,
-  `assignment_id` int(11) DEFAULT NULL,
-  `employee_id` int(11) DEFAULT NULL,
-  `branch_id` int(11) DEFAULT NULL,
+  `assignment_id` int(11) NOT NULL,
+  `employee_id` int(11) NOT NULL,
+  `branch_id` int(11) NOT NULL,
   `group_id` int(11) NOT NULL,
   `serialNumber` varchar(100) NOT NULL,
   `itemInfo` varchar(150) NOT NULL,
   `status` varchar(30) NOT NULL,
   `assetCode` varchar(200) NOT NULL,
   `assetNumber` varchar(200) NOT NULL,
-  `year_purchased` varchar(50) NOT NULL,
   `datecreated` varchar(50) NOT NULL,
   `createdby` varchar(50) NOT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=latin1 COLLATE=latin1_swedish_ci;
@@ -218,11 +193,9 @@ CREATE TABLE `tblassets_inventory` (
 -- Dumping data for table `tblassets_inventory`
 --
 
-INSERT INTO `tblassets_inventory` (`inventory_id`, `assignment_id`, `employee_id`, `branch_id`, `group_id`, `serialNumber`, `itemInfo`, `status`, `assetCode`, `assetNumber`, `year_purchased`, `datecreated`, `createdby`) VALUES
-(1, 1, 230005109, 1, 1, '', '', 'ASSIGNED', '001', 'OE-24001-HOS001', '', '08/10/2025', 'admin'),
-(2, 18, 3214865, 2, 2, 'SN-1234', 'Gaming Chair ASUS', 'ASSIGNED', '002', 'HOS-237977-DAR002', '', '10/21/25', 'admin'),
-(5, 15, 1, 1, 2, 's', 's', 'ASSIGNED', '3', 'FF-24003-HOS002', '2024', '2025-10-22 13:52:28', 'admin'),
-(6, 19, 230005109, 1, 2, 'SN 654654654', 'Laptop', 'ASSIGNED', '4', 'FF-24004-HOS002', '2024', '2025-10-24 08:51:10', 'admin');
+INSERT INTO `tblassets_inventory` (`inventory_id`, `assignment_id`, `employee_id`, `branch_id`, `group_id`, `serialNumber`, `itemInfo`, `status`, `assetCode`, `assetNumber`, `datecreated`, `createdby`) VALUES
+(1, 1, 230005109, 1, 1, '', '', 'ASSIGNED', '001', 'OE-24001-HOS001', '08/10/2025', 'admin'),
+(2, 1, 1, 1, 2, 'SN-1234', 'Gaming Chair ASUS', 'UNASSIGNED', '002', 'HOS-237977', '10/21/25', 'admin');
 
 -- --------------------------------------------------------
 
@@ -256,12 +229,12 @@ INSERT INTO `tblbranch` (`branch_id`, `branchCode`, `branchName`, `branchAddress
 CREATE TABLE `tblemployee` (
   `employee_id` int(50) NOT NULL,
   `account_id` int(50) NOT NULL,
-  `branch_id` int(11) NOT NULL,
   `lastname` varchar(50) NOT NULL,
   `firstname` varchar(50) NOT NULL,
   `middlename` varchar(50) NOT NULL,
   `department` varchar(50) NOT NULL,
   `position` varchar(50) NOT NULL,
+  `branch` varchar(50) NOT NULL,
   `email` varchar(100) NOT NULL,
   `createdby` varchar(50) NOT NULL,
   `datecreated` varchar(50) NOT NULL
@@ -271,12 +244,10 @@ CREATE TABLE `tblemployee` (
 -- Dumping data for table `tblemployee`
 --
 
-INSERT INTO `tblemployee` (`employee_id`, `account_id`, `branch_id`, `lastname`, `firstname`, `middlename`, `department`, `position`, `email`, `createdby`, `datecreated`) VALUES
-(0, 16, 2, 'dsadsadsa', 'dsadsadsa', 'dsadsada', 'IT', 'Specialist', 'm95ymh@tempblockchain.com', 'admin', '10/22/2025'),
-(1, 1, 1, 'Ricafort', 'Roland Josh', 'Manalo', 'IT', '', 'maedandoy04@gmail.com', 'ADMIN', '8/20/2025'),
-(123123, 8, 1, '123', '213', '213', 'IT', '', 'lehzter@gmail.com', 'admin', '09/17/2025'),
-(3214865, 17, 2, 'asdasd', 'Rato', 'sasda', 'IT', 'Specialist', 'joshricafort30@gmail.com', 'admin', '10/24/2025'),
-(230005109, 11, 1, 'Abueva', 'Ann Mercy', 'Faura', 'IT', '', 'itstoragemart@gmail.com', 'admin', '09/24/2025');
+INSERT INTO `tblemployee` (`employee_id`, `account_id`, `lastname`, `firstname`, `middlename`, `department`, `position`, `branch`, `email`, `createdby`, `datecreated`) VALUES
+(1, 1, 'Ricafort', 'Roland Josh', 'Manalo', 'IT', '', 'ERAN', 'maedandoy04@gmail.com', 'ADMIN', '8/20/2025'),
+(123123, 8, '123', '213', '213', 'IT', '', 'ERAN', 'lehzter@gmail.com', 'admin', '09/17/2025'),
+(230005109, 11, 'Abueva', 'Ann Mercy', 'Faura', 'IT', '', 'ERAN', 'itstoragemart@gmail.com', 'admin', '09/24/2025');
 
 -- --------------------------------------------------------
 
@@ -356,27 +327,7 @@ INSERT INTO `tbllogs` (`datelog`, `timelog`, `action`, `module`, `ID`, `performe
 ('2025-10-21', '02:52:58pm', 'Update Asset Group', 'Group Asset Management', '1', 'admin'),
 ('2025-10-21', '02:53:14pm', 'Update Asset Group', 'Group Asset Management', '1', 'admin'),
 ('2025-10-21', '02:53:27pm', 'Update Asset Group', 'Group Asset Management', '1', 'admin'),
-('2025-10-21', '15:12:14', 'Create Group', 'Group Asset Management', '1', 'admin'),
-('2025-10-22', '13:52:28', 'Added new asset: FF-', 'Asset Inventory', '1', 'admin'),
-('10/22/2025', '04:49:08pm', 'Create', 'Employee Management', '0', 'admin'),
-('2025-10-22', '18:09:29', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
-('2025-10-22', '18:10:02', 'Transferred asset FF', 'Asset Inventory', '5', 'admin'),
-('2025-10-22', '18:11:40', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
-('2025-10-24', '08:50:03', 'Transferred asset FF', 'Asset Inventory', '5', 'admin'),
-('2025-10-24', '08:50:31', 'Transferred asset FF', 'Asset Inventory', '5', 'admin'),
-('2025-10-24', '08:51:10', 'Added new asset: FF-', 'Asset Inventory', '1', 'admin'),
-('2025-10-24', '08:52:01', 'Transferred asset FF', 'Asset Inventory', '6', 'admin'),
-('2025-10-24', '08:55:41', 'Transferred asset FF', 'Asset Inventory', '5', 'admin'),
-('10/24/2025', '11:24:25am', 'Create', 'Employee Management', '0', 'admin'),
-('2025-10-24', '11:25:22', 'Transferred asset FF', 'Asset Inventory', '6', 'admin'),
-('2025-10-24', '11:25:46', 'Transferred asset FF', 'Asset Inventory', '6', 'admin'),
-('2025-10-24', '11:33:59', 'Transferred asset FF', 'Asset Inventory', '6', 'admin'),
-('2025-10-24', '11:34:15', 'Transferred asset FF', 'Asset Inventory', '5', 'admin'),
-('2025-10-24', '11:34:27', 'Transferred asset FF', 'Asset Inventory', '5', 'admin'),
-('2025-10-24', '11:34:39', 'Transferred asset FF', 'Asset Inventory', '6', 'admin'),
-('2025-10-24', '11:34:58', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
-('2025-10-24', '11:36:18', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
-('2025-10-24', '11:59:42', 'Transferred asset FF', 'Asset Inventory', '6', 'admin');
+('2025-10-21', '15:12:14', 'Create Group', 'Group Asset Management', '1', 'admin');
 
 -- --------------------------------------------------------
 
@@ -478,8 +429,7 @@ ALTER TABLE `tblbranch`
 --
 ALTER TABLE `tblemployee`
   ADD PRIMARY KEY (`employee_id`),
-  ADD KEY `account_id` (`account_id`),
-  ADD KEY `fk_branch_id` (`branch_id`);
+  ADD KEY `account_id` (`account_id`);
 
 --
 -- Indexes for table `tbltickets`
@@ -496,13 +446,13 @@ ALTER TABLE `tbltickets`
 -- AUTO_INCREMENT for table `tblaccounts`
 --
 ALTER TABLE `tblaccounts`
-  MODIFY `account_id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `account_id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
 
 --
 -- AUTO_INCREMENT for table `tblassets_assignment`
 --
 ALTER TABLE `tblassets_assignment`
-  MODIFY `assignment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `assignment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
 
 --
 -- AUTO_INCREMENT for table `tblassets_category`
@@ -526,7 +476,7 @@ ALTER TABLE `tblassets_group`
 -- AUTO_INCREMENT for table `tblassets_inventory`
 --
 ALTER TABLE `tblassets_inventory`
-  MODIFY `inventory_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `inventory_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `tblbranch`
@@ -575,8 +525,7 @@ ALTER TABLE `tblassets_inventory`
 -- Constraints for table `tblemployee`
 --
 ALTER TABLE `tblemployee`
-  ADD CONSTRAINT `account_id` FOREIGN KEY (`account_id`) REFERENCES `tblaccounts` (`account_id`) ON DELETE CASCADE ON UPDATE CASCADE,
-  ADD CONSTRAINT `fk_branch_id` FOREIGN KEY (`branch_id`) REFERENCES `tblbranch` (`branch_id`) ON DELETE CASCADE ON UPDATE CASCADE;
+  ADD CONSTRAINT `account_id` FOREIGN KEY (`account_id`) REFERENCES `tblaccounts` (`account_id`) ON DELETE CASCADE ON UPDATE CASCADE;
 
 --
 -- Constraints for table `tbltickets`

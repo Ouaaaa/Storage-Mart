@@ -353,7 +353,7 @@ if (!$result) {
                                                             <i class="fa-solid fa-right-left  fa-sm fa-fw mr-2 text-black-400"></i>
                                                             Transfer
                                                         </a>
-                                                        <a class="dropdown-item" href="Transfer-Asset.php?inventory_id=<?= $row['inventory_id']; ?>">
+                                                        <a class="dropdown-item" href="Transfer-History.php?inventory_id=<?= $row['inventory_id']; ?>">
                                                             <i class="fas fa-history fa-sm fa-fw mr-2 text-black-400"></i>
                                                             Transfer History
                                                         </a>

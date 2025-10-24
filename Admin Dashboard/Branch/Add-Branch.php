@@ -2,10 +2,8 @@
 require_once "config.php";
 include("session-checker.php");
 
-$assets = [];
+// Get logged-in username
 $accountID = $_SESSION['account_id'];
-
-// 🔹 Fetch logged-in username
 $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
 if ($stmtuser = mysqli_prepare($link, $sql)) {
     mysqli_stmt_bind_param($stmtuser, "i", $accountID);
@@ -16,13 +14,10 @@ if ($stmtuser = mysqli_prepare($link, $sql)) {
     $_SESSION['username'] = $dbUsername;
 }
 
-// 🔹 Display user info (firstname + usertype)
-$userQuery = "
-    SELECT e.firstname, a.usertype 
-    FROM tblaccounts a 
-    JOIN tblemployee e ON a.account_id = e.employee_id  
-    WHERE a.account_id = ?
-";
+// Display logged-in user info
+$userQuery = "SELECT e.firstname, a.usertype FROM tblaccounts a 
+              JOIN tblemployee e ON a.account_id = e.employee_id 
+              WHERE a.account_id = ?";
 if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_bind_param($stmt, "i", $accountID);
     mysqli_stmt_execute($stmt);
@@ -31,142 +26,45 @@ if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_close($stmt);
 }
 
-// 🔹 Get asset info
-if (isset($_GET['inventory_id'])) {
-    $inventory_id = intval($_GET['inventory_id']);
-    $sqlAsset = "SELECT * FROM tblassets_inventory WHERE inventory_id = ?";
-    $stmt = mysqli_prepare($link, $sqlAsset);
-    mysqli_stmt_bind_param($stmt, "i", $inventory_id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-    $assets = mysqli_fetch_assoc($result);
-    mysqli_stmt_close($stmt);
-} else {
-    $inventory_id = 0;
-}
-
-// 🔹 On Submit
-if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $inventory_id = intval($_POST['item_id']);
-    $new_employee = $_POST['employee_id'];
-    $transferDetails = $_POST['transferDetails'];
+// ========== INSERT INTO tblassets_branch ==========
+if (isset($_POST['btnSubmit'])) {
+    $branchName = $_POST['branchName'];
+    $branchCode = $_POST['branchCode'];
+    $branchAddress = $_POST['branchAddress'];
     $createdby = $_SESSION['username'];
-    $dateIssued = date("Y-m-d");
     $datecreated = date("Y-m-d H:i:s");
 
-    if ($inventory_id <= 0) {
-        echo "<script>alert('Error: Missing inventory ID!'); window.history.back();</script>";
-        exit;
+
+     $sql = "INSERT INTO tblbranch 
+            (branchCode, branchName, branchAddress, datecreated, createdby)
+            VALUES (?, ?, ?, ?, ?)";
+    $stmt = mysqli_prepare($link, $sql);
+    mysqli_stmt_bind_param($stmt, "sssss",
+        $branchCode,
+        $branchName,
+        $branchAddress,
+        $datecreated,
+        $createdby
+    );
+    if (mysqli_stmt_execute($stmt)) {
+        // Log creation
+        $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
+                   VALUES (?, ?, ?, ?, ?, ?)";
+        $stmtLog = mysqli_prepare($link, $sqlLog);
+        $date = date("Y-m-d");
+        $time = date("H:i:s");
+        $action = "Add New Branch";
+        $module = "Branch Management";
+        mysqli_stmt_bind_param($stmtLog, "ssssss", $date, $time, $action, $module, $accountID, $_SESSION['username']);
+        mysqli_stmt_execute($stmtLog);
+
+        $notificationMessage = "New Branch successfully added!";
+    } else {
+        echo "<font color='red'>Error inserting into tblbranch: " . mysqli_error($link) . "</font>";
     }
-
-    if (empty($new_employee)) {
-        echo "<script>alert('Please select an employee before submitting.'); window.history.back();</script>";
-        exit;
-    }
-
-    // 1️⃣ Get current asset info
-    $sqlOld = "SELECT assetNumber, group_id, status FROM tblassets_inventory WHERE inventory_id = ?";
-    $stmt = mysqli_prepare($link, $sqlOld);
-    mysqli_stmt_bind_param($stmt, "i", $inventory_id);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $oldAssetNumber, $group_id, $currentStatus);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    // 2️⃣ Extract base asset (e.g. OE-24001)
-    $baseAsset = explode('-', $oldAssetNumber);
-    $baseAssetNumber = (count($baseAsset) >= 2) ? ($baseAsset[0] . "-" . $baseAsset[1]) : $oldAssetNumber;
-
-    // 3️⃣ Get branchCode and branch_id of new employee
-    $sqlBranch = "
-        SELECT b.branchCode, b.branch_id
-        FROM tblemployee e
-        JOIN tblbranch b ON e.branch_id = b.branch_id
-        WHERE e.employee_id = ?
-    ";
-    $stmt = mysqli_prepare($link, $sqlBranch);
-    mysqli_stmt_bind_param($stmt, "i", $new_employee);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $branchCode, $branch_id);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    // 4️⃣ Global transfer counter (use MAX for safety)
-    $sqlCount = "SELECT IFNULL(MAX(CAST(transferCount AS UNSIGNED)), 0) FROM tblassets_assignment";
-    $stmt = mysqli_prepare($link, $sqlCount);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $totalTransfers);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    $newTransferCount = $totalTransfers + 1;
-    $formattedTransferCount = str_pad($newTransferCount, 3, "0", STR_PAD_LEFT);
-
-    // 5️⃣ Generate new asset number
-    $newAssetNumber = $baseAssetNumber . "-" . $branchCode . $formattedTransferCount;
-
-    // 6️⃣ Get employee full name
-    $sqlEmp = "SELECT CONCAT(lastname, ', ', firstname, ' ', IFNULL(middlename, '')) AS full_name 
-               FROM tblemployee WHERE employee_id = ?";
-    $stmt = mysqli_prepare($link, $sqlEmp);
-    mysqli_stmt_bind_param($stmt, "i", $new_employee);
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $assignedTo);
-    mysqli_stmt_fetch($stmt);
-    mysqli_stmt_close($stmt);
-
-    // 7️⃣ Insert into tblassets_assignment
-    $insert = "
-        INSERT INTO tblassets_assignment 
-        (employee_id, transferCount, assignedTo, dateIssued, transferDetails, datecreated, createdby)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
-    ";
-    $stmt = mysqli_prepare($link, $insert);
-    mysqli_stmt_bind_param($stmt, "issssss",
-        $new_employee, $formattedTransferCount, $assignedTo, $dateIssued, $transferDetails, $datecreated, $createdby
-    );
-    mysqli_stmt_execute($stmt);
-    $assignment_id = mysqli_insert_id($link);
-    mysqli_stmt_close($stmt);
-
-    // 8️⃣ Update tblassets_inventory
-    $newStatus = ($new_employee > 0) ? 'ASSIGNED' : 'UNASSIGNED';
-    $update = "
-        UPDATE tblassets_inventory 
-        SET assignment_id = ?, employee_id = ?, branch_id = ?, assetNumber = ?, status = ?
-        WHERE inventory_id = ?
-    ";
-    $stmt = mysqli_prepare($link, $update);
-    mysqli_stmt_bind_param($stmt, "iiissi",
-        $assignment_id, $new_employee, $branch_id, $newAssetNumber, $newStatus, $inventory_id
-    );
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
-
-    // 9️⃣ Log the transfer
-    $date = date("Y-m-d");
-    $time = date("H:i:s");
-    $action = "Transferred asset $oldAssetNumber to $assignedTo ($branchCode)";
-    $module = "Asset Inventory";
-
-    $log = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
-            VALUES (?, ?, ?, ?, ?, ?)";
-    $stmt = mysqli_prepare($link, $log);
-    mysqli_stmt_bind_param($stmt, "ssssss",
-        $date, $time, $action, $module, $inventory_id, $createdby
-    );
-    mysqli_stmt_execute($stmt);
-    mysqli_stmt_close($stmt);
-
-    // ✅ Success Message
-    echo "<script>
-        alert('Asset successfully transferred!\\nNew Asset Number: $newAssetNumber');
-        window.location.href='Assets.php';
-    </script>";
-
 }
-?>
 
+?>
 
 
 <html lang="en">
@@ -179,19 +77,19 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>StorageMart | Admin Transfer Details</title>
+    <title>Storage Mart | Add Branch</title>
 
     <!-- Custom fonts for this template -->
-    <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="../../css/sb-admin-2.min.css" rel="stylesheet">
-    <link href="../../css/input.css" rel="stylesheet">
+    <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="../css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
-    <link href="../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
@@ -201,12 +99,13 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     <div id="wrapper">
 
         <!-- Sidebar -->
+        <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../../index.php">
                 <div class="sidebar-brand-icon ">
-                    <img src="../../img/logo.png" alt="Logo" style="width:40px; height:auto;">
+                    <img src="../img/logo.png" alt="Logo" style="width:40px; height:auto;">
                 </div>
                 <div class="sidebar-brand-text mx-3">Storage Mart</div>
             </a>
@@ -216,7 +115,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item">
-                <a class="nav-link" href="../../index.php">
+                <a class="nav-link" href="../index.php">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -230,7 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item">
+            <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -239,24 +138,24 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="../../Account/Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="../../Account/Employee.php">Employee</a>
+                        <a class="collapse-item" href="Account/Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="Account/Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
 			
 			<li class="nav-item">
-                <a class="nav-link" href="../../Ticket/Tickets.php">
+                <a class="nav-link" href="Ticket/Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
             </li>
-            <li class="nav-item active">
-                <a class="nav-link" href="Assets.php">
+            <li class="nav-item">
+                <a class="nav-link" href="../Assets Inventory/Directory/Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
-            </li>
+            </li>            
             <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
                     aria-expanded="true" aria-controls="collapsethree">
@@ -295,7 +194,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 			
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="../../Pendings.php">
+                <a class="nav-link" href="../Pendings.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Pendings</span></a>
             </li>
@@ -320,7 +219,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
                 <!-- Topbar -->
                 <nav class="navbar navbar-expand navbar-light bg-white topbar mb-4 static-top shadow">
-
                     <!-- Sidebar Toggle (Topbar) -->
                     <form class="form-inline">
                         <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle mr-3">
@@ -363,14 +261,16 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?></span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
+                                    <?php echo htmlspecialchars($loggedFirstname);?> (<?php echo htmlspecialchars($loggedUsertype); ?>)
+                                </span>
                                 <img class="img-profile rounded-circle"
-                                    src="../../img/undraw_profile.svg">
+                                    src="../img/undraw_profile.svg">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../../../public/login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -392,70 +292,36 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Transfer Asset</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Branch</h6>
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
-                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
-                                    <input type="hidden" name="item_id" value="<?php echo htmlspecialchars($assets['inventory_id']); ?>">
-                                    <h1>Transfer Details</h1>
-                                    <div class ="row mb-5">
-                                        <div class = "col-md-6">
-                                            <label for="assignedTo" class="form-label">Transfer to</label>
-                                                <select id="employee_id" name="employee_id" class="form-control" required>
-                                                <option value="">-- Select Employee --</option>
-                                                    <?php 
-                                                        $sql = "
-                                                            SELECT e.employee_id,
-                                                                CONCAT(e.lastname, ', ', e.firstname, ' ', IFNULL(e.middlename, '')) AS full_name,
-                                                                b.branchName,
-                                                                b.branchCode
-                                                            FROM tblemployee e
-                                                            LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
-                                                            ORDER BY e.lastname ASC
-                                                        ";
+                        <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
 
-                                                        $result = mysqli_query($link, $sql);
-                                                        
-                                                        if($result && mysqli_num_rows($result) > 0){
-                                                            while ($row = mysqli_fetch_assoc($result)) {
-                                                                $displaytext = $row['employee_id'] . " - " . $row['full_name'];
-                                                                echo '<option value="'.$row['employee_id'].'"
-                                                                            data-branchName="'.$row['branchName'].'"
-                                                                            data-branchCode="'.$row['branchCode'].'">'
-                                                                            .$displaytext.
-                                                                    '</option>';
-                                                            }
-
-                                                            mysqli_free_result($result);
-                                                        } else {
-                                                            echo "<option value=''>No categories available</option>";
-                                                        }
-                                                    ?>
-                                                </select>
-                                        </div>
-                                        <div class = "col-md-6">
-                                            <label for="branchName" class="form-label">Employee Branch</label>
-                                            <input type="text" class ="form-control" id ="branchName" name="branchName" placeholder="Employee Branch" value="<?php echo htmlspecialchars($branch['branchName'] ?? ''); ?>" readonly>
-                                        </div>
-                                    </div>
+                                    
+                                <h1>Asset Branch</h1>
                                     <div class ="row mb-5">
                                             <div class="col-md-6">
-                                                <label for = "transferDetails" class ="form-label">Transfer Details</label>
-                                                <textarea id ="transferDetails" name="transferDetails" class="form-control" rows="6" maxlength="1000" required></textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            <label for = "branchName" class ="form-label">Branch Name</label>
+                                                <input type="text" name="branchName" class="form-control" id="branchName" placeholder="Branch Name" required>
+                                            </div>
+                                            <div class="col-md-6">
+                                            <label for = "branchCode" class ="form-label">Branch Code</label>
+                                                <input type="text" name="branchCode" class="form-control" id="branchCode" placeholder="Branch Code" required>
                                             </div>
                                     </div>
 
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "branchAddress" class ="form-label">Branch Address</label>
+                                                <textarea id ="branchAddress" name="branchAddress" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+                                    </div>
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Assets-item.php?group_id=<?= htmlspecialchars($assets['group_id']); ?>" 
-                                    class="btn btn-danger"
-                                    onclick="return confirm('Cancel transfer and return to the previous list?');">
-                                    Cancel
-                                    </a>
-
+                                    <a href="../Assets Inventory/Directory/Assets.php" class="btn btn-danger">Cancel</a>
                                     </form>
-                            </div>
+                                </div>
 
                         </div>
                     </div>
@@ -494,63 +360,52 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../../../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="../../vendor/jquery/jquery.min.js"></script>
-    <script src="../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../vendor/jquery/jquery.min.js"></script>
+    <script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="../../vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="../vendor/jquery-easing/jquery.easing.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="../../js/sb-admin-2.min.js"></script>
+    <script src="../js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="../../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
 
     <!-- Page level custom scripts -->
-    <script src="../../js/demo/datatables-demo.js"></script>
+    <script src="../js/demo/datatables-demo.js"></script>
     <script>
     function togglePasswordVisibility() {
-    var passwordField = document.getElementById("password");
-    var icon = document.querySelector("#showPassword i");
-
-    if (passwordField.type === "password") {
-        passwordField.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-    } else {
-        passwordField.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
+        var passwordField = document.getElementById("txtPassword");
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            document.getElementById("showPassword").textContent = "Hide";
+        }
+        else {
+            passwordField.type = "password";
+            document.getElementById("showPassword").textContent = "Show";
+        }
     }
-}
-
-document.getElementById("showPassword").addEventListener("click", togglePasswordVisibility);
-
 </script>
 
 <script>
     var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
     if (notificationMessage !== "") {
         alert(notificationMessage);
-        window.location.href = "Assets.php";
+        window.location.href = "../Assets Inventory/Directory/Assets.php";
     }
 </script>
-<script>
-document.getElementById("employee_id").addEventListener("change", function() {
-    var selectedOption = this.options[this.selectedIndex];
-    var branchName = selectedOption.getAttribute("data-branchName") || "";
-    document.getElementById("branchName").value = branchName;
-});
 
-</script>
+
+
 </body>
 
 </html>
