@@ -97,15 +97,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     mysqli_stmt_close($stmt);
 
     // 4️⃣ Count how many times this assetNumber base has been assigned (for suffix)
-    $sqlCount = "SELECT COUNT(*) FROM tblassets_inventory WHERE assetNumber LIKE CONCAT(?, '%')";
+    $sqlCount = "SELECT COUNT(*) FROM tblassets_assignment WHERE transferDetails LIKE CONCAT(?, '%')";
     $stmt = mysqli_prepare($link, $sqlCount);
     mysqli_stmt_bind_param($stmt, "s", $baseAssetNumber);
     mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $totalCount);
+    mysqli_stmt_bind_result($stmt, $transferCount);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
-
-    $suffix = str_pad($totalCount, 3, "0", STR_PAD_LEFT);
+    $total = $transferCount + 1 ;
+    $suffix = str_pad($total, 3, "0", STR_PAD_LEFT);
 
     // 5️⃣ Generate new asset number (base + branch code + suffix)
     $newAssetNumber = $baseAssetNumber . "-" . $branchCode . $suffix;
@@ -122,11 +122,11 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
 
     // 7️⃣ Record transfer in tblassets_assignment
     $insert = "INSERT INTO tblassets_assignment 
-                (employee_id, assignedTo, dateIssued, transferDetails, datecreated, createdby)
-                VALUES (?, ?, ?, ?, ?, ?)";
+                (employee_id, transferCount, assignedTo, dateIssued, transferDetails, datecreated, createdby)
+                VALUES (?, ?, ?, ?, ?, ?, ?)";
     $stmt = mysqli_prepare($link, $insert);
-    mysqli_stmt_bind_param($stmt, "isssss", 
-        $new_employee, $assignedTo, $dateIssued, $transferDetails, $datecreated, $createdby
+    mysqli_stmt_bind_param($stmt, "iisssss", 
+        $new_employee, $transferCount, $assignedTo, $dateIssued, $transferDetails, $datecreated, $createdby
     );
     mysqli_stmt_execute($stmt);
     $assignment_id = mysqli_insert_id($link);
