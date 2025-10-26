@@ -3,9 +3,9 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: 127.0.0.1
--- Generation Time: Oct 24, 2025 at 06:40 AM
+-- Generation Time: Oct 26, 2025 at 05:00 PM
 -- Server version: 10.4.32-MariaDB
--- PHP Version: 8.2.12
+-- PHP Version: 8.0.30
 
 SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
 START TRANSACTION;
@@ -42,15 +42,17 @@ CREATE TABLE `tblaccounts` (
 --
 
 INSERT INTO `tblaccounts` (`account_id`, `username`, `password`, `usertype`, `status`, `createdby`, `datecreated`) VALUES
-(1, 'admin', '123', 'ADMIN', 'ACTIVE', 'ADMIN', '8/19/2025'),
+(1, 'admin', 'Ricafort@2022', 'ADMIN', 'ACTIVE', 'ADMIN', '8/19/2025'),
 (8, 'Lester', '123', 'ADMIN', 'INACTIVE', 'admin', '09/17/2025'),
 (11, 'sales', '123', 'HR', 'ACTIVE', 'admin', '09/24/2025'),
-(12, 'Test1', 'Test2', 'HR', 'ACTIVE', 'admin', '10/22/2025'),
+(12, 'Test1', 'Test2', 'EMPLOYEE', 'ACTIVE', 'admin', '10/22/2025'),
 (13, 'test', 'asda', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
 (14, 'brjricafort30', 'asdas', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
 (15, 'sac', 'ads', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
 (16, 'a', 'sasad', 'ADMIN', 'ACTIVE', 'admin', '10/22/2025'),
-(17, 'sdasdsadsa', 'sadasdsad', 'HR', 'ACTIVE', 'admin', '10/24/2025');
+(17, 'sdasdsadsa', 'sadasdsad', 'HR', 'ACTIVE', 'admin', '10/24/2025'),
+(18, 'User', 'Ricafort@2022', 'EMPLOYEE', 'ACTIVE', 'admin', '10/13/2025'),
+(19, 'User1', '1234', 'ADMIN', 'ACTIVE', 'admin', '10/26/2025');
 
 -- --------------------------------------------------------
 
@@ -60,10 +62,11 @@ INSERT INTO `tblaccounts` (`account_id`, `username`, `password`, `usertype`, `st
 
 CREATE TABLE `tblassets_assignment` (
   `assignment_id` int(11) NOT NULL,
-  `employee_id` int(50) NOT NULL,
+  `employee_id` int(50) DEFAULT NULL,
   `assignedTo` varchar(150) NOT NULL,
   `dateIssued` varchar(50) NOT NULL,
   `transferDetails` varchar(200) NOT NULL,
+  `transferCount` varchar(50) NOT NULL,
   `dateReturned` varchar(50) NOT NULL,
   `datecreated` varchar(50) NOT NULL,
   `createdby` varchar(100) NOT NULL
@@ -73,26 +76,45 @@ CREATE TABLE `tblassets_assignment` (
 -- Dumping data for table `tblassets_assignment`
 --
 
-INSERT INTO `tblassets_assignment` (`assignment_id`, `employee_id`, `assignedTo`, `dateIssued`, `transferDetails`, `dateReturned`, `datecreated`, `createdby`) VALUES
-(1, 230005109, 'Ricafort, Roland Josh M.', '08/10/2025', 'From Abueva to Ricafort ', '', '08/10/2025', 'admin'),
-(2, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasdas', '', '2025-10-22 18:05:28', 'admin'),
-(3, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasdas', '', '2025-10-22 18:05:28', 'admin'),
-(4, 1, 'Ricafort, Roland Josh Manalo', '2025-10-22', 'adasdsa', '', '2025-10-22 18:09:29', 'admin'),
-(5, 1, 'Ricafort, Roland Josh Manalo', '2025-10-22', 'asdasdasd', '', '2025-10-22 18:10:02', 'admin'),
-(6, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasd', '', '2025-10-22 18:11:40', 'admin'),
-(7, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'sadasd', '', '2025-10-24 08:50:03', 'admin'),
-(8, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asdasd', '', '2025-10-24 08:50:31', 'admin'),
-(9, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'asdas', '', '2025-10-24 08:52:01', 'admin'),
-(10, 123123, '123, 213 213', '2025-10-24', '132', '', '2025-10-24 08:55:41', 'admin'),
-(11, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'sdasdsa', '', '2025-10-24 11:25:22', 'admin'),
-(12, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'sadad', '', '2025-10-24 11:25:46', 'admin'),
-(13, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asdasdsa', '', '2025-10-24 11:33:59', 'admin'),
-(14, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asdsad', '', '2025-10-24 11:34:15', 'admin'),
-(15, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asds', '', '2025-10-24 11:34:27', 'admin'),
-(16, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asdsad', '', '2025-10-24 11:34:39', 'admin'),
-(17, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'sads', '', '2025-10-24 11:34:58', 'admin'),
-(18, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asds', '', '2025-10-24 11:36:18', 'admin'),
-(19, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'asd', '', '2025-10-24 11:59:42', 'admin');
+INSERT INTO `tblassets_assignment` (`assignment_id`, `employee_id`, `assignedTo`, `dateIssued`, `transferDetails`, `transferCount`, `dateReturned`, `datecreated`, `createdby`) VALUES
+(1, 230005109, 'Ricafort, Roland Josh M.', '08/10/2025', 'From Abueva to Ricafort ', '', '', '08/10/2025', 'admin'),
+(2, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasdas', '', '', '2025-10-22 18:05:28', 'admin'),
+(3, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasdas', '', '', '2025-10-22 18:05:28', 'admin'),
+(4, 1, 'Ricafort, Roland Josh Manalo', '2025-10-22', 'adasdsa', '', '', '2025-10-22 18:09:29', 'admin'),
+(5, 1, 'Ricafort, Roland Josh Manalo', '2025-10-22', 'asdasdasd', '', '', '2025-10-22 18:10:02', 'admin'),
+(6, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-22', 'asdasd', '', '', '2025-10-22 18:11:40', 'admin'),
+(7, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'sadasd', '', '', '2025-10-24 08:50:03', 'admin'),
+(8, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asdasd', '', '', '2025-10-24 08:50:31', 'admin'),
+(9, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'asdas', '', '', '2025-10-24 08:52:01', 'admin'),
+(10, 123123, '123, 213 213', '2025-10-24', '132', '', '', '2025-10-24 08:55:41', 'admin'),
+(11, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'sdasdsa', '', '', '2025-10-24 11:25:22', 'admin'),
+(12, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'sadad', '', '', '2025-10-24 11:25:46', 'admin'),
+(13, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asdasdsa', '', '', '2025-10-24 11:33:59', 'admin'),
+(14, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asdsad', '', '', '2025-10-24 11:34:15', 'admin'),
+(15, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asds', '', '', '2025-10-24 11:34:27', 'admin'),
+(16, 1, 'Ricafort, Roland Josh Manalo', '2025-10-24', 'asdsad', '', '', '2025-10-24 11:34:39', 'admin'),
+(17, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'sads', '', '', '2025-10-24 11:34:58', 'admin'),
+(18, 3214865, 'asdasd, Rato sasda', '2025-10-24', 'asds', '', '', '2025-10-24 11:36:18', 'admin'),
+(19, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-24', 'asd', '', '', '2025-10-24 11:59:42', 'admin'),
+(20, 3214865, 'asdasd, Rato sasda', '2025-10-13', 'Reason for RETURNED: Replacement', '', '2025-10-13', '2025-10-13 18:32:55', 'admin'),
+(21, 3214865, 'asdasd, Rato sasda', '2025-10-13', 'Reason for RETURNED: Replacement', '', '2025-10-13', '2025-10-13 18:33:03', 'admin'),
+(22, 1, 'Ricafort, Roland Josh Manalo', '2025-10-25', 'Transfer Test\r\n', '001', '', '2025-10-25 20:00:41', 'admin'),
+(23, 123455678, 'Delacruz, Juan ', '2025-10-25', 'Test', '002', '', '2025-10-25 20:01:38', 'admin'),
+(24, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-26', 'From Test to Test again', '003', '', '2025-10-26 00:13:11', 'admin'),
+(25, 1, 'Ricafort, Roland Josh Manalo', '2025-10-26', 'Reason for RETURNED: From Lost to Return', '', '2025-10-26', '2025-10-26 00:14:21', 'admin'),
+(26, 0, 'Unassigned / Returned / Disposed / Lost', '2025-10-26', 'Reason for RETURNED/LOST/DISPOSED: Lost To Null', '', '2025-10-26', '2025-10-26 02:21:58', 'admin'),
+(27, 123455678, 'Delacruz, Juan ', '2025-10-26', 'Reason for RETURNED: asd', '', '2025-10-26', '2025-10-26 02:27:06', 'admin'),
+(28, 230005109, 'Abueva, Ann Mercy Faura', '2025-10-26', 'Reason for RETURNED: asdasd', '', '2025-10-26', '2025-10-26 02:29:14', 'admin'),
+(29, NULL, 'Unassigned / Returned', '2025-10-26', 'Reason for RETURNED: asdasd', '', '2025-10-26', '2025-10-26 02:33:10', 'admin'),
+(30, 1, 'Ricafort, Roland Josh Manalo', '2025-10-26', 'asdasdas', '004', '', '2025-10-26 02:34:52', 'admin'),
+(31, 1, 'Ricafort, Roland Josh Manalo', '2025-10-26', 'asdasd', '005', '', '2025-10-26 02:35:19', 'admin'),
+(32, NULL, 'Unassigned / Returned', '2025-10-26', 'Reason for RETURNED: asdas', '', '2025-10-26', '2025-10-26 02:35:58', 'admin'),
+(33, 123455678, 'Delacruz, Juan ', '2025-10-26', 'asdasd', '006', '', '2025-10-26 02:37:41', 'admin'),
+(34, 25648132, 'Smith, John ', '2025-10-26', 'From New Asset to Mr. Smith', '007', '', '2025-10-26 04:05:07', 'admin'),
+(35, NULL, 'Unassigned / Returned', '2025-10-26', 'Reason for RETURNED: Resign', '', '2025-10-26', '2025-10-26 04:06:04', 'admin'),
+(36, 25648132, 'Smith, John ', '2025-10-26', 'Test', '008', '', '2025-10-26 04:08:12', 'admin'),
+(37, 25648132, 'Smith, John ', '2025-10-26', '54131321', '009', '', '2025-10-26 04:23:43', 'admin'),
+(38, NULL, 'Unassigned / Returned', '2025-10-26', 'Reason for RETURNED: Return', '', '2025-10-26', '2025-10-26 20:22:17', 'test');
 
 -- --------------------------------------------------------
 
@@ -126,7 +148,8 @@ INSERT INTO `tblassets_category` (`category_id`, `ic_code`, `categoryName`, `cre
 (11, 'OE', 'Office Equipment', '', '2025-09-24 14:42:40'),
 (12, 'OE', 'Office Equipment', 'admin', '2025-09-24 14:44:48'),
 (13, 'FF', 'Fixture & Furniture', 'admin', '2025-09-25 09:06:40'),
-(14, 'CM', 'Communication', 'admin', '2025-09-25 17:40:55');
+(14, 'CM', 'Communication', 'admin', '2025-09-25 17:40:55'),
+(15, 'OE', 'Office Equipment', 'admin', '2025-10-26 04:02:16');
 
 -- --------------------------------------------------------
 
@@ -188,9 +211,10 @@ CREATE TABLE `tblassets_group` (
 
 INSERT INTO `tblassets_group` (`group_id`, `category_id`, `ic_code`, `groupName`, `description`, `datecreated`, `createdby`) VALUES
 (1, 11, 'OE', 'Lenovo-Laptop', 'Lenovo Laptop Intel Core I5', '10/21/25', 'admin'),
-(2, 13, 'FF', 'Asus - Gaming Chair ', 'Gaming Chair 123123', '2025-10-21 13:52:03', 'admin'),
+(2, 13, 'FF', 'Asus - Gaming Chair ', 'Gaming Chair 1231234', '2025-10-21 13:52:03', 'admin'),
 (3, 6, 'CA', 'Test Group', 'TEST \r\nTest Description TRY', '2025-10-21 14:16:32', 'admin'),
-(4, 5, 'OE', 'Test', 'Hello', '2025-10-21 15:12:14', 'admin');
+(4, 5, 'OE', 'Test', 'Hello', '2025-10-21 15:12:14', 'admin'),
+(5, 15, 'OE', 'OXGN', 'POLO SHIRT', '2025-10-26 04:03:13', 'admin');
 
 -- --------------------------------------------------------
 
@@ -220,9 +244,11 @@ CREATE TABLE `tblassets_inventory` (
 
 INSERT INTO `tblassets_inventory` (`inventory_id`, `assignment_id`, `employee_id`, `branch_id`, `group_id`, `serialNumber`, `itemInfo`, `status`, `assetCode`, `assetNumber`, `year_purchased`, `datecreated`, `createdby`) VALUES
 (1, 1, 230005109, 1, 1, '', '', 'ASSIGNED', '001', 'OE-24001-HOS001', '', '08/10/2025', 'admin'),
-(2, 18, 3214865, 2, 2, 'SN-1234', 'Gaming Chair ASUS', 'ASSIGNED', '002', 'HOS-237977-DAR002', '', '10/21/25', 'admin'),
-(5, 15, 1, 1, 2, 's', 's', 'ASSIGNED', '3', 'FF-24003-HOS002', '2024', '2025-10-22 13:52:28', 'admin'),
-(6, 19, 230005109, 1, 2, 'SN 654654654', 'Laptop', 'ASSIGNED', '4', 'FF-24004-HOS002', '2024', '2025-10-24 08:51:10', 'admin');
+(2, NULL, NULL, 1, 2, 'SN-1234', 'Gaming Chair ASUS', 'RETURNED', '002', 'HOS-237977-HOS009', '2025', '10/21/25', 'admin'),
+(5, 31, NULL, 1, 2, 's', 's', 'LOST', '3', 'FF-24003-HOS005', '2024', '2025-10-22 13:52:28', 'admin'),
+(6, 19, NULL, 1, 2, 'SN 654654654', 'Laptop', 'DISPOSED', '4', 'FF-24004-HOS002', '2024', '2025-10-24 08:51:10', 'admin'),
+(7, 24, 230005109, 1, 2, 'Test SN', 'Test Asset', 'ASSIGNED', '5', 'FF-25005-HOS003', '2025', '2025-10-13 18:10:08', 'admin'),
+(8, 36, 25648132, 1, 5, 'SN-1231512', 'Small', 'ASSIGNED', '6', 'OE-25006-HOS008', '2025', '2025-10-26 04:03:56', 'admin');
 
 -- --------------------------------------------------------
 
@@ -245,7 +271,8 @@ CREATE TABLE `tblbranch` (
 
 INSERT INTO `tblbranch` (`branch_id`, `branchCode`, `branchName`, `branchAddress`, `datecreated`, `createdby`) VALUES
 (1, 'HOS', 'Head Office', 'Iran', '08/10/2025', 'admin'),
-(2, 'DAR', 'Don Roces', 'StorageMart Don A Roces Storage Space Rental Quezon City Philippines', '2025-10-08 13:34:22', '');
+(2, 'DAR', 'Don Roces', 'StorageMart Don A Roces Storage Space Rental Quezon City Philippines', '2025-10-08 13:34:22', ''),
+(3, 'CLC', 'Caloocan', 'Basta caloocan sya', '2025-10-26 04:02:00', 'admin');
 
 -- --------------------------------------------------------
 
@@ -273,9 +300,11 @@ CREATE TABLE `tblemployee` (
 
 INSERT INTO `tblemployee` (`employee_id`, `account_id`, `branch_id`, `lastname`, `firstname`, `middlename`, `department`, `position`, `email`, `createdby`, `datecreated`) VALUES
 (0, 16, 2, 'dsadsadsa', 'dsadsadsa', 'dsadsada', 'IT', 'Specialist', 'm95ymh@tempblockchain.com', 'admin', '10/22/2025'),
-(1, 1, 1, 'Ricafort', 'Roland Josh', 'Manalo', 'IT', '', 'maedandoy04@gmail.com', 'ADMIN', '8/20/2025'),
+(1, 1, 1, 'Ricafort', 'Roland Josh', 'Manalos', 'IT', '', 'maedandoy04@gmail.com', 'ADMIN', '8/20/2025'),
 (123123, 8, 1, '123', '213', '213', 'IT', '', 'lehzter@gmail.com', 'admin', '09/17/2025'),
 (3214865, 17, 2, 'asdasd', 'Rato', 'sasda', 'IT', 'Specialist', 'joshricafort30@gmail.com', 'admin', '10/24/2025'),
+(25648132, 19, 1, 'Smith', 'John', '', 'IT', 'Tagahugas', 'rj.ricafort21@nullsto.edu.pl', 'admin', '10/26/2025'),
+(123455678, 18, 2, 'Delacruz', 'Juan', '', 'IT', 'Janitor', 'rj.ricafort21@gmail.com', 'admin', '10/13/2025'),
 (230005109, 11, 1, 'Abueva', 'Ann Mercy', 'Faura', 'IT', '', 'itstoragemart@gmail.com', 'admin', '09/24/2025');
 
 -- --------------------------------------------------------
@@ -376,7 +405,66 @@ INSERT INTO `tbllogs` (`datelog`, `timelog`, `action`, `module`, `ID`, `performe
 ('2025-10-24', '11:34:39', 'Transferred asset FF', 'Asset Inventory', '6', 'admin'),
 ('2025-10-24', '11:34:58', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
 ('2025-10-24', '11:36:18', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
-('2025-10-24', '11:59:42', 'Transferred asset FF', 'Asset Inventory', '6', 'admin');
+('2025-10-24', '11:59:42', 'Transferred asset FF', 'Asset Inventory', '6', 'admin'),
+('10/13/2025', '06:01:33pm', 'Create', 'Employee Management', '0', 'admin'),
+('2025-10-13', '18:10:08', 'Added new asset: FF-', 'Asset Inventory', '1', 'admin'),
+('2025-10-13', '06:32:55pm', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-13', '06:33:03pm', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-25', '20:00:41', 'Transferred asset FF', 'Asset Inventory', '7', 'admin'),
+('2025-10-25', '20:01:38', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
+('2025-10-26', '00:13:11', 'Transferred asset FF', 'Asset Inventory', '7', 'admin'),
+('2025-10-26', '12:13:40am', 'Updated Item Asset (', 'Item Asset Management', '5', 'admin'),
+('2025-10-26', '12:14:21am', 'Updated Item Asset (', 'Item Asset Management', '5', 'admin'),
+('2025-10-26', '02:21:58am', 'Updated Item Asset (', 'Item Asset Management', '5', 'admin'),
+('2025-10-26', '02:24:34am', 'Updated Item Asset (', 'Item Asset Management', '5', 'admin'),
+('2025-10-26', '02:25:20am', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-26', '02:26:07am', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-26', '02:27:06am', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-26', '02:28:36am', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-26', '02:29:14am', 'Updated Item Asset (', 'Item Asset Management', '6', 'admin'),
+('2025-10-26', '02:32:12am', 'Updated Item Asset (', 'Item Asset Management', '6', 'admin'),
+('2025-10-26', '02:33:10am', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-26', '02:34:52', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
+('2025-10-26', '02:35:19', 'Transferred asset FF', 'Asset Inventory', '5', 'admin'),
+('2025-10-26', '02:35:58am', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-26', '02:37:42', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
+('10/26/2025', '04:00:06am', 'Create', 'Employee Management', '0', 'admin'),
+('2025-10-26', '04:02:00', 'Add New Branch', 'Branch Management', '1', 'admin'),
+('2025-10-26', '04:02:16', 'Create Category', 'Asset Management', '1', 'admin'),
+('2025-10-26', '04:03:13', 'Create Group', 'Group Asset Management', '5', 'admin'),
+('2025-10-26', '04:03:56', 'Added new asset: OE-', 'Asset Inventory', '1', 'admin'),
+('2025-10-26', '04:05:07', 'Transferred asset OE', 'Asset Inventory', '8', 'admin'),
+('2025-10-26', '04:06:04am', 'Updated Item Asset (', 'Item Asset Management', '8', 'admin'),
+('2025-10-26', '04:07:00am', 'Updated Item Asset (', 'Item Asset Management', '8', 'admin'),
+('2025-10-26', '04:08:12', 'Transferred asset OE', 'Asset Inventory', '8', 'admin'),
+('2025-10-26', '04:16:59am', 'Update Asset Group', 'Group Asset Management', '1', 'admin'),
+('2025-10-26', '04:22:26am', 'Updated Item Asset (', 'Item Asset Management', '2', 'admin'),
+('2025-10-26', '04:23:43', 'Transferred asset HO', 'Asset Inventory', '2', 'admin'),
+('2025-10-26', '05:43:16am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:43:23am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:44:45am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:45:13am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:52:10am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:52:25am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:52:33am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:53:23am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:53:38am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '05:59:03am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '06:04:04am', 'Updated an Account', 'Employee Management', '1', 'pangit'),
+('2025-10-26', '06:07:58am', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '06:15:32am', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '06:15:34am', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '06:15:50am', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '06:15:52am', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '06:16:09am', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '06:16:16am', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '03:53:25pm', 'Updated an Account', 'Employee Management', '1', 'test'),
+('2025-10-26', '06:38:14pm', 'Create', 'Ticket Management', '12', ''),
+('2025-10-26', '08:22:17pm', 'Updated Item Asset (', 'Item Asset Management', '2', 'test'),
+('2025-10-26', '08:23:27pm', 'Updated Item Asset (', 'Item Asset Management', '5', 'test'),
+('2025-10-26', '08:27:20pm', 'Updated Item Asset (', 'Item Asset Management', '5', 'test'),
+('2025-10-26', '08:27:45pm', 'Updated Item Asset (', 'Item Asset Management', '2', 'test'),
+('2025-10-26', '08:28:54pm', 'Updated Item Asset (', 'Item Asset Management', '2', 'test');
 
 -- --------------------------------------------------------
 
@@ -418,7 +506,8 @@ INSERT INTO `tbltickets` (`ticket_id`, `employee_id`, `lastname`, `firstname`, `
 (7, 1, 'Ricafort', 'Roland Josh', 'Manalo', 'ERAN', 'IT', '6', 'CCTV & MAINTAINANCE', 'asdasd                      ', 'asdasd\r\n                                                ', 'asdasdas   ', 'Approved', 'low', 'Software,Hardware', '3', '2025-09-03 14:47:13', '', '', 'asdasdas                                     '),
 (9, 1, 'Ricafort', 'Roland Josh', 'Manalo', 'ERAN', 'IT', '1', 'CCTV & MAINTAINANCE', '\r\n                     asdasdasd                           ', 'asdasd\r\n                                                ', '\r\n              dasdsadsadasdassa                                  ', 'Approved', 'low', 'Software,Hardware', '1', '2025-09-17 17:53:45', '', '', '\r\n           asdsadsad                                     '),
 (10, 123123, '123', '213', '213', 'ERAN', 'IT', '1', 'CCTV & MAINTAINANCE', 'asdadasd                                ', 'adasds\r\n                                                ', 'asdasdasdd  a                            ', 'PENDING', 'low', 'Software,Hardware', '1', '2025-09-17 18:02:38', '', '', 'asdasdasa                            '),
-(11, 1, 'Ricafort', 'Roland Josh', 'Manalo', 'ERAN', 'IT', '1', 'CCTV & MAINTAINANCE', 'das', 'dasdad', 'asdasd           ', 'Declined', 'low', 'Software,Hardware', '1', '2025-09-24 09:47:44', '', '', 'asdasda\r\n                                                ');
+(11, 1, 'Ricafort', 'Roland Josh', 'Manalo', 'ERAN', 'IT', '1', 'CCTV & MAINTAINANCE', 'das', 'dasdad', 'asdasd           ', 'Declined', 'low', 'Software,Hardware', '1', '2025-09-24 09:47:44', '', '', 'asdasda\r\n                                                '),
+(12, 25648132, 'Smith', 'John', '', 'Head Office', 'IT', '230005109', 'CCTV & MAINTAINANCE', 'TEST', 'TEST', 'TEST', 'Approved', 'medium', 'Software,Hardware', '13', '2025-10-26 18:38:14', '', '', 'TEST');
 
 --
 -- Indexes for dumped tables
@@ -496,19 +585,19 @@ ALTER TABLE `tbltickets`
 -- AUTO_INCREMENT for table `tblaccounts`
 --
 ALTER TABLE `tblaccounts`
-  MODIFY `account_id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=18;
+  MODIFY `account_id` int(50) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `tblassets_assignment`
 --
 ALTER TABLE `tblassets_assignment`
-  MODIFY `assignment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
+  MODIFY `assignment_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=39;
 
 --
 -- AUTO_INCREMENT for table `tblassets_category`
 --
 ALTER TABLE `tblassets_category`
-  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=15;
+  MODIFY `category_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=16;
 
 --
 -- AUTO_INCREMENT for table `tblassets_directory`
@@ -520,25 +609,25 @@ ALTER TABLE `tblassets_directory`
 -- AUTO_INCREMENT for table `tblassets_group`
 --
 ALTER TABLE `tblassets_group`
-  MODIFY `group_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
+  MODIFY `group_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
 
 --
 -- AUTO_INCREMENT for table `tblassets_inventory`
 --
 ALTER TABLE `tblassets_inventory`
-  MODIFY `inventory_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
+  MODIFY `inventory_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=9;
 
 --
 -- AUTO_INCREMENT for table `tblbranch`
 --
 ALTER TABLE `tblbranch`
-  MODIFY `branch_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `branch_id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `tbltickets`
 --
 ALTER TABLE `tbltickets`
-  MODIFY `ticket_id` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=12;
+  MODIFY `ticket_id` int(100) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
 -- Constraints for dumped tables
