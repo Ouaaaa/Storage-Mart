@@ -31,7 +31,7 @@ if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_close($stmt);
 }
 
-// --- FORM SUBMISSION ---
+// --- FORM SUBMISSION --- 
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
     $inventoryID = intval($_POST['inventory']);
     $itemInfo = trim($_POST['itemInfo']);
@@ -42,15 +42,28 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
     $createdby = $_SESSION['username'] ?? 'System';
 
     // ✅ 1. Update tblassets_inventory (set status, info, serial, year)
-    $sql = "UPDATE tblassets_inventory 
-            SET itemInfo = ?, serialNumber = ?, year_purchased = ?, status = ? 
-            WHERE inventory_id = ?";
+    // When the status is RETURNED, LOST, or DISPOSED, set employee_id to NULL
+    $employee_id = NULL; // Set to NULL when unassigning
+
+    // Check if the status is RETURNED, LOST, or DISPOSED
+    if (in_array($status, ['RETURNED', 'LOST', 'DISPOSED'])) {
+        $sql = "UPDATE tblassets_inventory 
+                SET assignment_id = ?,itemInfo = ?, serialNumber = ?, year_purchased = ?, status = ?, employee_id = NULL 
+                WHERE inventory_id = ?";
+    } else {
+        // Regular update for other statuses
+        $sql = "UPDATE tblassets_inventory 
+                SET itemInfo = ?, serialNumber = ?, year_purchased = ?, status = ? 
+                WHERE inventory_id = ?";
+    }
+
     if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "ssssi",
-            $itemInfo,
-            $serialNumber,
-            $yearPurchased,
-            $status,
+        mysqli_stmt_bind_param($stmt, "issssi", 
+            $assignment_id,
+            $itemInfo, 
+            $serialNumber, 
+            $yearPurchased, 
+            $status, 
             $inventoryID
         );
 
@@ -64,27 +77,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                 $datecreated = date("Y-m-d H:i:s");
 
                 // Try to get employee info (based on current assignment if exists)
-                $employee_id = null;
-                $assignedTo = "";
-
-                $sqlFetch = "SELECT a.employee_id, CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS assignedTo
-                             FROM tblassets_inventory i
-                             JOIN tblassets_assignment a ON i.assignment_id = a.assignment_id
-                             JOIN tblemployee e ON a.employee_id = e.employee_id
-                             WHERE i.inventory_id = ? LIMIT 1";
-                if ($stmtFetch = mysqli_prepare($link, $sqlFetch)) {
-                    mysqli_stmt_bind_param($stmtFetch, "i", $inventoryID);
-                    mysqli_stmt_execute($stmtFetch);
-                    mysqli_stmt_bind_result($stmtFetch, $employee_id, $assignedTo);
-                    mysqli_stmt_fetch($stmtFetch);
-                    mysqli_stmt_close($stmtFetch);
-                }
-
-                // ✅ If no previous assignment found, mark as unassigned return
-                if (empty($employee_id)) {
-                    $employee_id = 0;
-                    $assignedTo = "Unassigned / Returned";
-                }
+                $employee_id = NULL;  // Make sure employee_id is NULL for returned items
+                $assignedTo = "Unassigned / Returned";
 
                 // Insert return record
                 $sqlInsert = "INSERT INTO tblassets_assignment 
@@ -134,7 +128,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
         }
         mysqli_stmt_close($stmt);
     }
-} 
+}
+
 // --- LOAD INVENTORY DATA ---
 else {
     if (isset($_GET['inventory_id']) && !empty(trim($_GET['inventory_id']))) {
@@ -379,11 +374,6 @@ else {
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">Update Item Asset</h6>
                         </div>
-                                                <?php
-                        if (empty($inventory)) {
-                            echo "<div class='alert alert-danger'>⚠️ No asset record found. Please open this page with a valid inventory_id in the URL.</div>";
-                        }
-                        ?>
                         <div class="card-body">
                             <div class="container mt-4">
                                 <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
@@ -426,8 +416,8 @@ else {
                                     </div>
                                     <div class="row mb-5" id="reasonRow" style="display: none;">
                                         <div class="col-md-12">
-                                            <label for="reason" class="form-label">Reason</label>
-                                            <textarea class="form-control" id="reason" name="reason" rows="4" maxlength="1000"
+                                            <label for="transferDetails" class="form-label">Reason</label>
+                                            <textarea class="form-control" id="transferDetails" name="transferDetails" rows="4" maxlength="1000"
                                                     placeholder="Enter reason for Disposed or Lost"></textarea>
                                             <small class="form-text text-muted">This reason will be stored in transfer history.</small>
                                         </div>

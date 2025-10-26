@@ -109,9 +109,7 @@ $result = mysqli_query($link, $fetchQuery);
     <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
     <!-- Custom styles for this page -->
     <link href="../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
-    <!-- Column Control CSS and JS -->
-    <link href="https://cdn.datatables.net/columncontrol/1.0.7/css/columnControl.dataTables.min.css" rel="stylesheet">
-  <script src="https://cdn.datatables.net/columncontrol/1.0.7/js/dataTables.columnControl.min.js"></script>
+    <link href="../vendor/datatables/dataTables.min.css" rel="stylesheet">
 
 </head>
 
@@ -319,9 +317,13 @@ $result = mysqli_query($link, $fetchQuery);
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">List of Tickets</h6>
                         </div>
+                        <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
+                            <a href="Add-Ticket.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Tickets</a>
+                            <a href="Add-Ticket.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Manual Add Ticket</a>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="tickets" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>Ticket ID</th>
@@ -416,9 +418,6 @@ $result = mysqli_query($link, $fetchQuery);
                                     </tbody>
                                 </table>
                             </div>
-                        </div>
-                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                            <a href="Add-Ticket.php" class="btn btn-primary">Add Ticket</a>
                         </div>
                     </div>
                 </div>
@@ -607,7 +606,7 @@ $result = mysqli_query($link, $fetchQuery);
 
     <!-- Page level plugins -->
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../vendor/datatables/dataTables.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="../js/demo/datatables-demo.js"></script>

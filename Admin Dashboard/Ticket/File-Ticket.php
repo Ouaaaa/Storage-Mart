@@ -1,72 +1,104 @@
 <?php
 require_once "config.php";
-include ("session-checker.php");
+include("session-checker.php");
 
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
+$inventory = [];
+$notificationMessage = "";
+
+// === FETCH INVENTORY INFO ===
+if (isset($_GET['inventory_id']) && !empty(trim($_GET['inventory_id']))) {
+    $inventory_id = trim($_GET['inventory_id']);
+
+    $sqlDisplay = "
+        SELECT 
+            e.employee_id,
+            CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS fullname,
+            e.department,
+            b.branch_id,
+            b.branchName,
+            i.inventory_id,
+            i.assetNumber,
+            g.group_id,
+            g.groupName
+        FROM tblemployee e
+        JOIN tblbranch b ON e.branch_id = b.branch_id
+        JOIN tblassets_inventory i ON e.employee_id = i.employee_id
+        LEFT JOIN tblassets_group g ON g.group_id = i.group_id
+        WHERE i.inventory_id = ?
+    ";
+
+    if ($stmt = mysqli_prepare($link, $sqlDisplay)) {
+        mysqli_stmt_bind_param($stmt, "i", $inventory_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $inventory = mysqli_fetch_assoc($result);
+        mysqli_stmt_close($stmt);
+    }
+}
+// Handle form submission
 if (isset($_POST['btnSubmit'])) {
-    // Check if the student is already existing
-    $sql = "SELECT * FROM tblaccounts WHERE username = ?";
-    
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "s", $_POST['username']);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            if (mysqli_num_rows($result) == 0) {    
-                $sql = "INSERT INTO tblaccounts (username, password, usertype, status, createdby, datecreated)
-                        VALUES (?, ?, ?, 'ACTIVE', ?, ?)";
-                if ($stmt = mysqli_prepare($link, $sql)) {
-                    $password = $_POST['password'];
-                    $usertype = $_POST['user-type'];
-                    $createdby = $_SESSION['username'];
-                    $datecreated = date("m/d/Y");
-                    mysqli_stmt_bind_param($stmt, "sssss", $_POST['username'], $password, $usertype, $createdby, $datecreated);
-                    if (mysqli_stmt_execute($stmt)) {
-                        $account_id = mysqli_insert_id($link);
+    $sql = "INSERT INTO tbltickets (
+        employee_id, lastname, firstname, middlename, branch, department,
+        ticket_assign, technical_purpose, concern_details, action, result,
+        status, priority, category, created_by, datecreated, attachments, remarks
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
 
-                        $sql = "INSERT INTO tblemployee (employee_id, account_id,branch_id, lastname, firstname, middlename, department, email,position, createdby, datecreated)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? )";
-                        if ($stmt = mysqli_prepare($link, $sql)) {
-                            mysqli_stmt_bind_param($stmt, "iiissssssss",$_POST['employee-id'], $account_id,$_POST['branch_id'],
-                                $_POST['last-name'], $_POST['first-name'], $_POST['middle-name'],
-                                $_POST['department'], $_POST['email'],$_POST['position'], $createdby, $datecreated);
-                            if (mysqli_stmt_execute($stmt)) {   
-                                $employee_id = mysqli_insert_id($link);
-                                // Insert into tbllogs
-                                $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) VALUES (?, ?, ?, ?, ?, ?)";
-                                if ($stmt = mysqli_prepare($link, $sql)) {
-                                    $date = date("m/d/Y");
-                                    $time = date("h:i:sa");
-                                    $action = "Create";
-                                    $module = "Employee Management";
-                                    mysqli_stmt_bind_param($stmt, "ssssss", $date, $time, $action, $module, $employee_id, $_SESSION['username']);
-                                    if (mysqli_stmt_execute($stmt)) {
-                                        $notificationMessage = "New Account successfully created!";
-                                    } else {
-                                        echo "<font color='red'>Error on inserting into tbllogs.</font>";
-                                    }
-                                } else {
-                                    echo "<font color='red'>Error preparing statement for tbllogs.</font>";
-                                }
-                            } else {
-                                echo "<font color='red'>Error on inserting into tblaccounts.</font>";
-                            }
-                        } else {
-                            echo "<font color='red'>Error preparing statement for tblaccounts.</font>";
-                        }
-                    } else {
-                        echo "<font color='red'>Error on inserting into tblstudents.</font>";
-                    }
-                } else {
-                    echo "<font color='red'>Error preparing statement for tblstudents.</font>";
-                }
-            } else {
-                $errorMessage = "Account is already in use.";
+    if ($stmt = mysqli_prepare($link, $sql)) {
+        $employee_id = $_POST['employee_id'];
+        $fullname = explode(',', $_POST['fullname']);
+        $lastname = trim($fullname[0]);
+        $firstname = trim($fullname[1]);
+        $middlename = trim($fullname[2] ?? '');
+        $branchName = $_POST['branchName'] ?? '';
+        $department = $_POST['department'] ?? '';
+        $ticket_assign = $_POST['ticket_assign'] ?? '';
+        $technical_purpose = $_POST['technical_purpose'] ?? '';
+        $concern_details = $_POST['concern_details'] ?? '';
+        $actionTaken = $_POST['action'] ?? '';
+        $resultDetails = $_POST['result'] ?? '';
+        $priority = $_POST['priority'] ?? '';
+        $category = $_POST['category'] ?? '';
+        $created_by = $_SESSION['account_id'];
+        $datecreated = date('Y-m-d H:i:s');
+        $status = "PENDING";
+        $attachments = "";
+        $remarks = $_POST['remarks'] ?? '';
+
+        mysqli_stmt_bind_param(
+            $stmt,
+            "isssssssssssssssss",
+            $employee_id, $lastname, $firstname, $middlename, $branchName, $department,
+            $ticket_assign, $technical_purpose, $concern_details, $actionTaken, $resultDetails,
+            $status, $priority, $category, $created_by, $datecreated, $attachments, $remarks
+        );
+
+        if (mysqli_stmt_execute($stmt)) {
+            $ticket_id = mysqli_insert_id($link);
+            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) VALUES (?, ?, ?, ?, ?, ?)";
+            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                $date = date("Y-m-d");
+                $time = date("h:i:sa");
+                $logAction = "Create";
+                $module = "Ticket Management";
+                $performedby = $_SESSION['username'];
+                mysqli_stmt_bind_param($stmtLog, "ssssss", $date, $time, $logAction, $module, $ticket_id, $performedby);
+                mysqli_stmt_execute($stmtLog);
             }
+            $notificationMessage = "New Ticket successfully created!";
         } else {
-            echo "<font color='red'>Error on select statement.</font>";
+            echo "<font color='red'>Error inserting into tbltickets: " . mysqli_error($link) . "</font>";
         }
+    } else {
+        echo "<font color='red'>Error preparing statement for tbltickets.</font>";
     }
 }
 ?>
+
+
 <html lang="en">
 
 <head>
@@ -77,7 +109,7 @@ if (isset($_POST['btnSubmit'])) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>StorageMart | Admin Accounts</title>
+    <title>StorageMart | File Ticket Admin</title>
 
     <!-- Custom fonts for this template -->
     <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -128,7 +160,7 @@ if (isset($_POST['btnSubmit'])) {
             </div>
 
             <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item active">
+            <li class="nav-item ">
                 <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
                     aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-fw fa-user"></i>
@@ -137,14 +169,14 @@ if (isset($_POST['btnSubmit'])) {
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="Employee.php">Employee</a>
+                        <a class="collapse-item" href="../Account/Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="../Account/Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
 			
-			<li class="nav-item">
-                <a class="nav-link" href="../Ticket/Tickets.php">
+			<li class="nav-item active">
+                <a class="nav-link" href="Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
@@ -290,115 +322,140 @@ if (isset($_POST['btnSubmit'])) {
                     <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Add Account</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Add Ticket</h6>
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
                                 <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
-                                    <h1>Account Details</h1>
-                                    <div class ="row mb-5">
-                                        <div class = "col-md-6">
-                                            <label for="username" class="form-label">Username</label>
-                                            <input type="text" class ="form-control" id ="username" name="username" placeholder="Username" required>
-                                        </div>
-                                    <div class="col-md-6 position-relative">
-                                        <label for="password" class="form-label">Password</label>
-                                        <div class="input-group">
-                                            <input type="password" class="form-control" id="password" name="password"
-                                                placeholder="Password" value="<?php echo htmlspecialchars($account['password'] ?? ''); ?>" required>
-                                            <span class="input-group-text" id="showPassword" style="cursor: pointer;">
-                                                <i class="fas fa-eye"></i>
-                                            </span>
-                                        </div>
-                                    </div>
-
-                                    </div>
-
-                                    <div class="row mb-5">
+                                    
+                            <h1>Employee Details</h1>
+                                <div class="row mb-5">
                                     <div class="col-md-6">
-                                        <label for="user-type" class="form-label">User Type</label>
-                                        <select id="user-type" name="user-type" class="form-control" required>
-                                        <option value="">-- Select User Type --</option>
-                                        <option value="ADMIN">Admin</option>
-                                        <option value="HR">Human Resources</option>
-                                        <option value="ACCTNG">ACCOUNTING</option>
-                                        <option value="EMPLOYEE">Employee</option>
-                                        </select>
+                                        <label for="employee_id" class="form-label">Employee ID</label>
+                                        <input type="text" class="form-control" id="employee_id" name="employee_id" placeholder="Employee ID" value="<?= htmlspecialchars($inventory['employee_id'] ?? '') ?>" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="fullname" class="form-label">Fullname</label>
+                                        <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Full Name" value="<?= htmlspecialchars($inventory['fullname'] ?? '')  ?>" readonly>
                                     </div>
                                     </div>
-
-
-                                    <h1>Employee Details </h1>
                                     <div class ="row mb-5">
-                                            <div class= "col-md-6">
-                                                <label for="employee-id" class="form-label">Employee ID</label>
-                                                <input type="text" class="form-control" id="employee-id" name="employee-id" placeholder="Employee ID" required> 
-                                            </div>
-                                            <div class="col-md-6">
-                                                <label for="branch" class="form-label">Branch</label>
-                                                <select id="branch_id" name="branch_id" class="form-control" required>
-                                                <option value="">-- Select Branch --</option>
-                                                    <?php 
-                                                        $sql = "SELECT branch_id,branchCode, branchName FROM tblbranch ORDER BY branchName ASC";
-                                                        $result = mysqli_query($link, $sql);
-                                                        
-                                                        if($result && mysqli_num_rows($result) > 0){
-                                                            while($row = mysqli_fetch_assoc($result)){
-                                                                $displaytext = $row['branchCode'] . " - " . $row['branchName'];
-                                                                echo '<option value="'.$row['branch_id'].'"
-                                                                            data-branchName="'.$row['branchName'].'"
-                                                                            data-branchCode="'.$row['branchCode'].'">'
-                                                                            .$displaytext.
-                                                                    '</option>';
-                                                            }
-                                                            mysqli_free_result($result);
-                                                        } else {
-                                                            echo "<option value=''>No categories available</option>";
+                                        <div class="col-md-6">
+                                            <label for="department" class="form-label">Department</label>
+                                            <input type="text" class="form-control" id="department" name="department" placeholder="Department" value="<?= htmlspecialchars($inventory['department'] ?? '') ?>" readonly>
+                                        </div>
+                                    <div class="col-md-6">
+                                        <label for="branchName" class="form-label">Branch</label>
+                                        <input type="text" class="form-control" id="branchName" name="branchName" placeholder="Branch" value="<?= htmlspecialchars($inventory['branchName'] ?? '') ?>" readonly>
+                                    </div>
+                                    </div>
+                                <hr></hr>
+                                <h1>Asset Details</h1>
+                                <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="assetNumber" class="form-label">Asset Number</label>
+                                        <input type="text" class="form-control" id="assetNumber" name="assetNumber" placeholder="Asset Number" value="<?= htmlspecialchars($inventory['assetNumber'] ?? '') ?>" readonly>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="groupName" class="form-label">Model Name</label>
+                                        <input type="text" class="form-control" id="groupName" name="groupName" placeholder="Model" value="<?= htmlspecialchars($inventory['groupName'] ?? '') ?>"  readonly>
+                                    </div>
+                                    </div>
+                                <h1>Ticket Details</h1>
+                                    <div class="row mb-5">
+                                        <div class="col-md-6">
+                                            <label for="department" class="form-label">Assign to</label>
+                                                <select id="ticket_assign" name="ticket_assign" class="form-control" readonly> 
+                                                    <option value="">-- Select Assignee --</option>
+                                                    <?php
+                                                    // include DB config
+                                                    require_once "config.php"; 
+
+                                                    // query employees
+                                                    $sql = "SELECT
+                                                    employee_id, 
+                                                    CONCAT(lastname ,',',' ', firstname) AS fullname
+                                                    FROM tblemployee WHERE department = 'IT'";
+                                                    $result = mysqli_query($link, $sql);
+
+                                                    if ($result && mysqli_num_rows($result) > 0) {
+                                                        while ($row = mysqli_fetch_assoc($result)) {
+                                                            echo '<option value="'.$row['employee_id'].'">'.$row['fullname'].'</option>';
                                                         }
+                                                    } else {
+                                                        echo '<option value="">No employees found</option>';
+                                                    }
                                                     ?>
                                                 </select>
+                                        </div>
+                                    </div>
+                                    <div class ="row mb-5">
+                                            <div class ="col-md-6">
+                                                <label for="technical_purpose" class="form-label">Technical Purpose</label>
+                                                <select id="technical_purpose" name="technical_purpose" class="form-control" required>
+                                                <option value="">-- Select Purpose --</option>
+                                                <option value="CCTV & MAINTAINANCE">CCTV & MAINTAINANCE</option>
+                                                <option value=""></option>
+                                                <option value=""></option>
+                                                </select>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "concern-details" class ="form-label">Concern Details</label>
+                                                <textarea id ="concern_details" name="concern_details"class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
                                             </div>
                                     </div>
-                                    <div class="row mb-5">
-                                    <div class="col-md-6">
-                                        <label for="last-name" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="last-name" name="last-name" placeholder="Last name" required>
+
+                                    <div class ="row mb-5">
+                                            <div class="col-md-6">
+                                                <label for = "action" class ="form-label">Action Taken</label>
+                                                <textarea id ="action" name="action"class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
+
+                                            <div class="col-md-6">
+                                                <label for = "result" class ="form-label">Result Details</label>
+                                                <textarea id ="result" name="result" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="first-name" class="form-label">First Name</label>
-                                        <input type="text" class="form-control" id="first-name" name="first-name" placeholder="First name" required>
-                                    </div>
+
+                                    <div class ="row mb-5">
+                                        <div class ="col-md-6">
+                                            <label for ="priority" class ="form-label">Priority</label>
+                                                <select id="priority" name="priority" class="form-control" required>
+                                                <option value="">-- Select Priority level --</option>
+                                                <option value="low">Low</option>
+                                                <option value="medium">Medium</option>
+                                                <option value="high">High</option>
+                                                </select>
+                                        </div>
+
+                                        <div class ="col-md-6">
+                                            <label for ="category" class ="form-label">Category</label>
+                                                <select id="category" name="category" class="form-control" required>
+                                                <option value="">-- Select Category --</option>
+                                                <option value="Software,Hardware">Software & Hardware</option>
+                                                <option value=""></option>
+                                                <option value=""></option>
+                                                </select>
+                                        </div>
+
                                     </div>
 
                                     <div class="row mb-5">
-                                    <div class="col-md-6">
-                                        <label for="middle-name" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name">
+                                            <div class="col-md-6">
+                                                <label for = "remarks" class ="form-label">Remarks</label>
+                                                <textarea id ="remarks" name="remarks" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                            </div>
                                     </div>
-                                    <div class="col-md-6">
-                                        <label for="department" class="form-label">Department</label>
-                                        <select id="department" name="department" class="form-control" required>
-                                        <option value="">-- Select Department --</option>
-                                        <option value="IT">Information Technology</option>
-                                        <option value=""></option>
-                                        <option value=""></option>
-                                        </select>
-                                    </div>
-                                    </div>
-                                    <div class="row mb-5">
-                                        <div class="col-md-6">
-                                            <label for="email" class="form-label">Email</label>
-                                            <input type="text" class="form-control" id="email" name="email" placeholder="Email" required>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for="position" class="form-label">Position</label>
-                                            <input type="text" class="form-control" id="position" name="position" placeholder="Position" required>
-                                        </div>
-                                    </div>
+
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Accounts.php" class="btn btn-danger">Cancel</a>
+                                    <a href="Tickets.php" class="btn btn-danger">Cancel</a>
                                     </form>
-                            </div>
+                                </div>
 
                         </div>
                     </div>
@@ -461,41 +518,45 @@ if (isset($_POST['btnSubmit'])) {
     <script src="../js/demo/datatables-demo.js"></script>
     <script>
     function togglePasswordVisibility() {
-    var passwordField = document.getElementById("password");
-    var icon = document.querySelector("#showPassword i");
-
-    if (passwordField.type === "password") {
-        passwordField.type = "text";
-        icon.classList.remove("fa-eye");
-        icon.classList.add("fa-eye-slash");
-    } else {
-        passwordField.type = "password";
-        icon.classList.remove("fa-eye-slash");
-        icon.classList.add("fa-eye");
+        var passwordField = document.getElementById("txtPassword");
+        if (passwordField.type === "password") {
+            passwordField.type = "text";
+            document.getElementById("showPassword").textContent = "Hide";
+        }
+        else {
+            passwordField.type = "password";
+            document.getElementById("showPassword").textContent = "Show";
+        }
     }
-}
-
-document.getElementById("showPassword").addEventListener("click", togglePasswordVisibility);
-
 </script>
 
 <script>
     var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
     if (notificationMessage !== "") {
         alert(notificationMessage);
-        window.location.href = "Accounts.php";
+        window.location.href = "Tickets.php";
     }
 </script>
+
 <script>
-document.getElementById("branchName").addEventListener("change", function() {
+document.getElementById("employee_id").addEventListener("change", function() {
     var selectedOption = this.options[this.selectedIndex];
     if (selectedOption.value !== "") {
-        document.getElementById("branchCode").value = selectedOption.getAttribute("data-branchCode");
+        document.getElementById("lastname").value = selectedOption.getAttribute("data-lastname");
+        document.getElementById("firstname").value = selectedOption.getAttribute("data-firstname");
+        document.getElementById("middlename").value = selectedOption.getAttribute("data-middlename");
+        document.getElementById("branch").value = selectedOption.getAttribute("data-branch");
+        document.getElementById("department").value = selectedOption.getAttribute("data-department");
     } else {
-        document.getElementById("branchCode").value = "";
+        document.getElementById("lastname").value = "";
+        document.getElementById("firstname").value = "";
+        document.getElementById("middlename").value = "";
+        document.getElementById("branch").value = "";
+        document.getElementById("department").value = "";
     }
 });
 </script>
+
 </body>
 
 </html>

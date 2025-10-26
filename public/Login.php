@@ -28,9 +28,9 @@ if (isset($_POST['btnLogin'])) {
 
                     // redirect based on user type
                     if (!empty($usertype)) {
-                        if ($usertype == 'Jobseeker') {
-                            header("Location: CareerSearch-Page.php");
-                        } elseif ($usertype == 'Employer') {
+                        if ($usertype == 'EMPLOYEE') {
+                            header("Location: ../Admin Dashboard/User/index.php");
+                        } elseif ($usertype == 'HR') {
                             header("Location: ../../Employer/User/CareerSearch-Page.php");
                         } elseif ($usertype == 'ADMIN') {
                             header("Location: ../Admin Dashboard/index.php");

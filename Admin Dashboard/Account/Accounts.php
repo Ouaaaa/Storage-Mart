@@ -105,6 +105,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
     <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
     <!-- Custom styles for this page -->
     <link href="../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="../vendor/datatables/dataTables.min.css" rel="stylesheet">
 
 </head>
 
@@ -309,9 +310,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">List of Accounts</h6>
                         </div>
+                        <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
+                            <a href="Add-Account.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Accounts</a>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="account" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
 											<th>Account ID</th>
@@ -372,9 +376,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                 </table>
                             </div>
                         </div>
-                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                            <a href="Add-Account.php" class="btn btn-primary">Add Account</a>
-                        </div>
                     </div>
                 </div>
         </div>
@@ -432,7 +433,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
     <!-- Page level plugins -->
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../vendor/datatables/dataTables.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="../js/demo/datatables-demo.js"></script>

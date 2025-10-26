@@ -1,7 +1,8 @@
 <?php
 require_once "config.php";
 include("session-checker.php");
-    //Fetching username from the logged in user
+
+    // Fetching username from the logged-in user
     $accountID = $_SESSION['account_id'];
     $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
     if($stmtuser = mysqli_prepare($link, $sql)){
@@ -10,19 +11,20 @@ include("session-checker.php");
         mysqli_stmt_bind_result($stmtuser, $dbUsername);
         mysqli_stmt_fetch($stmtuser);
         mysqli_stmt_close($stmtuser);   
-    
         $_SESSION['username'] = $dbUsername; 
     }
-    //Displaying off logged in user
-    $userQuery ="SELECT e.firstname , a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id WHERE a.account_id = ?";
+
+    // Displaying the logged-in user
+    $userQuery = "SELECT e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id WHERE a.account_id = ?";
     if($stmt = mysqli_prepare($link, $userQuery)){
-        mysqli_stmt_bind_param($stmt , "i", $accountID);
+        mysqli_stmt_bind_param($stmt, "i", $accountID);
         mysqli_stmt_execute($stmt);
         mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
         mysqli_stmt_fetch($stmt);
         mysqli_stmt_close($stmt);
     }
-    //Inserting into tblassets_directory and tbllogs 
+
+    // Inserting into tblassets_group and tbllogs 
     if( isset($_POST['btnSubmit'])){
         $category_id = $_POST['categoryName'];
         $ic_code = $_POST['ic_code'];
@@ -31,56 +33,39 @@ include("session-checker.php");
         $createdby = $_SESSION['username'];
         $datecreated = date("Y-m-d H:i:s");
 
-
-        //Displaying of Category in Dropdown
-        $sqlIC = "SELECT ic_code FROM tblassets_category WHERE category_id = ?";
-        $stmt = mysqli_prepare($link, $sqlIC);
-        mysqli_stmt_bind_param($stmt, "i", $category_id);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $ic_code);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
-
+        // Inserting into tblassets_group
         $sql = "INSERT INTO tblassets_group 
             (category_id, ic_code, groupName, description, datecreated, createdby)
             VALUES (?, ?, ?, ?, ?, ?)";
 
-        $stmt = mysqli_prepare($link, $sql);
-        mysqli_stmt_bind_param($stmt,  "isssss",
-                $category_id, 
-                $ic_code, 
-                $groupName, 
-                $description, 
-                $datecreated,
-                $createdby);
+        if ($stmt = mysqli_prepare($link, $sql)) {
+            mysqli_stmt_bind_param($stmt, "isssss", $category_id, $ic_code, $groupName, $description, $datecreated, $createdby);
 
-        if (mysqli_stmt_execute($stmt)) {
-            $category_id = mysqli_insert_id($link);
-            // Insert into tbllogs
-            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
-                       VALUES (?, ?, ?, ?, ?, ?)";
-            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
-                $date       = date("Y-m-d");
-                $time       = date("H:i:s");
-                $logAction  = "Create Group";
-                $module     = "Group Asset Management";
-                $performedby = $_SESSION['username'];
+            if (mysqli_stmt_execute($stmt)) {
+                $category_id = mysqli_insert_id($link);
+                // Insert into tbllogs
+                $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
+                           VALUES (?, ?, ?, ?, ?, ?)";
+                if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
+                    $date       = date("Y-m-d");
+                    $time       = date("H:i:s");
+                    $logAction  = "Create Group";
+                    $module     = "Group Asset Management";
+                    $performedby = $_SESSION['username'];
 
-                mysqli_stmt_bind_param(
-                    $stmtLog,
-                    "ssssss",
-                    $date, $time, $logAction, $module, $accountID, $_SESSION['username']
-                );
-                mysqli_stmt_execute($stmtLog);
+                    mysqli_stmt_bind_param(
+                        $stmtLog,
+                        "ssssss",
+                        $date, $time, $logAction, $module, $category_id, $performedby
+                    );
+                    mysqli_stmt_execute($stmtLog);
+                }
+
+                $notificationMessage = "New Group Asset successfully created!";
+            } else {
+                echo "<font color='red'>Error inserting into tblassets_group: " . mysqli_error($link) . "</font>";
             }
-
-            $notificationMessage = "New Group Asset successfully created!";
-        } else {
-            echo "<font color='red'>Error inserting into tblassets_group: " . mysqli_error($link) . "</font>";
         }
-
-
-
     }
 ?>
 
@@ -282,92 +267,77 @@ include("session-checker.php");
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">
                                     <?php echo htmlspecialchars($loggedFirstname);?> (<?php echo htmlspecialchars($loggedUsertype); ?>)
                                 </span>
-                                <img class="img-profile rounded-circle"
-                                    src="../../img/undraw_profile.svg">
+                            <img class="img-profile rounded-circle" src="../../img/undraw_profile.svg">
                             </a>
-                            <!-- Dropdown - User Information -->
-                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
-                                aria-labelledby="userDropdown">
+                            <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
                                 <a class="dropdown-item" href="../../../public/login.php" data-toggle="modal" data-target="#logoutModal">
-                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
-                                    Logout
+                                    <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i> Logout
                                 </a>
                             </div>
                         </li>
-
                     </ul>
-
                 </nav>
                 <!-- End of Topbar -->
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
+                    <h1 class="h3 mb-2 text-gray-800">Add Group Asset</h1>
+                    <p class="mb-4">Create a new asset group by filling out the information below.</p>
 
-                    <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800"></h1>
-                    <p class="mb-4">"Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum."</p>
-
-                    <!-- DataTales Example -->
+                    <!-- Form to Add Group -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">Add Group</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">Group Asset Details</h6>
                         </div>
                         <div class="card-body">
-                            <div class="container mt-4">
-                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
-                                    
-                                <h1>Group Details</h1>
-                                    <div class ="row mb-5">
-                                        <div class ="col-md-6">
-                                            <label for ="categoryName" class ="form-label">Item Category</label>
-                                                <select id="categoryName" name="categoryName" class="form-control" required>
-                                                <option value="">-- Select Category --</option>
-                                                    <?php 
-                                                        $sql = "SELECT category_id, ic_code, categoryName FROM tblassets_category ORDER BY categoryName ASC";
-                                                        $result = mysqli_query($link, $sql);
-                                                        
-                                                        if($result && mysqli_num_rows($result) > 0){
-                                                            while($row = mysqli_fetch_assoc($result)){
-                                                                $displaytext = $row['ic_code'] . " - " . $row['categoryName'];
-                                                                echo '<option value="'.$row['category_id'].'"
-                                                                            data-categoryName="'.$row['categoryName'].'"
-                                                                            data-ic_code="'.$row['ic_code'].'">'
-                                                                            .$displaytext.
-                                                                    '</option>';
-                                                            }
-                                                            mysqli_free_result($result);
-                                                        } else {
-                                                            echo "<option value=''>No categories available</option>";
-                                                        }
-                                                    ?>
-                                                </select>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <label for = "ic_code" class ="form-label">IC Code</label>
-                                                <input type="text" name="ic_code" class="form-control" id="ic_code" placeholder="IC Code" readonly>
-                                        </div>
+                            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="categoryName" class="form-label">Item Category</label>
+                                        <select id="categoryName" name="categoryName" class="form-control" required>
+                                            <option value="">-- Select Category --</option>
+                                            <?php
+                                                $sql = "SELECT category_id, ic_code, categoryName FROM tblassets_category ORDER BY categoryName ASC";
+                                                $result = mysqli_query($link, $sql);
+                                                
+                                                if($result && mysqli_num_rows($result) > 0){
+                                                    while($row = mysqli_fetch_assoc($result)){
+                                                        echo '<option value="'.$row['category_id'].'"
+                                                                data-categoryName="'.$row['categoryName'].'"
+                                                                data-ic_code="'.$row['ic_code'].'">
+                                                                '.$row['ic_code']." - ".$row['categoryName'].'</option>';
+                                                    }
+                                                    mysqli_free_result($result);
+                                                } else {
+                                                    echo "<option value=''>No categories available</option>";
+                                                }
+                                            ?>
+                                        </select>
                                     </div>
-
-                                    <div class ="row mb-5">
-                                            <div class="col-md-6">
-                                                <label for = "groupName" class ="form-label">Group Asset Name</label>
-                                                    <input type="text" name="groupName" class="form-control" id="groupName" placeholder="Group Asset Name" required>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <label for = "description" class ="form-label">Description</label>
-                                                <textarea id ="description" name="description" class="form-control" rows="6" maxlength="1000" required></textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <label for="ic_code" class="form-label">IC Code</label>
+                                        <input type="text" name="ic_code" class="form-control" id="ic_code" placeholder="IC Code" readonly>
                                     </div>
-                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Assets.php" class="btn btn-danger">Cancel</a>
-                                    </form>
                                 </div>
 
+                                <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="groupName" class="form-label">Group Asset Name</label>
+                                        <input type="text" name="groupName" class="form-control" id="groupName" placeholder="Group Asset Name" required>
+                                    </div>
+
+                                    <div class="col-md-6">
+                                        <label for="description" class="form-label">Description</label>
+                                        <textarea id="description" name="description" class="form-control" rows="6" maxlength="1000" required></textarea>
+                                        <small class="form-text text-muted">Maximum 1000 characters.</small>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                <a href="Assets.php" class="btn btn-danger">Cancel</a>
+                            </form>
                         </div>
                     </div>
-                    
                 </div>
                 <!-- /.container-fluid -->
 
@@ -375,6 +345,13 @@ include("session-checker.php");
             <!-- End of Main Content -->
 
             <!-- Footer -->
+            <footer class="sticky-footer bg-white">
+                <div class="container my-auto">
+                    <div class="copyright text-center my-auto">
+                        <span>© 2025 Storage Mart. All Rights Reserved.</span>
+                    </div>
+                </div>
+            </footer>
             <!-- End of Footer -->
 
         </div>
@@ -389,8 +366,7 @@ include("session-checker.php");
     </a>
 
     <!-- Logout Modal-->
-    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel"
-        aria-hidden="true">
+    <div class="modal fade" id="logoutModal" tabindex="-1" role="dialog" aria-labelledby="exampleModalLabel" aria-hidden="true">
         <div class="modal-dialog" role="document">
             <div class="modal-content">
                 <div class="modal-header">
@@ -425,25 +401,24 @@ include("session-checker.php");
     <!-- Page level custom scripts -->
     <script src="../../js/demo/datatables-demo.js"></script>
 
-<script>
-    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
-    if (notificationMessage !== "") {
-        alert(notificationMessage);
-        window.location.href = "Assets.php";
-    }
-</script>
+    <script>
+        var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+        if (notificationMessage !== "") {
+            alert(notificationMessage);
+            window.location.href = "Assets.php";
+        }
+    </script>
 
-<script>
-document.getElementById("categoryName").addEventListener("change", function() {
-    var selectedOption = this.options[this.selectedIndex];
-    if (selectedOption.value !== "") {
-        document.getElementById("ic_code").value = selectedOption.getAttribute("data-ic_code");
-    } else {
-        document.getElementById("ic_code").value = "";
-    }
-});
-</script>
-
+    <script>
+        document.getElementById("categoryName").addEventListener("change", function() {
+            var selectedOption = this.options[this.selectedIndex];
+            if (selectedOption.value !== "") {
+                document.getElementById("ic_code").value = selectedOption.getAttribute("data-ic_code");
+            } else {
+                document.getElementById("ic_code").value = "";
+            }
+        });
+    </script>
 
 </body>
 

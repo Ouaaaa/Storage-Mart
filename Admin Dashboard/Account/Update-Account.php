@@ -2,95 +2,122 @@
 require_once "config.php";
 include("session-checker.php");
 
+// Enable strict error reporting for debugging
+mysqli_report(MYSQLI_REPORT_ERROR | MYSQLI_REPORT_STRICT);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
+
 $account = [];
 $employee = [];
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
-    // === Update tblaccounts ===
-    $sql = "UPDATE tblaccounts SET username = ?, password = ?, usertype = ?,status = ? WHERE account_id = ?";
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "ssssi", 
-            $_POST['username'], 
-            $_POST['password'], 
-            $_POST['usertype'],
-            $_POST['status'], 
-            $_POST['account_id']
-        );
+$notificationMessage = "";
 
-        if (mysqli_stmt_execute($stmt)) {
-            mysqli_stmt_close($stmt);
-
-            // === Update tblemployee ===
-            $empsql = "UPDATE tblemployee 
-                       SET lastname = ?, firstname = ?, middlename = ?, department = ?, branch = ?, email = ? 
-                       WHERE employee_id = ?";
-            if ($stmt = mysqli_prepare($link, $empsql)) {
-                mysqli_stmt_bind_param($stmt, "ssssssi", 
-                    $_POST['last-name'], 
-                    $_POST['first-name'], 
-                    $_POST['middle-name'], 
-                    $_POST['department'], 
-                    $_POST['branch'],
-                    $_POST['email'], 
-                    $_POST['employee_id']
-                );
-
-                if (mysqli_stmt_execute($stmt)) {
-                    mysqli_stmt_close($stmt);
-
-                    // === Insert into tbllogs ===
-                    $sql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
-                            VALUES (?, ?, ?, ?, ?, ?)";
-                    if ($stmt = mysqli_prepare($link, $sql)) {
-                        $date = date("Y-m-d");
-                        $time = date("h:i:sa");
-                        $action = "Updated an Account";
-                        $module = "Employee Management";
-                        $employee_id = $_POST['employee_id'];
-                        mysqli_stmt_bind_param($stmt, "ssssss", 
-                            $date, 
-                            $time, 
-                            $action, 
-                            $module, 
-                            $employee_id, 
-                            $_SESSION['username']
-                        );
-
-                        if (mysqli_stmt_execute($stmt)) {
-                            $notificationMessage = "Account successfully updated!";
-                        } else {
-                            echo "<font color='red'>Error inserting into tbllogs.</font>";
-                        }
-                        mysqli_stmt_close($stmt);
-                    }
-                } else {
-                    echo "<font color='red'>Error updating tblemployee: " . mysqli_error($link) . "</font>";
-                }
-            }
-        } else {
-           echo "<font color='red'>Error updating tblaccounts: " . mysqli_error($link) . "</font>";
-        }
-    }
-
-} else {
-    // === Loading the data to the form ===
-    if (isset($_GET['account_id']) && !empty(trim($_GET['account_id']))) {
-    $sql = "SELECT a.*, e.* 
+// === Load data for the form ===
+if (isset($_GET['account_id']) && !empty(trim($_GET['account_id']))) {
+    $sql = "SELECT a.*, e.*, e.branch_id, b.branchName
             FROM tblaccounts a
             JOIN tblemployee e ON a.account_id = e.account_id
+            LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
             WHERE a.account_id = ?";
+
     if ($stmt = mysqli_prepare($link, $sql)) {
         mysqli_stmt_bind_param($stmt, "i", $_GET['account_id']);
-        if (mysqli_stmt_execute($stmt)) {
-            $result = mysqli_stmt_get_result($stmt);
-            $data = mysqli_fetch_array($result, MYSQLI_ASSOC);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
+        $data = mysqli_fetch_array($result, MYSQLI_ASSOC);
 
-            $account  = $data;  // contains account fields
-            $employee = $data;  // contains employee fields
+        if ($data) {
+            $account = $data;
+            $employee = $data;
         }
+
         mysqli_stmt_close($stmt);
     }
 }
 
+// === Handle form submission ===
+if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
+    mysqli_begin_transaction($link); // start transaction
+
+    try {
+        // === Update tblaccounts ===
+        $sql = "UPDATE tblaccounts 
+                SET username = ?, password = ?, usertype = ?, status = ? 
+                WHERE account_id = ?";
+        if ($stmt = mysqli_prepare($link, $sql)) {
+            mysqli_stmt_bind_param($stmt, "ssssi", 
+                $_POST['username'], 
+                $_POST['password'], 
+                $_POST['usertype'],
+                $_POST['status'], 
+                $_POST['account_id']
+            );
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
+
+            // === Update tblemployee ===
+            $empsql = "UPDATE tblemployee 
+                    SET lastname = ?, firstname = ?, middlename = ?, department = ?, branch_id = ?, email = ? 
+                    WHERE employee_id = ?";
+
+            if ($stmt = mysqli_prepare($link, $empsql)) {
+
+                // Safely extract POST values (using null coalescing)
+                $lastname   = $_POST['last-name']   ?? null;
+                $firstname  = $_POST['first-name']  ?? null;
+                $middlename = $_POST['middle-name'] ?? null;
+                $department = $_POST['department']  ?? null;
+                $branch_id  = $_POST['branch_id']   ?? null;
+                $email      = $_POST['email']       ?? null;
+                $employee_id = $_POST['employee_id'] ?? null;
+
+                mysqli_stmt_bind_param($stmt, "ssssssi",
+                    $lastname,
+                    $firstname,
+                    $middlename,
+                    $department,
+                    $branch_id,
+                    $email,
+                    $employee_id
+                );
+
+                mysqli_stmt_execute($stmt);
+                mysqli_stmt_close($stmt);
+            }
+
+
+        // === Insert log ===
+        $logsql = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
+                   VALUES (?, ?, ?, ?, ?, ?)";
+        if ($stmt = mysqli_prepare($link, $logsql)) {
+            $date = date("Y-m-d");
+            $time = date("h:i:sa");
+            $action = "Updated an Account";
+            $module = "Employee Management";
+            $employee_id = $_POST['employee_id'];
+            $performedby = $_SESSION['username'] ?? 'SYSTEM';
+
+            mysqli_stmt_bind_param($stmt, "ssssss",
+                $date,
+                $time,
+                $action,
+                $module,
+                $employee_id,
+                $performedby
+            );
+            mysqli_stmt_execute($stmt);
+            mysqli_stmt_close($stmt);
+        }
+
+        // Commit all changes
+        mysqli_commit($link);
+        $notificationMessage = "✅ Account and Employee updated successfully.";
+
+    } catch (Exception $e) {
+        mysqli_rollback($link);
+        $notificationMessage = "❌ Error updating records: " . $e->getMessage();
+    }
 }
 ?>
 
@@ -117,7 +144,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
     <link href="../css/sb-admin-2.min.css" rel="stylesheet">
     <link href="../css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
-    <link href="../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
@@ -322,9 +348,9 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
-                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                               <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+
                                     <input type="hidden" name="account_id" value="<?php echo htmlspecialchars($account['account_id']); ?>">
-                                    <input type="hidden" name="employee_id" value="<?php echo htmlspecialchars($employee['employee_id']); ?>">
                                     <h1>Account Details</h1>
                                     <div class ="row mb-5">
                                         <div class = "col-md-6">
@@ -353,6 +379,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                                             <option value="ADMIN" <?= (isset($account['usertype']) && $account['usertype'] === 'ADMIN') ? 'selected' : '' ?>>Admin</option>
                                             <option value="HR" <?= (isset($account['usertype']) && $account['usertype'] === 'HR') ? 'selected' : '' ?>>Human Resources</option>
                                             <option value="ACCTNG" <?= (isset($account['usertype']) && $account['usertype'] === 'ACCTNG') ? 'selected' : '' ?>>ACCOUNTING</option>
+                                            <option value="EMPLOYEE" <?= (isset($account['usertype']) && $account['usertype'] === 'EMPLOYEE') ? 'selected' : '' ?>>EMPLOYEE</option>
                                         </select>
                                     </div>
                                         <div class="col-md-6">
@@ -373,13 +400,22 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                                                 <input type="text" class="form-control" id="employee_id" name="employee_id" placeholder="Employee ID" value="<?php echo htmlspecialchars($employee['employee_id'] ?? ''); ?>" readonly> 
                                             </div>
                                             <div class="col-md-6">
-                                                <label for="branch" class="form-label">Branch</label>
-                                                <select id="branch" name="branch" class="form-control" required>
-                                                <option value="">-- Select Branch --</option>
-                                                <option value="ERAN" <?= (isset($employee['branch']) && $employee['branch'] === 'ERAN') ? 'selected' : '' ?>>Eran</option>
-                                                <option value=""></option>
-                                                <option value=""></option>
-                                                </select>
+                                                <label for="branch_id" class="form-label">Branch</label>
+                                                    <select id="branch_id" name="branch_id" class="form-control" required>
+                                                        <option value="">-- Select Branch --</option>
+                                                        <?php 
+                                                            $BranchID = $employee['branch_id']; // store branch_id instead of branchName
+                                                            $query = "SELECT branch_id, branchName FROM tblbranch";
+                                                            $result = mysqli_query($link, $query);
+                                                            while ($row_branch = mysqli_fetch_assoc($result)) {
+                                                                // check if this branch matches the employee’s current branch_id
+                                                                $selected = ($row_branch['branch_id'] == $BranchID) ? 'selected' : '';
+                                                                echo '<option value="' . $row_branch['branch_id'] . '" ' . $selected . '>' . $row_branch['branchName'] . '</option>';
+                                                            }
+                                                        ?>
+                                                    </select>
+
+
                                             </div>
                                     </div>
                                     <div class="row mb-5">
@@ -396,7 +432,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                                     <div class="row mb-5">
                                     <div class="col-md-6">
                                         <label for="middle-name" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name" value="<?php echo htmlspecialchars($employee['middlename'])?>" required>
+                                        <input type="text" class="form-control" id="middle-name" name="middle-name" placeholder="Middle name" value="<?php echo htmlspecialchars($employee['middlename'])?>">
                                     </div>
                                     <div class="col-md-6">
                                         <label for="department" class="form-label">Department</label>
@@ -471,11 +507,6 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
 
     <!-- Custom scripts for all pages-->
     <script src="../js/sb-admin-2.min.js"></script>
-
-    <!-- Page level plugins -->
-    <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-
     <!-- Page level custom scripts -->
     <script src="../js/demo/datatables-demo.js"></script>
     <script>
@@ -497,13 +528,14 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
 document.getElementById("showPassword").addEventListener("click", togglePasswordVisibility);
 
 </script>
-
 <script>
-    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
-    if (notificationMessage !== "") {
-        alert(notificationMessage);
-        window.location.href = "Accounts.php";
-    }
+var notificationMessage = "<?php echo addslashes($notificationMessage); ?>";
+if (notificationMessage.includes("✅")) {
+    alert(notificationMessage);
+    window.location.href = "Accounts.php";
+} else if (notificationMessage !== "") {
+    alert(notificationMessage);
+}
 </script>
 </body>
 

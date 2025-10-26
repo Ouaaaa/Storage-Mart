@@ -1,79 +1,58 @@
 <?php
 require_once "config.php";
 include("session-checker.php");
-
     $accountID = $_SESSION['account_id'];
-    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = '';
-if (isset($_POST['btnSubmit'])) {
-    // Insert into tbltickets
-   $sql = "INSERT INTO tbltickets (
-                employee_id, lastname, firstname, middlename, branch, department,
-                ticket_assign, technical_purpose, concern_details, action, result,
-                status, priority, category, created_by, datecreated, attachments, remarks
-            ) VALUES (
-                ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?
-            )";
+    $username = ''; // Initialize to avoid Errors
+
+    $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
+
+
+    if ($stmt = mysqli_prepare($link, $userQuery)) {
+        mysqli_stmt_bind_param($stmt, "i", $accountID);
+        mysqli_stmt_execute($stmt);
+        mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
+        mysqli_stmt_fetch($stmt);
+        mysqli_stmt_close($stmt);
+    }
+    $_SESSION['username'] = $username;
+
+// Handle employee selection
+if (isset($_GET['employee_id'])) {
+    $employee_id = $_GET['employee_id'];
+
+    // Query to fetch the assets related to the selected employee
+    $sql = "
+    SELECT 
+        i.assetNumber,
+        g.groupName,
+        g.ic_code,
+        i.itemInfo,
+        i.serialNumber,
+        i.year_purchased
+    FROM 
+        tblassets_inventory i
+    LEFT JOIN tblassets_group g ON i.group_id = g.group_id
+    WHERE i.employee_id = ?
+    ";
+
     if ($stmt = mysqli_prepare($link, $sql)) {
-        // Collect form values
-        $employee_id = $_POST['employee_id'];
-        $lastname = $_POST['lastname'];
-        $firstname = $_POST['firstname'];
-        $middlename = $_POST['middlename'];
-        $branch = $_POST['branch'];
-        $department = $_POST['department'];
-        $ticket_assign = $_POST['ticket_assign'];
-        $technical_purpose = $_POST['technical_purpose'];
-        $concern_details = $_POST['concern_details'];
-        $actionTaken = $_POST['action'];
-        $resultDetails = $_POST['result'];
-        $priority = $_POST['priority'];
-        $category = $_POST['category'];
-        $created_by = $_SESSION['account_id']; 
-        $datecreated = date('Y-m-d H:i:s');
-        $status = "PENDING";   
-        $attachments = "";
-        $remarks = $_POST['remarks'];
+        mysqli_stmt_bind_param($stmt, "i", $employee_id);
+        mysqli_stmt_execute($stmt);
+        $result = mysqli_stmt_get_result($stmt);
 
-       
-       mysqli_stmt_bind_param(
-            $stmt,
-            "isssssssssssssssss",   // 1 int + 17 strings = 18 total
-            $employee_id, $lastname, $firstname, $middlename, $branch, $department,
-            $ticket_assign, $technical_purpose, $concern_details, $actionTaken, $resultDetails,
-            $status, $priority, $category, $created_by, $datecreated, $attachments, $remarks
-        );
+        $assets = [];
 
-
-
-        if (mysqli_stmt_execute($stmt)) {
-            // Get the auto incremented ticket_id
-            $ticket_id = mysqli_insert_id($link);
-
-            // Insert into tbllogs
-            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) 
-                       VALUES (?, ?, ?, ?, ?, ?)";
-            if ($stmtLog = mysqli_prepare($link, $sqlLog)) {
-                $date       = date("Y-m-d");
-                $time       = date("h:i:sa");
-                $logAction  = "Create";
-                $module     = "Ticket Management";
-                $performedby = $_SESSION['username'];
-
-                mysqli_stmt_bind_param(
-                    $stmtLog,
-                    "ssssss",
-                    $date, $time, $logAction, $module, $ticket_id, $performedby
-                );
-                mysqli_stmt_execute($stmtLog);
-            }
-
-            $notificationMessage = "New Ticket successfully created!";
-        } else {
-            echo "<font color='red'>Error inserting into tbltickets: " . mysqli_error($link) . "</font>";
+        // Fetch assets and add them to the assets array
+        while ($row = mysqli_fetch_assoc($result)) {
+            $assets[] = $row;
         }
+
+        mysqli_stmt_close($stmt);
+
+        // Return assets as JSON
+        echo json_encode($assets);
     } else {
-        echo "<font color='red'>Error preparing statement for tbltickets.</font>";
+        echo json_encode(['error' => 'Error executing query']);
     }
 }
 ?>
@@ -98,9 +77,10 @@ if (isset($_POST['btnSubmit'])) {
 
     <!-- Custom styles for this template -->
     <link href="../css/sb-admin-2.min.css" rel="stylesheet">
-    <link href="../css/input.css" rel="stylesheet">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
     <!-- Custom styles for this page -->
     <link href="../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="../vendor/datatables/dataTables.min.css" rel="stylesheet">
 
 </head>
 
@@ -310,173 +290,80 @@ if (isset($_POST['btnSubmit'])) {
                                 <h1>Employee Details</h1>
                                 <div class="row mb-5">
                                     <div class="col-md-6">
-                                        <label for="lastname" class="form-label">Employee ID</label>
-                                        <select id="employee_id" name="employee_id" class="form-control" required> 
+                                        <label for="employee_id" class="form-label">Employee ID</label>
+                                        <select id="employee_id" name="employee_id" class="form-control" required>
                                             <option value="">-- Select Employee --</option>
                                             <?php
-                                            $sql = "SELECT employee_id, lastname, firstname, middlename, branch, department 
-                                                    FROM tblemployee ";
-                                            $result = mysqli_query($link, $sql);
-
-                                            if ($result && mysqli_num_rows($result) > 0) {
-                                                while ($row = mysqli_fetch_assoc($result)) {
-                                                    $displayText = $row['employee_id'] . " - " . $row['lastname'] . ", " . $row['firstname'];
-                                                    echo '<option value="'.$row['employee_id'].'" 
-                                                                data-lastname="'.$row['lastname'].'" 
-                                                                data-middlename="'.$row['middlename'].'" 
-                                                                data-firstname="'.$row['firstname'].'" 
-                                                                data-branch="'.$row['branch'].'" 
-                                                                data-department="'.$row['department'].'">'
-                                                            .$displayText.'</option>';
+                                                $sql = "SELECT e.employee_id, CONCAT(e.lastname, ', ', e.firstname, ' ', IFNULL(e.middlename, '')) AS full_name, 
+                                                        b.branchName, b.branchCode, e.department
+                                                        FROM tblemployee e
+                                                        LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
+                                                        ORDER BY e.lastname ASC";
+                                                $result = mysqli_query($link, $sql);
+                                                
+                                                if ($result && mysqli_num_rows($result) > 0) {
+                                                    while ($row = mysqli_fetch_assoc($result)) {
+                                                        echo '<option value="'.$row['employee_id'].'"
+                                                              data-fullname="'.$row['full_name'].'"
+                                                              data-branchName="'.$row['branchName'].'"
+                                                              data-department="'.$row['department'].'"
+                                                              data-branchCode="'.$row['branchCode'].'">'.$row['employee_id'].' - '.$row['full_name'].'</option>';
+                                                    }
+                                                    mysqli_free_result($result);
+                                                } else {
+                                                    echo "<option value=''>No employees available</option>";
                                                 }
-                                            } else {
-                                                echo '<option value="">No employees found</option>';
-                                            }
                                             ?>
                                         </select>
                                     </div>
                                     <div class="col-md-6">
-                                        <label for="lastname" class="form-label">Last Name</label>
-                                        <input type="text" class="form-control" id="lastname" name="lastname" placeholder="Last name" required>
+                                        <label for="fullname" class="form-label">Fullname</label>
+                                        <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Full Name" required>
                                     </div>
                                     </div>
-
-                                    <div class="row mb-5">
-                                        <div class="col-md-6">
-                                            <label for="firstname" class="form-label">First Name</label>
-                                            <input type="text" class="form-control" id="firstname" name="firstname" placeholder="First name" required>
-                                        </div>
-                                    <div class="col-md-6">
-                                        <label for="middlename" class="form-label">Middle Name</label>
-                                        <input type="text" class="form-control" id="middlename" name="middlename" placeholder="Middle name" required>
-                                    </div>
-                                    </div>
-
                                     <div class ="row mb-5">
                                         <div class="col-md-6">
                                             <label for="department" class="form-label">Department</label>
-                                            <select id="department" name="department" class="form-control" required>
-                                            <option value="">-- Select Department --</option>
-                                            <option value="IT">Information Technology</option>
-                                            <option value=""></option>
-                                            <option value=""></option>
-                                            </select>
+                                            <input type="text" class="form-control" id="department" name="department" placeholder="Department" required>
                                         </div>
-                                            <div class="col-md-6">
-                                                <label for="branch" class="form-label">Branch</label>
-                                                <select id="branch" name="branch" class="form-control" required>
-                                                <option value="">-- Select Branch --</option>
-                                                <option value="ERAN">Eran</option>
-                                                <option value=""></option>
-                                                <option value=""></option>
-                                                </select>
-                                            </div>
+                                    <div class="col-md-6">
+                                        <label for="branch" class="form-label">Branch</label>
+                                        <input type="text" class="form-control" id="branch" name="branch" placeholder="Branch" required>
                                     </div>
-                                <hr></hr>
-                                <h1>Ticket Details</h1>
-                                    <div class="row mb-5">
-                                        <div class="col-md-6">
-                                            <label for="department" class="form-label">Assign to</label>
-                                                <select id="ticket_assign" name="ticket_assign" class="form-control" required> 
-                                                    <option value="">-- Select Assignee --</option>
-                                                    <?php
-                                                    // include DB config
-                                                    require_once "config.php"; 
-
-                                                    // query employees
-                                                    $sql = "SELECT
-                                                    employee_id, 
-                                                    CONCAT(lastname ,',',' ', firstname) AS fullname
-                                                    FROM tblemployee WHERE department = 'IT'";
-                                                    $result = mysqli_query($link, $sql);
-
-                                                    if ($result && mysqli_num_rows($result) > 0) {
-                                                        while ($row = mysqli_fetch_assoc($result)) {
-                                                            echo '<option value="'.$row['employee_id'].'">'.$row['fullname'].'</option>';
-                                                        }
-                                                    } else {
-                                                        echo '<option value="">No employees found</option>';
-                                                    }
-                                                    ?>
-                                                </select>
-                                        </div>
-                                    </div>
-                                    <div class ="row mb-5">
-                                            <div class ="col-md-6">
-                                                <label for="technical_purpose" class="form-label">Technical Purpose</label>
-                                                <select id="technical_purpose" name="technical_purpose" class="form-control" required>
-                                                <option value="">-- Select Purpose --</option>
-                                                <option value="CCTV & MAINTAINANCE">CCTV & MAINTAINANCE</option>
-                                                <option value=""></option>
-                                                <option value=""></option>
-                                                </select>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <label for = "concern-details" class ="form-label">Concern Details</label>
-                                                <textarea id ="concern_details" name="concern_details"class="form-control" rows="6" maxlength="1000" required>
-
-                                                </textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
                                     </div>
 
-                                    <div class ="row mb-5">
-                                            <div class="col-md-6">
-                                                <label for = "action" class ="form-label">Action Taken</label>
-                                                <textarea id ="action" name="action"class="form-control" rows="6" maxlength="1000" required>
-
-                                                </textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
-
-                                            <div class="col-md-6">
-                                                <label for = "result" class ="form-label">Result Details</label>
-                                                <textarea id ="result" name="result" class="form-control" rows="6" maxlength="1000" required>
-
-                                                </textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
-                                    </div>
-
-                                    <div class ="row mb-5">
-                                        <div class ="col-md-6">
-                                            <label for ="priority" class ="form-label">Priority</label>
-                                                <select id="priority" name="priority" class="form-control" required>
-                                                <option value="">-- Select Priority level --</option>
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                                </select>
-                                        </div>
-
-                                        <div class ="col-md-6">
-                                            <label for ="category" class ="form-label">Category</label>
-                                                <select id="category" name="category" class="form-control" required>
-                                                <option value="">-- Select Category --</option>
-                                                <option value="Software,Hardware">Software & Hardware</option>
-                                                <option value=""></option>
-                                                <option value=""></option>
-                                                </select>
-                                        </div>
-
-                                    </div>
-
-                                    <div class="row mb-5">
-                                            <div class="col-md-6">
-                                                <label for = "remarks" class ="form-label">Remarks</label>
-                                                <textarea id ="remarks" name="remarks" class="form-control" rows="6" maxlength="1000" required>
-
-                                                </textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
-                                    </div>
-
-                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Tickets.php" class="btn btn-danger">Cancel</a>
-                                    </form>
-                                </div>
-
+                                    <hr></hr>
+                            <div class="card-body">
+                            <div class="table-responsive">
+                                <table class="table table-bordered" id="asset-ticket" width="100%" cellspacing="0">
+                                    <thead>
+                                        <tr>
+                                            <th>Asset Number</th>
+                                            <th>Name</th>
+                                            <th>IC CODE</th>
+                                            <th>Description</th>
+											<th>Serial Number</th>
+                                            <th>Year Purchased</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tfoot>
+                                        <tr>
+                                            <th>Asset Number</th>
+                                            <th>Name</th>
+                                            <th>IC CODE</th>
+                                            <th>Description</th>
+											<th>Serial Number</th>
+                                            <th>Year Purchased</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </tfoot>
+                                    <tbody id="assetsTable">
+                                    </tbody>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
                         </div>
                     </div>
                     
@@ -532,23 +419,11 @@ if (isset($_POST['btnSubmit'])) {
 
     <!-- Page level plugins -->
     <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../vendor/datatables/dataTables.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="../js/demo/datatables-demo.js"></script>
-    <script>
-    function togglePasswordVisibility() {
-        var passwordField = document.getElementById("txtPassword");
-        if (passwordField.type === "password") {
-            passwordField.type = "text";
-            document.getElementById("showPassword").textContent = "Hide";
-        }
-        else {
-            passwordField.type = "password";
-            document.getElementById("showPassword").textContent = "Show";
-        }
-    }
-</script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
 <script>
     var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
@@ -557,26 +432,60 @@ if (isset($_POST['btnSubmit'])) {
         window.location.href = "Tickets.php";
     }
 </script>
-
 <script>
 document.getElementById("employee_id").addEventListener("change", function() {
     var selectedOption = this.options[this.selectedIndex];
-    if (selectedOption.value !== "") {
-        document.getElementById("lastname").value = selectedOption.getAttribute("data-lastname");
-        document.getElementById("firstname").value = selectedOption.getAttribute("data-firstname");
-        document.getElementById("middlename").value = selectedOption.getAttribute("data-middlename");
-        document.getElementById("branch").value = selectedOption.getAttribute("data-branch");
-        document.getElementById("department").value = selectedOption.getAttribute("data-department");
-    } else {
-        document.getElementById("lastname").value = "";
-        document.getElementById("firstname").value = "";
-        document.getElementById("middlename").value = "";
-        document.getElementById("branch").value = "";
-        document.getElementById("department").value = "";
-    }
+    
+    // Extract the full name and split it by comma (last name, first name, and optionally middle name)
+    var fullName = selectedOption.getAttribute("data-fullname").split(",");
+    document.getElementById("fullname").value = selectedOption.getAttribute("data-fullname");
+    document.getElementById("branch").value = selectedOption.getAttribute("data-branchName");
+    document.getElementById("department").value = selectedOption.getAttribute("data-department");
 });
+
+
 </script>
+ <script>
+    $(document).ready(function() {
+        $("#employee_id").on('change', function() {
+            var employee_id = $(this).val();
+
+            if (employee_id) {
+                $.ajax({
+                    type: 'GET',
+                    url: 'get_assets.php',  // AJAX endpoint in same folder
+                    data: { employee_id: employee_id },
+                    dataType: 'json',
+                    success: function(response) {
+                        if (response && response.length > 0) {
+                            var assetsHTML = '';
+                            $.each(response, function(index, asset) {
+                                assetsHTML += '<tr>';
+                                assetsHTML += '<td>' + asset.assetNumber + '</td>';
+                                assetsHTML += '<td>' + asset.groupName + '</td>';
+                                assetsHTML += '<td>' + asset.ic_code + '</td>';
+                                assetsHTML += '<td>' + asset.itemInfo + '</td>';
+                                assetsHTML += '<td>' + asset.serialNumber + '</td>';
+                                assetsHTML += '<td>' + asset.year_purchased + '</td>';
+                                assetsHTML += '<td><a href="File-ticket.php?inventory_id=' + asset.inventory_id + '&employee_id=' + employee_id + '"><button type="button" class="btn btn-outline-success">File Ticket</button></a></td>';
+                                assetsHTML += '</tr>';
+                            });
+                            $('#assetsTable').html(assetsHTML);
+                        } else {
+                            $('#assetsTable').html('<tr><td colspan="7">No assets found for this employee.</td></tr>');
+                        }
+                    },
+                    error: function() {
+                        alert('Error fetching asset data.');
+                    }
+                });
+            } else {
+                $('#assetsTable').html('');
+            }
+        });
+    });
+    </script>
+
 
 </body>
-
 </html>
