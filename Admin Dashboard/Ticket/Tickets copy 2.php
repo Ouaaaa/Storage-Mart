@@ -99,19 +99,17 @@ $result = mysqli_query($link, $fetchQuery);
     <title>Storage Mart Tickets - Tables</title>
 
     <!-- Custom fonts for this template -->
-    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
     <!-- Custom styles for this page -->
-    <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
-    <!-- Column Control CSS and JS -->
-    <link href="https://cdn.datatables.net/columncontrol/1.0.7/css/columnControl.dataTables.min.css" rel="stylesheet">
-  <script src="https://cdn.datatables.net/columncontrol/1.0.7/js/dataTables.columnControl.min.js"></script>
+    <link href="../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="../vendor/datatables/dataTables.min.css" rel="stylesheet">
 
 </head>
 
@@ -124,9 +122,9 @@ $result = mysqli_query($link, $fetchQuery);
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../index.php">
                 <div class="sidebar-brand-icon ">
-                    <img src="img/logo.png" alt="Logo" style="width:40px; height:auto;">
+                    <img src="../img/logo.png" alt="Logo" style="width:40px; height:auto;">
                 </div>
                 <div class="sidebar-brand-text mx-3">Storage Mart</div>
             </a>
@@ -136,7 +134,7 @@ $result = mysqli_query($link, $fetchQuery);
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item">
-                <a class="nav-link" href="index.php">
+                <a class="nav-link" href="../index.php">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -159,8 +157,8 @@ $result = mysqli_query($link, $fetchQuery);
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="Employee.php">Employee</a>
+                        <a class="collapse-item" href="../Account/Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="../Account/Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
@@ -172,7 +170,7 @@ $result = mysqli_query($link, $fetchQuery);
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="Assets.php">
+                <a class="nav-link" href="../Assets Inventory/Directory/Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
@@ -186,21 +184,21 @@ $result = mysqli_query($link, $fetchQuery);
                 <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">Branch:</h6>
-                        <a class="collapse-item" href="Head-office.php">Head Office</a>
-                        <a class="collapse-item" href="Iran.php">Iran</a>
-                        <a class="collapse-item" href="Don-roces.php">Don Roces</a>
-                        <a class="collapse-item" href="Sucat.php">Sucat</a>
-                        <a class="collapse-item" href="Banawe.php">Sucat</a>
-                        <a class="collapse-item" href="Santolan.php">Santolan</a>
-                        <a class="collapse-item" href="Pasig.php">Pasig</a>
-                        <a class="collapse-item" href="Bangkal.php">Bangkal</a>
-                        <a class="collapse-item" href="Delta.php">Delta</a>
-                        <a class="collapse-item" href="Binondo.php">Binondo</a>
-                        <a class="collapse-item" href="Katipunan.php">Katipunan</a>
-                        <a class="collapse-item" href="Fairview.php">Fairview</a>
-                        <a class="collapse-item" href="Jabad.php">Jabad</a>
-                        <a class="collapse-item" href="Yakal.php">Yakal</a>
-                        <a class="collapse-item" href="Caloocan.php">Caloocan</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Iran.php">Iran</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Delta.php">Delta</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Caloocan.php">Caloocan</a>
 
                     </div>
                 </div>
@@ -215,7 +213,7 @@ $result = mysqli_query($link, $fetchQuery);
 			
             <!-- Nav Item - Tables -->
             <li class="nav-item">
-                <a class="nav-link" href="Pendings.php">
+                <a class="nav-link" href="../Pendings.php">
                     <i class="fas fa-fw fa-table"></i>
                     <span>Pendings</span></a>
             </li>
@@ -288,12 +286,12 @@ $result = mysqli_query($link, $fetchQuery);
                                 </span>
 
                                 <img class="img-profile rounded-circle"
-                                    src="img/undraw_profile.svg">
+                                    src="../img/undraw_profile.svg">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../public/login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -319,9 +317,12 @@ $result = mysqli_query($link, $fetchQuery);
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">List of Tickets</h6>
                         </div>
+                        <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
+                            <a href="Add-Ticket.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Ticket</a>
+                        </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="tickets" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>Ticket ID</th>
@@ -417,9 +418,6 @@ $result = mysqli_query($link, $fetchQuery);
                                 </table>
                             </div>
                         </div>
-                        <div class="col-md-3" style="margin-bottom:20px; margin-left:40px;">
-                            <a href="Add-Ticket.php" class="btn btn-primary">Add Ticket</a>
-                        </div>
                     </div>
                 </div>
         </div>
@@ -459,7 +457,7 @@ $result = mysqli_query($link, $fetchQuery);
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
@@ -596,21 +594,21 @@ $result = mysqli_query($link, $fetchQuery);
 </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../vendor/jquery/jquery.min.js"></script>
+    <script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="../vendor/jquery-easing/jquery.easing.min.js"></script>
 
     <!-- Custom scripts for all pages-->
-    <script src="js/sb-admin-2.min.js"></script>
+    <script src="../js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="../vendor/datatables/dataTables.min.js"></script>
 
     <!-- Page level custom scripts -->
-    <script src="js/demo/datatables-demo.js"></script>
+    <script src="../js/demo/datatables-demo.js"></script>
     <script>
     $(document).ready(function() {
         $('.viewBtn').on('click', function() {

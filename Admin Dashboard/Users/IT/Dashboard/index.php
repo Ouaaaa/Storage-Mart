@@ -1,20 +1,24 @@
 <?php
 require_once "config.php";
-include "session-checker.php";
-
+include("session-checker.php");
 $accountID = $_SESSION['account_id'];
-$username = ''; 
-
-// ✅ Fetch logged-in username
-$sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-if ($stmt = mysqli_prepare($link, $sql)) {
-    mysqli_stmt_bind_param($stmt, "i", $accountID);
+$fetchUser = "
+    SELECT e.firstname,e.position 
+    FROM tblaccounts a
+    JOIN tblemployee e ON a.account_id = e.account_id
+    WHERE a.account_id = ?
+";
+$loggedfirstname = '';
+$loggedPosition = '';
+if($stmt = mysqli_prepare($link, $fetchUser)){
+    mysqli_stmt_bind_param($stmt, 'i',$accountID);
     mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $username);
+    mysqli_stmt_bind_result($stmt,$loggedfirstname,$loggedPosition);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
 }
-$_SESSION['username'] = $username;
+$_SESSION['loggedfirstname'] = $loggedfirstname;
+$_SESSION['loggedPosition'] = $loggedPosition;
 
 // ✅ Count total users
 $userCount = 0;
@@ -61,11 +65,11 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
     <title>Storage Mart | Admin Dashboard</title>
 
     <!-- Custom fonts for this template -->
-    <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
+    <link href="../../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+    <link href="../../../css/sb-admin-2.min.css" rel="stylesheet">
 </head>
 
 <body id="page-top">
@@ -96,14 +100,14 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
             <div class="sidebar-heading">Interface</div>
 
             <li class="nav-item">
-                <a class="nav-link" href="Ticket/Tickets.php">
+                <a class="nav-link" href="../Tickets/IT-Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
             </li>
 
             <li class="nav-item">
-                <a class="nav-link" href="Assets Inventory/Directory/Assets.php">
+                <a class="nav-link" href="../Asset/Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets</span>
                 </a>
@@ -112,13 +116,6 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
             <hr class="sidebar-divider">
 
             <div class="sidebar-heading">Addons</div>
-
-            <li class="nav-item">
-                <a class="nav-link" href="Pendings.php">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Pendings</span>
-                </a>
-            </li>
 
             <hr class="sidebar-divider d-none d-md-block">
             <div class="text-center d-none d-md-inline">
@@ -145,13 +142,13 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                    <?php echo htmlspecialchars($_SESSION['username']); ?>
+                                    <?= htmlspecialchars($loggedfirstname) . " (" . htmlspecialchars($loggedPosition) . ")" ?>
                                 </span>
-                                <img class="img-profile rounded-circle" src="../img/undraw_profile.svg">
+                                <img class="img-profile rounded-circle" src="../../../img/undraw_profile.svg">
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                  aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../public/login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../../../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -234,16 +231,16 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Scripts -->
-    <script src="../vendor/jquery/jquery.min.js"></script>
-    <script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-    <script src="../vendor/jquery-easing/jquery.easing.min.js"></script>
-    <script src="../js/sb-admin-2.min.js"></script>
+    <script src="../../../vendor/jquery/jquery.min.js"></script>
+    <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../../../vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="../../../js/sb-admin-2.min.js"></script>
 </body>
 </html>

@@ -1,34 +1,29 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
+require_once "config.php";
+include("session-checker.php");
 
-    $accountID = $_SESSION['account_id'];
-    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
+$accountID = $_SESSION['account_id'];
 
-
-$userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
-
-
-if ($stmt = mysqli_prepare($link, $userQuery)) {
-    mysqli_stmt_bind_param($stmt, "i", $accountID);
+// ==========================
+// Fetch user info for display
+// ==========================
+$fetchUser = "
+    SELECT e.firstname, e.position 
+    FROM tblaccounts a
+    JOIN tblemployee e ON a.account_id = e.account_id
+    WHERE a.account_id = ?
+";
+$loggedfirstname = '';
+$loggedPosition = '';
+if ($stmt = mysqli_prepare($link, $fetchUser)) {
+    mysqli_stmt_bind_param($stmt, 'i', $accountID);
     mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $loggedUsername, $loggedUsertype);
+    mysqli_stmt_bind_result($stmt, $loggedfirstname, $loggedPosition);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
 }
-
-
-
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "i", $accountID);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $username);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
-    }
-
-    $_SESSION['username'] = $username;
+$_SESSION['loggedfirstname'] = $loggedfirstname;
+$_SESSION['loggedPosition'] = $loggedPosition;
 
     // Handle delete request
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Decline') {
@@ -48,40 +43,18 @@ if ($stmt = mysqli_prepare($link, $userQuery)) {
             mysqli_stmt_close($stmt);
         }
     }
-
-$fetchQuery = "
-    SELECT 
-        t.ticket_id,
-        t.employee_id,
-        CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS fullname,
-        t.branch,
-        t.department,
-        t.ticket_assign,
-        CONCAT(assign.lastname, ', ', assign.firstname, ' ', assign.middlename) AS assign_name,
-        t.technical_purpose,
-        t.concern_details,
-        t.action,
-        t.result,
-        t.status,
-        t.priority,
-        t.category,
-        t.created_by,
-        a.username AS created_by_name,
-        a.usertype AS created_by_usertype,
-        t.datecreated,
-        t.dateupdated,
-        t.attachments,
-        t.remarks
-    FROM tbltickets t
-    JOIN tblemployee e 
-        ON t.employee_id = e.employee_id
-    LEFT JOIN tblemployee assign 
-        ON t.ticket_assign = assign.employee_id
-    LEFT JOIN tblaccounts a 
-        ON t.created_by = a.account_id
+    //All tickets query
+$sqlQuery = "
+SELECT t.ticket_id, t.ticket_number, 
+       CONCAT(e.lastname, ', ', e.firstname) AS employee_name,
+       t.category, t.priority, t.status, t.date_filed, b.branchName
+FROM tbltickets t
+JOIN tblemployee e ON t.employee_id = e.employee_id
+LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
+ORDER BY t.date_filed DESC
 ";
 
-$result = mysqli_query($link, $fetchQuery);
+$result = mysqli_query($link, $sqlQuery);
 
 
 ?>
@@ -169,6 +142,7 @@ $result = mysqli_query($link, $fetchQuery);
                     <span>Ticket</span>
                 </a>
             </li>
+            
             <li class="nav-item">
                 <a class="nav-link" href="../Assets Inventory/Directory/Assets.php">
                     <i class="fas fa-archive"></i>
@@ -282,7 +256,7 @@ $result = mysqli_query($link, $fetchQuery);
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                   <?= htmlspecialchars($loggedUsername) . " (" . htmlspecialchars($loggedUsertype) . ")" ?>
+                                   <?= htmlspecialchars($loggedfirstname) . " (" . htmlspecialchars($loggedPosition) . ")" ?>
                                 </span>
 
                                 <img class="img-profile rounded-circle"
@@ -318,102 +292,45 @@ $result = mysqli_query($link, $fetchQuery);
                             <h6 class="m-0 font-weight-bold text-primary">List of Tickets</h6>
                         </div>
                         <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
-                            <a href="Add-Ticket.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Tickets</a>
-                            <a href="Add-Ticket.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Manual Add Ticket</a>
+                            <a href="Add-Ticket.php" class="btn btn-primary" style="width:160px;"><i class="fas fa-plus"></i> Add Ticket</a>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="tickets" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="ticketsTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-                                            <th>Ticket ID</th>
-                                            <th>Employee ID</th>
-                                            <th>Customer Name</th>
+                                            <th>Ticket #</th>
+                                            <th>Employee</th>
                                             <th>Branch</th>
-											<th>Department</th>
-                                            <th>Concern Details</th>
-											<th>Priority</th>
                                             <th>Category</th>
-                                            <th>Attachments</th>
+                                            <th>Priority</th>
+                                            <th>Status</th>
+                                            <th>Date Filed</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Ticket ID</th>
-                                            <th>Employee ID</th>
-                                            <th>Customer Name</th>
-                                            <th>Branch</th>
-											<th>Department</th>
-                                            <th>Concern Details</th>
-											<th>Priority</th>
-                                            <th>Category</th>
-                                            <th>Attachments</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </tfoot>
                                     <tbody>
-                                            <?php while ($row = mysqli_fetch_assoc($result)) { 
-                                                // Set color based on priority
-                                                $priorityColor = '';
-                                                if (strtolower($row['priority']) === 'low') {
-                                                    $priorityColor = 'color: #FFD700; font-weight: bold;'; // Yellow
-                                                } elseif (strtolower($row['priority']) === 'medium') {
-                                                    $priorityColor = 'color: #FF8C00; font-weight: bold;'; // Orange
-                                                } elseif (strtolower($row['priority']) === 'high') {
-                                                    $priorityColor = 'color: #FF0000; font-weight: bold;'; // Red
-                                                }
-                                            ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['ticket_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['employee_id']) ?></td>
-                                            <td><?= htmlspecialchars($row['fullname']) ?></td>
-                                            <td><?= htmlspecialchars($row['branch']) ?></td>
-                                            <td><?= htmlspecialchars($row['department']) ?></td>
-                                            <td><?= htmlspecialchars($row['concern_details']) ?></td>
-                                            <td style="<?= $priorityColor ?>"><?= htmlspecialchars($row['priority']) ?></td>
-                                            <td><?= htmlspecialchars($row['category']) ?></td>
-                                            <td><?= htmlspecialchars($row['attachments']) ?></td>
-                                            <td>
-                                                <form method="POST" style="display:inline;">
-                                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
-                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
-                                                        Action</span>
-                                                    </a>
-                                                    <!-- Dropdown - User Information -->
-                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
-                                                        <a class="dropdown-item viewBtn"  data-toggle="modal" 
-                                                            data-target="#viewTicketModal"
-                                                            data-ticketid="<?= $row['ticket_id'] ?>"
-                                                            data-employeeid="<?= $row['employee_id'] ?>"
-                                                            data-employee="<?= htmlspecialchars($row['fullname']) ?>"
-                                                            data-branch="<?= htmlspecialchars($row['branch']) ?>"
-                                                            data-department="<?= htmlspecialchars($row['department']) ?>"
-                                                            data-assign="<?= htmlspecialchars($row['assign_name']) ?>"
-                                                            data-tech="<?= htmlspecialchars($row['technical_purpose']) ?>"
-                                                            data-concern="<?= htmlspecialchars($row['concern_details']) ?>"
-                                                            data-action="<?= htmlspecialchars($row['action']) ?>"
-                                                            data-result="<?= htmlspecialchars($row['result']) ?>"
-                                                            data-status="<?= htmlspecialchars($row['status']) ?>"
-                                                            data-priority="<?= htmlspecialchars($row['priority']) ?>"
-                                                            data-category="<?= htmlspecialchars($row['category']) ?>"
-                                                            data-createdby="<?= htmlspecialchars($row['created_by_usertype']) ?>"
-                                                            data-datecreated="<?= htmlspecialchars($row['datecreated']) ?>"
-                                                            data-dateupdated="<?= htmlspecialchars($row['dateupdated']) ?>"
-                                                            data-attachments="<?= htmlspecialchars($row['attachments']) ?>"
-                                                            data-remarks="<?= htmlspecialchars($row['remarks']) ?>">
-                                                            <i class="fas fa-solid fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            View
-                                                        </a>
-                                                        <a class="dropdown-item">
-                                                            <i class="fas fa-trash fa-sm fa-fw mr-2 text-black-400"></i>
-                                                            Delete
-                                                        </a>
-                                                    </div>
-                                                </form>
-                                            </td>
-                                        </tr>
+                                        <?php while ($row = mysqli_fetch_assoc($result)) { ?>
+                                            <tr>
+                                                <td><?= htmlspecialchars($row['ticket_number']) ?></td>
+                                                <td><?= htmlspecialchars($row['employee_name']) ?></td>
+                                                <td><?= htmlspecialchars($row['branchName']) ?></td>
+                                                <td><?= htmlspecialchars($row['category']) ?></td>
+                                                <td><?= htmlspecialchars($row['priority']) ?></td>
+                                                <td><?= htmlspecialchars($row['status']) ?></td>
+                                                <td><?= htmlspecialchars($row['date_filed']) ?></td>
+                                                <td>
+                                                    <button class="btn btn-sm btn-primary viewBtn" 
+                                                        data-ticketid="<?= $row['ticket_id'] ?>" 
+                                                        data-ticketnum="<?= htmlspecialchars($row['ticket_number']) ?>"
+                                                        data-employee="<?= htmlspecialchars($row['employee_name']) ?>"
+                                                        data-branch="<?= htmlspecialchars($row['branchName']) ?>"
+                                                        data-priority="<?= htmlspecialchars($row['priority']) ?>"
+                                                        data-status="<?= htmlspecialchars($row['status']) ?>">
+                                                        View
+                                                    </button>
+                                                </td>
+                                            </tr>
                                         <?php } ?>
                                     </tbody>
                                 </table>
@@ -465,131 +382,53 @@ $result = mysqli_query($link, $fetchQuery);
     </div>
 <!-- View Ticket Modal -->
 <div class="modal fade" id="viewTicketModal" tabindex="-1" aria-labelledby="viewTicketLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
+  <div class="modal-dialog modal-xl modal-dialog-centered">
     <div class="modal-content">
-      
-        <!-- Modal Header -->
-        <div class="modal-header">
-        <h5 class="modal-title" id="viewTicketLabel">Ticket Details</h5>
-        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-            <span aria-hidden="true">&times;</span>
-        </button>
+        <div class="modal-header bg-primary text-white">
+            <h5 class="modal-title" id="viewTicketLabel">Ticket History</h5>
+            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
         </div>
-
-
-      <div class="container mt-4">
-        <div class="row mb-5" style="margin-left:10px">
+        <div class="modal-body">
+            <div class="row mb-3">
                 <div class="col-md-6">
-                    <label for="ticket_id" class="form-label">Ticket ID</label>
-                    <input type="text" class="form-control" id="ticket_id" name="ticket_id" placeholder="Ticket ID" readonly>
+                    <label>Ticket Number</label>
+                    <input type="text" id="ticket_number" class="form-control" readonly>
                 </div>
                 <div class="col-md-6">
-                    <label for="employee_id" class="form-label">Employee ID</label>
-                    <input type="text" class="form-control" id="employee_id" name="employee_id" placeholder="Employee ID" readonly>
+                    <label>Status</label>
+                    <input type="text" id="status" class="form-control" readonly>
                 </div>
+            </div>
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <label>Employee</label>
+                    <input type="text" id="employee" class="form-control" readonly>
+                </div>
+                <div class="col-md-6">
+                    <label>Priority</label>
+                    <input type="text" id="priority" class="form-control" readonly>
+                </div>
+            </div>
+
+            <h6 class="mt-4">History Records</h6>
+            <div class="table-responsive">
+                <table class="table table-bordered" id="ticketHistoryTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+                            <th>Action Taken</th>
+                            <th>Technician</th>
+                            <th>Old Status</th>
+                            <th>New Status</th>
+                            <th>Date</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
         </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for="fullname" class="form-label">Employee name</label>
-                    <input type="text" class="form-control" id="fullname" name="fullname" placeholder="Full name" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label for="branch" class="form-label">Branch</label>
-                    <input type="text" class="form-control" id="branch" name="branch" placeholder="Branch" readonly>
-                </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-dismiss="modal">Close</button>
         </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for="department" class="form-label">Department</label>
-                    <input type="text" class="form-control" id="department" name="department" placeholder="Department" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label for="assign_name" class="form-label">Ticket Assign to</label>
-                    <input type="text" class="form-control" id="assign_name" name="assign_name" placeholder="Ticket Assign" readonly>
-                </div>
-        </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for="technical_purpose" class="form-label">Technical Purpose</label>
-                    <input type="text" class="form-control" id="technical_purpose" name="technical_purpose" placeholder="Technical Purpose" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label for = "concern-details" class ="form-label">Concern Details</label>
-                    <textarea id ="concern_details" name="concern_details"class="form-control" rows="6" maxlength="1000" readonly>
-
-                    </textarea>
-                </div>
-        </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for = "action" class ="form-label">Action Taken</label>
-                    <textarea id ="action" name="action"class="form-control" rows="6" maxlength="1000" readonly>
-
-                    </textarea>
-                </div>
-                <div class="col-md-6">
-                    <label for = "result" class ="form-label">Result Details</label>
-                    <textarea id ="result" name="result"class="form-control" rows="6" maxlength="1000" readonly>
-
-                    </textarea>
-                </div>
-        </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for="status" class="form-label">Status</label>
-                    <input type="text" class="form-control" id="status" name="status" placeholder="Status" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label for="priority" class="form-label">Priority</label>
-                    <input type="text" class="form-control" id="priority" name="priority" placeholder="priority" readonly>
-                </div>
-        </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for="category" class="form-label">Category</label>
-                    <input type="text" class="form-control" id="category" name="category" placeholder="Category" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label for="created_by_usertype" class="form-label">Performed By</label>
-                    <input type="text" class="form-control" id="created_by_usertype" name="created_by_usertype" placeholder="Performed By" readonly>
-                </div>
-        </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for="datecreated" class="form-label">Date created</label>
-                    <input type="text" class="form-control" id="datecreated" name="datecreated" placeholder="Date Created" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label for="dateupdated" class="form-label">Date Updated</label>
-                    <input type="text" class="form-control" id="dateupdated" name="dateupdated" placeholder="Date Updated" readonly>
-                </div>
-        </div>
-
-        <div class="row mb-5" style="margin-left:10px">
-                <div class="col-md-6">
-                    <label for = "remarks" class ="form-label">Remarks</label>
-                    <textarea id ="remarks" name="remarks"class="form-control" rows="6" maxlength="1000" readonly>
-
-                    </textarea>
-                </div>
-        </div>
-      </div>
-      
-      <!-- Modal Footer -->
-      <div class="modal-footer">
-        <a href="#" class="d-none d-sm-inline-block btn btn-sm btn-primary shadow-sm">
-            <i class="fas fa-download fa-sm text-white-50"></i> Generate Report
-        </a>
-        <button type="button" class="btn btn-secondary" data-dismiss="modal"s>Close</button>
-      </div>
-      
     </div>
   </div>
 </div>
@@ -610,31 +449,42 @@ $result = mysqli_query($link, $fetchQuery);
 
     <!-- Page level custom scripts -->
     <script src="../js/demo/datatables-demo.js"></script>
-    <script>
-    $(document).ready(function() {
-        $('.viewBtn').on('click', function() {
-            $('#ticket_id').val($(this).data('ticketid'));
-            $('#employee_id').val($(this).data('employeeid'));
-            $('#fullname').val($(this).data('employee'));
-            $('#branch').val($(this).data('branch'));
-            $('#department').val($(this).data('department'));
-            $('#assign_name').val($(this).data('assign'));
-            $('#technical_purpose').val($(this).data('tech'));
-            $('#concern_details').val($(this).data('concern'));
-            $('#action').val($(this).data('action'));
-            $('#result').val($(this).data('result'));
-            $('#status').val($(this).data('status'));
-            $('#priority').val($(this).data('priority'));
-            $('#category').val($(this).data('category'));
-            $('#created_by_usertype').val($(this).data('createdby'));
-            $('#datecreated').val($(this).data('datecreated'));
-            $('#dateupdated').val($(this).data('dateupdated'));
-            $('#remarks').val($(this).data('remarks'));
+<script>
+$(document).ready(function() {
+    $('#ticketsTable').DataTable();
 
-            $('#viewTicketModal').modal('show');
+    $('.viewBtn').on('click', function() {
+        const id = $(this).data('ticketid');
+        $('#ticket_number').val($(this).data('ticketnum'));
+        $('#employee').val($(this).data('employee'));
+        $('#priority').val($(this).data('priority'));
+        $('#status').val($(this).data('status'));
+
+        $('#ticketHistoryTable tbody').empty();
+
+        $.get('fetch_ticket_history.php', { ticket_id: id }, function(data) {
+            const history = JSON.parse(data);
+            if (history.length > 0) {
+                history.forEach(row => {
+                    $('#ticketHistoryTable tbody').append(`
+                        <tr>
+                            <td>${row.action_details}</td>
+                            <td>${row.performed_by}</td>
+                            <td>${row.old_status}</td>
+                            <td>${row.new_status}</td>
+                            <td>${row.date_logged}</td>
+                        </tr>
+                    `);
+                });
+            } else {
+                $('#ticketHistoryTable tbody').append(`<tr><td colspan="5" class="text-center">No history found.</td></tr>`);
+            }
         });
+
+        $('#viewTicketModal').modal('show');
     });
-    </script>
+});
+</script>
 
 
                                        

@@ -151,31 +151,40 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     exit();
     }
 }
+// Get the logged-in IT employee_id
+$employee_id = null;
+$getEmp = mysqli_prepare($link, "SELECT employee_id FROM tblemployee WHERE account_id = ?");
+mysqli_stmt_bind_param($getEmp, "i", $accountID);
+mysqli_stmt_execute($getEmp);
+mysqli_stmt_bind_result($getEmp, $employee_id);
+mysqli_stmt_fetch($getEmp);
+mysqli_stmt_close($getEmp);
 
 // ========================
-// Fetch pending tickets
+// Fetch Assigned tickets
 // ========================
 $fetchQuery = "
     SELECT 
         t.ticket_id,
         t.ticket_number,
-        CONCAT(e.lastname, ', ', e.firstname, ' ', e.middlename) AS fullname,
-        b.branchName,
-        e.department,
-        CONCAT(i.assetNumber, ' - ', g.groupName) AS asset_info,
         t.category,
         t.priority,
         t.concern_details,
+        t.status,
         t.date_filed,
-        t.status
+        t.remarks,
+        CONCAT(e.firstname, ' ', e.lastname) AS employee_name,
+        b.branchName,
+        CONCAT(i.assetNumber, ' - ', g.groupName) AS asset_info
     FROM tbltickets t
     JOIN tblemployee e ON t.employee_id = e.employee_id
     JOIN tblbranch b ON e.branch_id = b.branch_id
     JOIN tblassets_inventory i ON t.inventory_id = i.inventory_id
     LEFT JOIN tblassets_group g ON i.group_id = g.group_id
-    WHERE t.status = 'Pending'
+    WHERE t.assigned_to = $employee_id AND t.status = 'In Progress'
     ORDER BY t.date_filed ASC
 ";
+
 $result = mysqli_query($link, $fetchQuery);
 if (!$result) {
     die("SQL Error: " . mysqli_error($link));
@@ -192,20 +201,20 @@ if (!$result) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart | Admin Pending Tickets - Tables</title>
+    <title>Storage Mart | IT Tickets - Tables</title>
 
     <!-- Custom fonts for this template -->
-    <link href="vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="../../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="css/sb-admin-2.min.css" rel="stylesheet">
-        <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <link href="../../../css/sb-admin-2.min.css" rel="stylesheet">
+        <link rel="icon" href="../../../img/favicon.ico" type="image/x-icon">
 
     <!-- Custom styles for this page -->
-    <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="../../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
 
 </head>
 
@@ -218,7 +227,7 @@ if (!$result) {
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../Dashboard/index.php">
                 <div class="sidebar-brand-icon rotate-n-15">
                 </div>
                 <div class="sidebar-brand-text mx-3">Storage Mart</div>
@@ -229,7 +238,7 @@ if (!$result) {
 
             <!-- Nav Item - Dashboard -->
             <li class="nav-item">
-                <a class="nav-link" href="index.php">
+                <a class="nav-link" href="../Dashboard/index.php">
                     <i class="fas fa-fw fa-tachometer-alt"></i>
                     <span>Dashboard</span></a>
             </li>
@@ -241,62 +250,18 @@ if (!$result) {
             <div class="sidebar-heading">
                 Interface
             </div>
-
-            <!-- Nav Item - Pages Collapse Menu -->
-            <li class="nav-item ">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
-                    aria-expanded="true" aria-controls="collapseTwo">
-                    <i class="fas fa-fw fa-user"></i>
-                    <span>Users</span>	
-                </a>
-                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="Employee.php">Employee</a>
-                    </div>
-                </div>
-            </li>
 			
-			<li class="nav-item">
-                <a class="nav-link" href="Ticket/Tickets.php">
+			<li class="nav-item active">
+                <a class="nav-link" href="IT-Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="Assets.php">
+                <a class="nav-link" href="../Asset/Assets.php">
                     <i class="fas fa-archive"></i>
-                    <span>Assets Directory </span>
+                    <span>My Assets</span>
                 </a>
-            </li>
-            <li class="nav-item ">
-                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
-                    aria-expanded="true" aria-controls="collapsethree">
-                    <i class="fas fa-fw fa-user"></i>
-                    <span>Asset Inventory</span>	
-                </a>
-                <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
-                    <div class="bg-white py-2 collapse-inner rounded">
-                        <h6 class="collapse-header">Branch:</h6>
-                        <a class="collapse-item" href="Head-office.php">Head Office</a>
-                        <a class="collapse-item" href="Iran.php">Iran</a>
-                        <a class="collapse-item" href="Don-roces.php">Don Roces</a>
-                        <a class="collapse-item" href="Sucat.php">Sucat</a>
-                        <a class="collapse-item" href="Banawe.php">Sucat</a>
-                        <a class="collapse-item" href="Santolan.php">Santolan</a>
-                        <a class="collapse-item" href="Pasig.php">Pasig</a>
-                        <a class="collapse-item" href="Bangkal.php">Bangkal</a>
-                        <a class="collapse-item" href="Delta.php">Delta</a>
-                        <a class="collapse-item" href="Binondo.php">Binondo</a>
-                        <a class="collapse-item" href="Katipunan.php">Katipunan</a>
-                        <a class="collapse-item" href="Fairview.php">Fairview</a>
-                        <a class="collapse-item" href="Jabad.php">Jabad</a>
-                        <a class="collapse-item" href="Yakal.php">Yakal</a>
-                        <a class="collapse-item" href="Caloocan.php">Caloocan</a>
-
-                    </div>
-                </div>
             </li>
             <!-- Divider -->
             <hr class="sidebar-divider">
@@ -305,13 +270,6 @@ if (!$result) {
             <div class="sidebar-heading">
                 Actions
             </div>
-			
-            <!-- Nav Item - Tables -->
-            <li class="nav-item active">
-                <a class="nav-link" href="Pendings.php">
-                    <i class="fas fa-fw fa-table"></i>
-                    <span>Pendings</span></a>
-            </li>
 
             <!-- Divider -->
             <hr class="sidebar-divider d-none d-md-block">
@@ -379,12 +337,12 @@ if (!$result) {
                                 <span class="mr-2 d-none d-lg-inline text-gray-600 small">                                    
                                     <?= htmlspecialchars($loggedfirstname) . " (" . htmlspecialchars($loggedPosition) . ")" ?></span>
                                 <img class="img-profile rounded-circle"
-                                    src="img/undraw_profile.svg">
+                                    src="../../../img/undraw_profile.svg">
                             </a>
                             <!-- Dropdown - User Information -->
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                 aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../public/login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../../../../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -415,31 +373,31 @@ if (!$result) {
                                 <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
-                                            <th>Ticket ID</th>
-                                            <th>Employee Name</th>
-                                            <th>Department</th>
-                                            <th>Branch</th>
-											<th>Asset Info</th>
-											<th>Category</th>
+                                            <th>Ticket #</th>
+                                            <th>Category</th>
                                             <th>Priority</th>
                                             <th>Concern Details</th>
-                                            <th>Date Filed</th>
-                                            <th>Status</th>
+											<th>Status</th>
+                                            <th>Remarks</th>
+                                            <th>Employee Name</th>
+                                            <th>Branch</th>
+											<th>Date Filed</th>
+                                            <th>Asset Info</th>
 											<th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
                                         <tr>
-                                            <th>Ticket ID</th>
-                                            <th>Employee Name</th>
-                                            <th>Department</th>
-                                            <th>Branch</th>
-											<th>Asset Info</th>
-											<th>Category</th>
+                                            <th>Ticket #</th>
+                                            <th>Category</th>
                                             <th>Priority</th>
                                             <th>Concern Details</th>
-                                            <th>Date Filed</th>
-                                            <th>Status</th>
+											<th>Status</th>
+                                            <th>Remarks</th>
+                                            <th>Employee Name</th>
+                                            <th>Branch</th>
+											<th>Date Filed</th>
+                                            <th>Asset Info</th>
 											<th>Actions</th>
                                         </tr>
                                     </tfoot>
@@ -447,15 +405,15 @@ if (!$result) {
                                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
                                         <tr>
                                             <td><?= htmlspecialchars($row['ticket_number']); ?></td>
-                                            <td><?= htmlspecialchars($row['fullname']); ?></td>
-                                            <td><?= htmlspecialchars($row['department']); ?></td>
-                                            <td><?= htmlspecialchars($row['branchName']); ?></td>
-                                            <td><?= htmlspecialchars($row['asset_info']); ?></td>
                                             <td><?= htmlspecialchars($row['category']); ?></td>
                                             <td><?= htmlspecialchars($row['priority']); ?></td>
                                             <td><?= htmlspecialchars($row['concern_details']); ?></td>
-                                            <td><?= htmlspecialchars($row['date_filed']); ?></td>
                                             <td><?= htmlspecialchars($row['status']); ?></td>
+                                            <td><?= htmlspecialchars($row['remarks']); ?></td>
+                                            <td><?= htmlspecialchars($row['employee_name']); ?></td>
+                                            <td><?= htmlspecialchars($row['branchName']); ?></td>
+                                            <td><?= htmlspecialchars($row['date_filed']); ?></td>
+                                            <td><?= htmlspecialchars($row['asset_info']); ?></td>
                                             <td>
                                                 <div class="dropdown">
                                                     <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="actionDropdown<?= $row['ticket_id'] ?>" data-toggle="dropdown" aria-expanded="false">
@@ -525,7 +483,7 @@ if (!$result) {
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
@@ -606,22 +564,22 @@ if (!$result) {
     </div>
     </div>
 
-    <!-- Bootstrap core JavaScript-->
-    <script src="vendor/jquery/jquery.min.js"></script>
-    <script src="vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <!-- Bootstrap core JavaScript-->
+        <script src="../../../vendor/jquery/jquery.min.js"></script>
+        <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Core plugin JavaScript-->
-    <script src="vendor/jquery-easing/jquery.easing.min.js"></script>
+        <!-- Core plugin JavaScript-->
+        <script src="../../../vendor/jquery-easing/jquery.easing.min.js"></script>
 
-    <!-- Custom scripts for all pages-->
-    <script src="js/sb-admin-2.min.js"></script>
+        <!-- Custom scripts for all pages-->
+        <script src="../../../js/sb-admin-2.min.js"></script>
 
-    <!-- Page level plugins -->
-    <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+        <!-- Page level plugins -->
+        <script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
+        <script src="../../../vendor/datatables/dataTables.min.js"></script>
 
-    <!-- Page level custom scripts -->
-    <script src="js/demo/datatables-demo.js"></script>
+        <!-- Page level custom scripts -->
+        <script src="../../../js/demo/datatables-demo.js"></script>
     <script>
         $('#approveAssignModal').on('show.bs.modal', function (event) {
   var button = $(event.relatedTarget);

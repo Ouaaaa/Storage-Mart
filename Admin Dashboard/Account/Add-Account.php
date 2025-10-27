@@ -321,8 +321,9 @@ if (isset($_POST['btnSubmit'])) {
                                         <option value="">-- Select User Type --</option>
                                         <option value="ADMIN">Admin</option>
                                         <option value="HR">Human Resources</option>
-                                        <option value="ACCTNG">ACCOUNTING</option>
+                                        <option value="ACCTNG">Accounting</option>
                                         <option value="EMPLOYEE">Employee</option>
+                                        <option value="IT">Information Technology</option>
                                         </select>
                                     </div>
                                     </div>

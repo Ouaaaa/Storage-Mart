@@ -29,11 +29,13 @@ if (isset($_POST['btnLogin'])) {
                     // redirect based on user type
                     if (!empty($usertype)) {
                         if ($usertype == 'EMPLOYEE') {
-                            header("Location: ../Admin Dashboard/User/index.php");
+                            header("Location: ../Admin Dashboard/Users/Employee/Dashboard/index.php");
                         } elseif ($usertype == 'HR') {
                             header("Location: ../../Employer/User/CareerSearch-Page.php");
                         } elseif ($usertype == 'ADMIN') {
                             header("Location: ../Admin Dashboard/index.php");
+                        } elseif ($usertype == 'IT') {
+                            header("Location: ../Admin Dashboard/Users/IT/Dashboard/index.php");
                         } else {
                             $loginMessage = "Error: Invalid user type.";
                         }

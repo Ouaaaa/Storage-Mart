@@ -148,7 +148,7 @@ if (isset($_POST['btnSubmit'])) {
             </li>
 			
 			<li class="nav-item">
-                <a class="nav-link" href="Tickets.php">
+                <a class="nav-link" href="../../Ticket/Tickets.php">
                     <i class="fas fa-ticket-alt"></i>
                     <span>Ticket</span>
                 </a>
@@ -356,7 +356,7 @@ if (isset($_POST['btnSubmit'])) {
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
