@@ -28,129 +28,119 @@ $_SESSION['loggedPosition'] = $loggedPosition;
 // ========================
 // Handle Approve / Decline
 // ========================
+// ========================
+// Handle Ticket Status Actions (Resolve / On Hold / Unresolved)
+// ========================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $ticket_id = $_POST['ticket_id'];
-    $action = $_POST['action'];
-
-    // Fetch ticket number for log
-    $getTicketNo = mysqli_prepare($link, "SELECT ticket_number FROM tbltickets WHERE ticket_id = ?");
-    mysqli_stmt_bind_param($getTicketNo, "i", $ticket_id);
-    mysqli_stmt_execute($getTicketNo);
-    mysqli_stmt_bind_result($getTicketNo, $ticket_number);
-    mysqli_stmt_fetch($getTicketNo);
-    mysqli_stmt_close($getTicketNo);
-
-    if ($action === 'ApproveAssign') {
-        $oldStatus = 'Pending';
-        $newStatus = 'In Progress';
-        $assigned_to = $_POST['assigned_to'];
-        $remarks = trim($_POST['remarks'] ?? '');
-        $action_type = 'Approved';
-        $action_details = "Ticket approved and assigned to IT staff ID: $assigned_to";
-
-        // ✅ Update tbltickets
-        $query = "
-            UPDATE tbltickets 
-            SET status = ?, assigned_to = ?, approved_by = ?, remarks = ?, date_approved = NOW(), last_updated = NOW()
-            WHERE ticket_id = ?
-        ";
-        if ($stmt = mysqli_prepare($link, $query)) {
-            mysqli_stmt_bind_param($stmt, 'siisi', $newStatus, $assigned_to, $accountID, $remarks, $ticket_id);
-            mysqli_stmt_execute($stmt);
-            mysqli_stmt_close($stmt);
-        }
-
-        // ✅ Insert into tblticket_history
-        $logHistory = "
-            INSERT INTO tblticket_history (ticket_id, action_type, action_details, old_status, new_status, performed_by, performed_role)
-            VALUES (?, ?, ?, ?, ?, ?, 'Admin')
-        ";
-        if ($stmtLog = mysqli_prepare($link, $logHistory)) {
-            mysqli_stmt_bind_param($stmtLog, "issssi", $ticket_id, $action_type, $action_details, $oldStatus, $newStatus, $accountID);
-            mysqli_stmt_execute($stmtLog);
-            mysqli_stmt_close($stmtLog);
-        }
-
-        // ✅ Log into tbllogs
-        $date = date("Y-m-d");
-        $time = date("h:i:sa");
-        $logAction = "Approve & Assign";
-        $module = "Ticket Management";
-        $performedby = $_SESSION['username'];
-        $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
-                VALUES (?, ?, ?, ?, ?, ?)";
-        if ($stmtLog2 = mysqli_prepare($link, $sqlLog)) {
-            mysqli_stmt_bind_param($stmtLog2, "ssssss", $date, $time, $logAction, $module, $ticket_id, $performedby);
-            mysqli_stmt_execute($stmtLog2);
-            mysqli_stmt_close($stmtLog2);
-        }
-
-        header("Location: " . $_SERVER['PHP_SELF']);
-        exit();
-
-    }elseif ($action === 'Decline') {
-    $oldStatus = 'Pending';
-    $newStatus = 'Declined';
-    $decline_reason = trim($_POST['decline_reason'] ?? '');
-    $remarks = trim($_POST['remarks'] ?? '');
     $ticket_id = intval($_POST['ticket_id']);
+    $action = trim($_POST['action']);
+    $technical_purpose = trim($_POST['technical_purpose'] ?? '');
+    $action_taken = trim($_POST['action_taken'] ?? '');
+    $result = trim($_POST['result'] ?? '');
+    $remarks = trim($_POST['remarks'] ?? '');
+    $status = trim($_POST['status'] ?? '');
+    $oldStatus = 'In Progress';
+    $employee_id = null;
 
-    if ($ticket_id <= 0) {
-        die("Invalid Ticket ID received.");
+    // 🔹 Get logged IT employee_id
+    $getEmp = mysqli_prepare($link, "SELECT employee_id FROM tblemployee WHERE account_id = ?");
+    mysqli_stmt_bind_param($getEmp, "i", $accountID);
+    mysqli_stmt_execute($getEmp);
+    mysqli_stmt_bind_result($getEmp, $employee_id);
+    mysqli_stmt_fetch($getEmp);
+    mysqli_stmt_close($getEmp);
+
+    // 🔹 Determine new status
+    if ($action === 'Resolve') {
+        $newStatus = 'Resolved';
+    } elseif ($action === 'On Hold') {
+        $newStatus = 'On Hold';
+    } elseif ($action === 'Unresolved') {
+        $newStatus = 'Unresolved';
+    } else {
+        $newStatus = 'In Progress';
     }
 
-    // ✅ Update tbltickets
-    $query = "
-        UPDATE tbltickets 
-        SET status = 'Closed', 
-            decline_reason = ?, 
+    $action_type = $newStatus;
+    $action_details = "Ticket $newStatus by IT Staff (Account ID: $accountID)";
+
+    // =============================
+    // 1️⃣ Update tbltickets
+    // =============================
+    $update = "
+        UPDATE tbltickets
+        SET 
+            status = ?, 
             remarks = ?, 
-            declined_by = ?, 
-            date_declined = NOW(),
             last_updated = NOW()
         WHERE ticket_id = ?
     ";
-    if ($stmt = mysqli_prepare($link, $query)) {
-        mysqli_stmt_bind_param($stmt, 'ssii', $decline_reason, $remarks, $accountID, $ticket_id);
+    if ($stmt = mysqli_prepare($link, $update)) {
+        mysqli_stmt_bind_param($stmt, 'ssi', $newStatus, $remarks, $ticket_id);
         mysqli_stmt_execute($stmt);
-
-        if (mysqli_stmt_affected_rows($stmt) > 0) {
-            // ✅ Only log if ticket updated successfully
-            $logHistory = "INSERT INTO tblticket_history 
-                (ticket_id, action_type, action_details, old_status, new_status, performed_by, performed_role)
-                VALUES (?, 'Closed', 'Ticket Declined by Admin', 'Pending', 'Closed', ?, 'Admin')";
-            if ($stmtLog = mysqli_prepare($link, $logHistory)) {
-                mysqli_stmt_bind_param($stmtLog, "ii", $ticket_id, $accountID);
-                mysqli_stmt_execute($stmtLog);
-                mysqli_stmt_close($stmtLog);
-            }
-
-            // ✅ Log to tbllogs
-            $date = date("Y-m-d");
-            $time = date("h:i:sa");
-            $logAction = "Decline";
-            $module = "Ticket Management";
-            $performedby = $_SESSION['username'];
-            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby) VALUES (?, ?, ?, ?, ?, ?)";
-            if ($stmtLog2 = mysqli_prepare($link, $sqlLog)) {
-                mysqli_stmt_bind_param($stmtLog2, "ssssss", $date, $time, $logAction, $module, $ticket_id, $performedby);
-                mysqli_stmt_execute($stmtLog2);
-                mysqli_stmt_close($stmtLog2);
-            }
-        } else {
-            die("❌ Ticket update failed. No rows affected. Check ticket_id or DB data.");
-        }
-
         mysqli_stmt_close($stmt);
     } else {
-        die("❌ SQL error: " . mysqli_error($link));
+        die('❌ SQL Error (tbltickets): ' . mysqli_error($link));
     }
 
-    $notificationMessage = "Ticket successfully Declined! Ticket No: $ticket_number";
+    // =============================
+    // 2️⃣ Insert into tblticket_technical
+    // =============================
+    $insertTech = "
+        INSERT INTO tblticket_technical
+        (ticket_id, performed_by, technical_purpose, action_taken, result, remarks, date_performed)
+        VALUES (?, ?, ?, ?, ?, ?, NOW())
+    ";
+    if ($stmtTech = mysqli_prepare($link, $insertTech)) {
+        mysqli_stmt_bind_param($stmtTech, 'iissss', $ticket_id, $employee_id, $technical_purpose, $action_taken, $result, $remarks);
+        mysqli_stmt_execute($stmtTech);
+        mysqli_stmt_close($stmtTech);
+    } else {
+        die('❌ SQL Error (tblticket_technical): ' . mysqli_error($link));
+    }
+
+    // =============================
+    // 3️⃣ Log into tblticket_history
+    // =============================
+    $insertHistory = "
+        INSERT INTO tblticket_history
+        (ticket_id, action_type, action_details, old_status, new_status, performed_by, performed_role)
+        VALUES (?, ?, ?, ?, ?, ?, 'IT Staff')
+    ";
+    if ($stmtHist = mysqli_prepare($link, $insertHistory)) {
+        mysqli_stmt_bind_param($stmtHist, 'issssi', $ticket_id, $action_type, $action_details, $oldStatus, $newStatus, $accountID);
+        mysqli_stmt_execute($stmtHist);
+        mysqli_stmt_close($stmtHist);
+    } else {
+        die('❌ SQL Error (tblticket_history): ' . mysqli_error($link));
+    }
+
+    // =============================
+    // 4️⃣ Log into tbllogs
+    // =============================
+    $date = date('Y-m-d');
+    $time = date('h:i:sa');
+    $logAction = ucfirst($newStatus) . ' Ticket';
+    $module = 'Ticket Management';
+    $performedby = $_SESSION['username'] ?? 'Unknown';
+
+    $insertLog = "
+        INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
+        VALUES (?, ?, ?, ?, ?, ?)
+    ";
+    if ($stmtLog = mysqli_prepare($link, $insertLog)) {
+        mysqli_stmt_bind_param($stmtLog, 'ssssss', $date, $time, $logAction, $module, $ticket_id, $performedby);
+        mysqli_stmt_execute($stmtLog);
+        mysqli_stmt_close($stmtLog);
+    } else {
+        die('❌ SQL Error (tbllogs): ' . mysqli_error($link));
+    }
+
+    // ✅ Redirect
     header("Location: " . $_SERVER['PHP_SELF']);
     exit();
-    }
 }
+
 // Get the logged-in IT employee_id
 $employee_id = null;
 $getEmp = mysqli_prepare($link, "SELECT employee_id FROM tblemployee WHERE account_id = ?");
@@ -403,45 +393,38 @@ if (!$result) {
                                     </tfoot>
                                     <tbody>
                                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                                        <tr>
-                                            <td><?= htmlspecialchars($row['ticket_number']); ?></td>
-                                            <td><?= htmlspecialchars($row['category']); ?></td>
-                                            <td><?= htmlspecialchars($row['priority']); ?></td>
-                                            <td><?= htmlspecialchars($row['concern_details']); ?></td>
-                                            <td><?= htmlspecialchars($row['status']); ?></td>
-                                            <td><?= htmlspecialchars($row['remarks']); ?></td>
-                                            <td><?= htmlspecialchars($row['employee_name']); ?></td>
-                                            <td><?= htmlspecialchars($row['branchName']); ?></td>
-                                            <td><?= htmlspecialchars($row['date_filed']); ?></td>
-                                            <td><?= htmlspecialchars($row['asset_info']); ?></td>
-                                            <td>
-                                                <div class="dropdown">
-                                                    <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="actionDropdown<?= $row['ticket_id'] ?>" data-toggle="dropdown" aria-expanded="false">
-                                                        Actions
-                                                    </button>
-                                                    <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="actionDropdown<?= $row['ticket_id'] ?>">
-                                                        <!-- Approve -->
-                                                        <!-- Approve (opens Assign modal) -->
-                                                        <button type="button" 
-                                                                class="dropdown-item text-success"
-                                                                data-toggle="modal" 
-                                                                data-target="#approveAssignModal" 
-                                                                data-ticket-id="<?= $row['ticket_id']; ?>">
-                                                            <i class="fas fa-check fa-sm fa-fw mr-2"></i>Approve & Assign
-                                                        </button>
-
-
-                                                        <!-- Decline (modal trigger) -->
-                                                        <button type="button" class="dropdown-item text-danger" 
-                                                                data-toggle="modal" 
-                                                                data-target="#declineModal" 
-                                                                data-ticket-id="<?= $row['ticket_id']; ?>">
-                                                            <i class="fas fa-times fa-sm fa-fw mr-2"></i>Decline
-                                                        </button>
+                                            <tr>
+                                                <td><?= htmlspecialchars($row['ticket_number']) ?></td>
+                                                <td><?= htmlspecialchars($row['category']) ?></td>
+                                                <td><?= htmlspecialchars($row['priority']) ?></td>
+                                                <td><?= htmlspecialchars($row['concern_details']) ?></td>
+                                                <td><?= htmlspecialchars($row['status']) ?></td>
+                                                <td><?= htmlspecialchars($row['remarks']) ?></td>
+                                                <td><?= htmlspecialchars($row['employee_name']) ?></td>
+                                                <td><?= htmlspecialchars($row['branchName']) ?></td>
+                                                <td><?= htmlspecialchars($row['date_filed']) ?></td>
+                                                <td><?= htmlspecialchars($row['asset_info']) ?></td>
+                                                <td>
+                                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
+                                                        Action</span>
+                                                    </a>
+                                                    <!-- Dropdown - User Information -->
+                                                    <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown">
+                                                    <a href="#" class="dropdown-item openModalBtn" data-action="Resolve" data-ticket-id="<?= $row['ticket_id']; ?>">
+                                                        <i class="fas fa-check fa-sm fa-fw mr-2 text-black-400"></i> Resolved
+                                                    </a>
+                                                    <a href="#" class="dropdown-item openModalBtn" data-action="On Hold" data-ticket-id="<?= $row['ticket_id']; ?>">
+                                                        <i class="fas fa-pause fa-sm fa-fw mr-2 text-black-400"></i> On Hold
+                                                    </a>
+                                                    <a href="#" class="dropdown-item openModalBtn" data-action="Unresolved" data-ticket-id="<?= $row['ticket_id']; ?>">
+                                                        <i class="fas fa-times fa-sm fa-fw mr-2 text-black-400"></i> Unresolved
+                                                    </a>
                                                     </div>
-                                                </div>
-                                            </td>
-                                        </tr>
+
+                                                </td>
+                                            </tr>
                                         <?php } ?>
                                     </tbody>
                                 </table>
@@ -488,114 +471,220 @@ if (!$result) {
             </div>
         </div>
     </div>
-    <!-- Decline Modal -->
-    <div class="modal fade" id="declineModal" tabindex="-1" role="dialog" aria-labelledby="declineModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <form method="POST" action="">
-        <div class="modal-content">
-            <div class="modal-header">
-            <h5 class="modal-title" id="declineModalLabel">Decline Ticket</h5>
-            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
-            </div>
-            <div class="modal-body">
-            <input type="hidden" name="ticket_id" id="decline_ticket_id">
-            <input type="hidden" name="action" value="Decline">
-            <div class="form-group">
-                <label for="decline_reason">Reason for Decline:</label>
-                <textarea class="form-control" id="decline_reason" name="decline_reason" rows="4" required></textarea>
-                <label for="remarks">Remarks:</label>
-                <textarea class="form-control" id="remarks" name="remarks" rows="4"></textarea>
-            </div>
-            </div>
-            <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-danger">Confirm Decline</button>
-            </div>
+
+<!-- ✅ Ticket Modal -->
+<div class="modal fade" id="ticketModal" tabindex="-1" role="dialog" aria-labelledby="ticketModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog modal-lg" style="margin-top: 100px;" role="document">
+    <form method="POST" action="">
+      <div class="modal-content shadow-lg border-0" style="margin:auto; max-width:850px;">
+        <div class="modal-header bg-primary text-white text-center">
+          <h5 class="modal-title w-100" id="ticketModalLabel">Update Ticket</h5>
+          <button type="button" class="close text-white position-absolute" style="right:15px;" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
         </div>
-        </form>
-    </div>
-    </div>
 
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="ticket_id" id="ticket_id">
+          <input type="hidden" name="action" id="ticket_action">
 
-        <!-- Approve & Assign Modal -->
-    <div class="modal fade" id="approveAssignModal" tabindex="-1" role="dialog" aria-labelledby="approveAssignModalLabel" aria-hidden="true">
-    <div class="modal-dialog" role="document">
-        <form method="POST" action="">
-        <div class="modal-content">
-            <div class="modal-header bg-success text-white">
-            <h5 class="modal-title" id="approveAssignModalLabel">Approve Ticket & Assign IT Staff</h5>
-            <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
-                <span aria-hidden="true">&times;</span>
-            </button>
+          <h5 class="text-primary text-center mb-3">Technical Details</h5>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label>Technical Purpose</label>
+              <select class="form-control" name="technical_purpose" required>
+                <option value="">-- Select Technical Purpose --</option>
+                <option>Desktop / Laptop Issue</option>
+                <option>Network Issue</option>
+                <option>Software Installation / Activation</option>
+                <option>Application Issue</option>
+                <option>Phone Issue</option>
+                <option>Others</option>
+              </select>
             </div>
-            <div class="modal-body">
-
-            <input type="hidden" name="ticket_id" id="approve_ticket_id">
-            <input type="hidden" name="action" value="ApproveAssign">
-
-            <div class="form-group">
-                <label for="assigned_to">Select IT Staff:</label>
-                <select class="form-control" id="assigned_to" name="assigned_to" required>
-                <option value="">-- Select IT Staff --</option>
-                <?php
-                $it_query = "SELECT employee_id, firstname, lastname FROM tblemployee WHERE department = 'IT'";
-                $it_result = mysqli_query($link, $it_query);
-                while ($it = mysqli_fetch_assoc($it_result)) {
-                    echo "<option value='{$it['employee_id']}'>{$it['firstname']} {$it['lastname']}</option>";
-                }
-                ?>
-                </select>
+            <div class="col-md-6">
+              <label>Status</label>
+              <select class="form-control" name="status" required>
+                <option value="Resolved">Resolved</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Unresolved">Unresolved</option>
+              </select>
             </div>
+          </div>
 
-            <div class="form-group">
-                <label for="remarks">Remarks (optional):</label>
-                <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label>Action Taken</label>
+              <textarea class="form-control" name="action_taken" rows="3" required></textarea>
             </div>
+            <div class="col-md-6">
+              <label>After Service Note</label>
+              <textarea class="form-control" name="result" rows="3" required></textarea>
+            </div>
+          </div>
 
-            </div>
-            <div class="modal-footer">
-            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
-            <button type="submit" class="btn btn-success">Approve & Assign</button>
-            </div>
+          <div class="form-group">
+            <label>Remarks</label>
+            <textarea class="form-control" name="remarks" rows="3"></textarea>
+          </div>
         </div>
-        </form>
-    </div>
-    </div>
 
-        <!-- Bootstrap core JavaScript-->
-        <script src="../../../vendor/jquery/jquery.min.js"></script>
-        <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4" id="modalSubmitBtn">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+          <!-- Technical Details
+          <h5 class="text-primary mb-3 text-center">Technical Details</h5>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="technical_purpose">Technical Purpose</label>
+              <select class="form-control" id="technical_purpose" name="technical_purpose" required>
+                <option value="">-- Select Technical Purpose --</option>
+                <option value="Desktop / Laptop Issue">Desktop / Laptop Issue</option>
+                <option value="Phone Issue">Phone Issue</option>
+                <option value="Network Issue">Internet Connection Issue</option>
+                <option value="Software Installation / Activation Request">Software Installation / Activation Request</option>
+                <option value="Application Issue">Application Issue</option>
+                <option value="Others">Others</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label for="status">Status</label>
+              <select class="form-control" id="status" name="status" required>
+                <option value="">-- Select Status --</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Resolved">Resolved</option>
+                <option value="Unresolved">Unresolved</option>
+              </select>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="action_taken">Action Taken</label>
+              <textarea class="form-control" id="action_taken" name="action_taken" rows="3" required></textarea>
+            </div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label for="result">After Service Note</label>
+              <textarea class="form-control" id="result" name="result" rows="3" required></textarea>
+            </div>
+            <div class="col-md-6">
+              <label for="remarks">Remarks</label>
+              <textarea class="form-control" id="remarks" name="remarks" rows="3"></textarea>
+            </div>
+          </div>
 
-        <!-- Core plugin JavaScript-->
-        <script src="../../../vendor/jquery-easing/jquery.easing.min.js"></script>
+        </div>
 
-        <!-- Custom scripts for all pages-->
-        <script src="../../../js/sb-admin-2.min.js"></script>
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4">Submit Resolution</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div> -->
 
-        <!-- Page level plugins -->
-        <script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
-        <script src="../../../vendor/datatables/dataTables.min.js"></script>
+<!-- Ticket Action Modal (Resolve / On Hold / Unresolved)
+<div class="modal fade" id="ticketModal" tabindex="-1" role="dialog" aria-labelledby="ticketModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered modal-lg" role="document">
+    <form method="POST" action="">
+      <div class="modal-content shadow-lg border-0" style="margin:auto; max-width:850px;">
+        <div class="modal-header bg-primary text-white text-center">
+          <h5 class="modal-title w-100" id="ticketModalLabel">Update Ticket</h5>
+          <button type="button" class="close text-white position-absolute" style="right:15px;" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
 
-        <!-- Page level custom scripts -->
-        <script src="../../../js/demo/datatables-demo.js"></script>
-    <script>
-        $('#approveAssignModal').on('show.bs.modal', function (event) {
-  var button = $(event.relatedTarget);
-  var ticketId = button.data('ticket-id');
-  $(this).find('#approve_ticket_id').val(ticketId);
-});
+        <div class="modal-body px-4 py-3">
+          <input type="hidden" name="ticket_id" id="ticket_id">
+          <input type="hidden" name="action" id="ticket_action">
 
-    </script>
+          <h5 class="text-primary text-center mb-3">Technical Details</h5>
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label>Technical Purpose</label>
+              <select class="form-control" name="technical_purpose" required>
+                <option value="">-- Select Technical Purpose --</option>
+                <option>Desktop / Laptop Issue</option>
+                <option>Network Issue</option>
+                <option>Software Installation / Activation</option>
+                <option>Application Issue</option>
+                <option>Phone Issue</option>
+                <option>Others</option>
+              </select>
+            </div>
+            <div class="col-md-6">
+              <label>Status</label>
+              <select class="form-control" name="status" required>
+                <option value="Resolved">Resolved</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Unresolved">Unresolved</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="row mb-3">
+            <div class="col-md-6">
+              <label>Action Taken</label>
+              <textarea class="form-control" name="action_taken" rows="3" required></textarea>
+            </div>
+            <div class="col-md-6">
+              <label>After Service Note</label>
+              <textarea class="form-control" name="result" rows="3" required></textarea>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label>Remarks</label>
+            <textarea class="form-control" name="remarks" rows="3"></textarea>
+          </div>
+        </div>
+
+        <div class="modal-footer justify-content-center">
+          <button type="button" class="btn btn-secondary px-4" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-success px-4" id="modalSubmitBtn">Submit</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div> -->
+
+<!-- ✅ Scripts -->
+<script src="../../../vendor/jquery/jquery.min.js"></script>
+<script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+<script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
+<script src="../../../vendor/datatables/dataTables.bootstrap4.min.js"></script>
+<script src="../../../js/sb-admin-2.min.js"></script>
+
 <script>
 $(document).ready(function() {
+  // Initialize datatable
   $('#dataTable').DataTable();
 
-  $('#declineModal').on('show.bs.modal', function (event) {
-    var button = $(event.relatedTarget);
-    var ticketId = button.data('ticket-id');
-    $(this).find('#decline_ticket_id').val(ticketId);
+  // Handle ticket action modal
+  $('.openModalBtn').click(function() {
+    const ticketId = $(this).data('ticket-id');
+    const action = $(this).data('action'); // Resolve / On Hold / Unresolved
+    const btnColor = action === 'Resolve' ? 'btn-success' :
+                     action === 'On Hold' ? 'btn-warning' :
+                     'btn-danger';
+
+    $('#ticket_id').val(ticketId);
+    $('#ticket_action').val(action);
+    $('#ticketModalLabel').text(action + ' Ticket');
+    $('#modalSubmitBtn')
+      .removeClass('btn-success btn-warning btn-danger')
+      .addClass(btnColor)
+      .text(action);
+
+    $('#ticketModal').modal('show');
   });
 });
 </script>

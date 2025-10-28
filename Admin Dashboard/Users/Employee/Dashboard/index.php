@@ -16,39 +16,50 @@ if ($stmt = mysqli_prepare($link, $sql)) {
 }
 $_SESSION['username'] = $username;
 
-// ✅ Count total users
-$userCount = 0;
-if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tblaccounts")) {
-    $row = mysqli_fetch_array($result);
-    $userCount = $row[0];
-    mysqli_free_result($result);
+// ✅ Get employee_id for this account
+$employee_id = 0;
+$sqlEmp = "SELECT employee_id FROM tblemployee WHERE account_id = ?";
+if ($stmt = mysqli_prepare($link, $sqlEmp)) {
+    mysqli_stmt_bind_param($stmt, "i", $accountID);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $employee_id);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
 }
+
+// ✅ Helper function to count tickets by status
+function getCount($link, $employee_id, $status = null) {
+    if ($status === null) {
+        $query = "SELECT COUNT(*) FROM tbltickets WHERE employee_id = ?";
+        $stmt = mysqli_prepare($link, $query);
+        mysqli_stmt_bind_param($stmt, "i", $employee_id);
+    } else {
+        $query = "SELECT COUNT(*) FROM tbltickets WHERE employee_id = ? AND status = ?";
+        $stmt = mysqli_prepare($link, $query);
+        mysqli_stmt_bind_param($stmt, "is", $employee_id, $status);
+    }
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $count);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+    return $count;
+}
+
+// ✅ Count totals
+$totalTickets = getCount($link, $employee_id);
+$pendingTickets = getCount($link, $employee_id, 'Pending');
+$inProgressTickets = getCount($link, $employee_id, 'In Progress');
+$resolvedTickets = getCount($link, $employee_id, 'Resolved');
 
 // ✅ Count assets for this logged-in user
 $assetsCount = 0;
 $sqlAssets = "SELECT COUNT(*) FROM tblassets_inventory WHERE employee_id = ?";
 if ($stmt = mysqli_prepare($link, $sqlAssets)) {
-    mysqli_stmt_bind_param($stmt, "i", $accountID);
+    mysqli_stmt_bind_param($stmt, "i", $employee_id);
     mysqli_stmt_execute($stmt);
     mysqli_stmt_bind_result($stmt, $assetsCount);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
-}
-
-// ✅ Count all tickets
-$ticketCount = 0;
-if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets")) {
-    $row = mysqli_fetch_array($result);
-    $ticketCount = $row[0];
-    mysqli_free_result($result);
-}
-
-// ✅ Count ongoing tickets
-$ticketOngoing = 0;
-if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status='On-going'")) {
-    $row = mysqli_fetch_array($result);
-    $ticketOngoing = $row[0];
-    mysqli_free_result($result);
 }
 ?>
 <!DOCTYPE html>
@@ -63,6 +74,7 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
     <!-- Custom fonts for this template -->
     <link href="../../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Custom styles for this template -->
     <link href="../../../css/sb-admin-2.min.css" rel="stylesheet">
@@ -154,55 +166,74 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
                 </nav>
 
                 <!-- Page Content -->
-                <div class="container-fluid">
-                    <div class="d-sm-flex align-items-center justify-content-between mb-4">
-                        <h1 class="h3 mb-0 text-gray-800">Dashboard</h1>
+            <!-- Page Content -->
+            <div class="container-fluid">
+                <h1 class="h3 mb-4 text-gray-800">Dashboard</h1>
+
+                <div class="row">
+                    <!-- Assets Card -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-primary shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Your Assets</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $assetsCount ?></div>
+                            </div>
+                        </div>
                     </div>
 
-                    <div class="row">
-                        <!-- Assets Card -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-primary shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                                        Your Assets
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        <?php echo $assetsCount; ?>
-                                    </div>
-                                </div>
+                    <!-- Total Tickets -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-success shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Total Tickets</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $totalTickets ?></div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Tickets Card -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-success shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                                        Tickets
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        <?php echo $ticketCount; ?>
-                                    </div>
-                                </div>
+                    <!-- Pending Tickets -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-warning shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Pending Tickets</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $pendingTickets ?></div>
                             </div>
                         </div>
+                    </div>
 
-                        <!-- Ongoing Tickets -->
-                        <div class="col-xl-3 col-md-6 mb-4">
-                            <div class="card border-left-warning shadow h-100 py-2">
-                                <div class="card-body">
-                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                                        On-going Tickets
-                                    </div>
-                                    <div class="h5 mb-0 font-weight-bold text-gray-800">
-                                        <?php echo $ticketOngoing; ?>
-                                    </div>
-                                </div>
+                    <!-- Resolved Tickets -->
+                    <div class="col-xl-3 col-md-6 mb-4">
+                        <div class="card border-left-info shadow h-100 py-2">
+                            <div class="card-body">
+                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Resolved</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800"><?= $resolvedTickets ?></div>
                             </div>
                         </div>
                     </div>
                 </div>
+
+                <!-- Ticket Status Pie Chart -->
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">Ticket Status Overview</h6>
+                    </div>
+                    <div class="card-body text-center">
+                        <canvas id="ticketChart" width="400" height="200"></canvas>
+                    </div>
+                </div>
+            </div>
+
+
+                <!-- Ticket Status Pie Chart -->
+                <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ticket Status Overview</h6>
+                </div>
+                <div class="card-body text-center">
+                    <canvas id="ticketChart" width="400" height="200"></canvas>
+                </div>
+                </div>
+
                 <!-- End Page Content -->
             </div>
         </div>
@@ -232,7 +263,29 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
             </div>
         </div>
     </div>
-
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+  const ctx = document.getElementById('ticketChart').getContext('2d');
+  const data = {
+    labels: ['Pending', 'In Progress', 'Resolved'],
+    datasets: [{
+      data: [<?= $pendingTickets ?>, <?= $inProgressTickets ?>, <?= $resolvedTickets ?>],
+      backgroundColor: [
+        'rgba(255, 206, 86, 0.8)',
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(75, 192, 192, 0.8)'
+      ],
+      borderColor: [
+        'rgba(255, 206, 86, 1)',
+        'rgba(54, 162, 235, 1)',
+        'rgba(75, 192, 192, 1)'
+      ],
+      borderWidth: 1
+    }]
+  };
+  new Chart(ctx, { type: 'pie', data: data, options: { plugins: { legend: { position: 'bottom' } } } });
+});
+</script>
     <!-- Scripts -->
     <script src="../../../vendor/jquery/jquery.min.js"></script>
     <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
