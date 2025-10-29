@@ -118,12 +118,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     // 7️⃣ Insert into tblassets_assignment
     $insert = "
         INSERT INTO tblassets_assignment 
-        (employee_id, transferCount, assignedTo, dateIssued, transferDetails, datecreated, createdby)
-        VALUES (?, ?, ?, ?, ?, ?, ?)
+        (employee_id,inventory_id, transferCount, assignedTo, dateIssued, transferDetails, datecreated, createdby)
+        VALUES (?, ?, ?, ?, ?, ?, ?,?)
     ";
     $stmt = mysqli_prepare($link, $insert);
-    mysqli_stmt_bind_param($stmt, "issssss",
-        $new_employee, $formattedTransferCount, $assignedTo, $dateIssued, $transferDetails, $datecreated, $createdby
+    mysqli_stmt_bind_param($stmt, "iissssss",
+        $new_employee, $inventory_id,$formattedTransferCount, $assignedTo, $dateIssued, $transferDetails, $datecreated, $createdby
     );
     mysqli_stmt_execute($stmt);
     $assignment_id = mysqli_insert_id($link);

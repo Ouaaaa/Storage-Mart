@@ -372,10 +372,13 @@ if (isset($_POST['btnSubmit'])) {
                                         </div>
                                     </div>
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Assets.php" class="btn btn-danger">Cancel</a>
-                                    </form>
-                                </div>
+                                    <button type="button" class="btn btn-danger"
+                                        onclick="window.location.href='Assets-item.php?group_id=<?= htmlspecialchars($_GET['group_id']); ?>'">
+                                        Cancel
+                                    </button>
 
+                                </div>
+                            </form>
                         </div>
                     </div>
                     
@@ -453,7 +456,7 @@ if (isset($_POST['btnSubmit'])) {
     var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
     if (notificationMessage !== "") {
         alert(notificationMessage);
-        window.location.href = "Assets.php";
+        window.location.href = "Assets-item.php?group_id=<?php echo intval($_GET['group_id']); ?>";
     }
 </script>
 

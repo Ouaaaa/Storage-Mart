@@ -47,17 +47,15 @@ if ($stmtInv = mysqli_prepare($link, $sqlInventory)) {
 // ✅ Fetch all transfer records related to this inventory
 $query = "
     SELECT 
-        a.assignment_id,
-        a.employee_id,
-        a.assignedTo,
-        a.transferDetails,
-        a.dateIssued,
-        a.dateReturned,
-        a.createdby
-    FROM tblassets_assignment a
-    INNER JOIN tblassets_inventory i ON a.assignment_id = i.assignment_id OR a.employee_id = i.employee_id
-    WHERE i.inventory_id = ?
-    ORDER BY a.dateIssued DESC
+        employee_id,
+        assignedTo,
+        transferDetails,
+        dateIssued,
+        dateReturned,
+        createdby
+    FROM tblassets_assignment
+    WHERE inventory_id = ?
+    ORDER BY assignment_id DESC
 ";
 
 if ($stmt = mysqli_prepare($link, $query)) {
@@ -82,20 +80,17 @@ if ($stmt = mysqli_prepare($link, $query)) {
 
         <title>StorageMart | Transfer History</title>
 
-        <!-- Custom fonts for this template -->
-        <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
 
-        <link
-            href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
-            rel="stylesheet">
+    <link href="../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link
+        href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
+        rel="stylesheet">
 
-        <!-- Custom styles for this template -->
-        <link href="../../css/sb-admin-2.min.css" rel="stylesheet">
-        <link rel="icon" href="../../img/favicon.ico" type="image/x-icon">
-        <!-- Custom styles for this page -->
-        <link href="../../vendor/datatables/dataTables.min.css" rel="stylesheet">
-
+    <!-- Custom styles for this template -->
+    <link href="../../css/sb-admin-2.min.css" rel="stylesheet">
+    <link rel="icon" href="../../img/favicon.ico" type="image/x-icon">
+    <!-- Custom styles for this page -->
+    <link href="../../vendor/datatables/dataTables.min.css" rel="stylesheet">
     </head>
 
     <body id="page-top">
@@ -327,7 +322,7 @@ if ($stmt = mysqli_prepare($link, $query)) {
                             </div>
                             <div class="card-body">
                                 <div class="table-responsive">
-                                    <table class="table table-bordered" id="asset_inventory" width="100%" cellspacing="0">
+                                    <table class="table table-bordered" id="asst-history" width="100%" cellspacing="0">
                                         <thead>
                                             <tr>
                                                 <th>Employee ID</th>
@@ -409,21 +404,21 @@ if ($stmt = mysqli_prepare($link, $query)) {
         </div>
 
         <!-- Bootstrap core JavaScript-->
-        <script src="../../vendor/jquery/jquery.min.js"></script>
-        <script src="../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="../../vendor/jquery/jquery.min.js"></script>
+    <script src="../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-        <!-- Core plugin JavaScript-->
-        <script src="../../vendor/jquery-easing/jquery.easing.min.js"></script>
+    <!-- Core plugin JavaScript-->
+    <script src="../../vendor/jquery-easing/jquery.easing.min.js"></script>
 
-        <!-- Custom scripts for all pages-->
-        <script src="../../js/sb-admin-2.min.js"></script>
+    <!-- Custom scripts for all pages-->
+    <script src="../../js/sb-admin-2.min.js"></script>
 
-        <!-- Page level plugins -->
-        <script src="../../vendor/datatables/jquery.dataTables.min.js"></script>
-        <script src="../../vendor/datatables/dataTables.min.js"></script>
+    <!-- Page level plugins -->
+    <script src="../../vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="../../vendor/datatables/dataTables.min.js"></script>
 
-        <!-- Page level custom scripts -->
-        <script src="../../js/demo/datatables-demo.js"></script>
+    <!-- Page level custom scripts -->
+    <script src="../../js/demo/datatables-demo.js"></script>
 
     </body>
 

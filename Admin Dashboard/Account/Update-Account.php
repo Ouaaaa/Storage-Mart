@@ -439,8 +439,12 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                                         <select id="department" name="department" class="form-control" required>
                                         <option value="">-- Select Department --</option>
                                         <option value="IT"<?= (isset($employee['department']) && $employee['department'] === 'IT') ? 'selected' : '' ?>>Information Technology</option>
-                                        <option value=""></option>
-                                        <option value=""></option>
+                                        <option value="Sales" <?= (isset($employee['department']) && $employee['department'] === 'Sales') ? 'selected' : '' ?>>Sales</option>
+                                        <option value="Purchasing"<?= (isset($employee['department']) && $employee['department'] === 'Purchasing') ? 'selected' : '' ?>>Purchasing</option>
+                                        <option value="Accounting"<?= (isset($employee['department']) && $employee['department'] === 'Accounting') ? 'selected' : '' ?>>Accounting</option>
+                                        <option value="HRMD"<?= (isset($employee['department']) && $employee['department'] === 'HRMD') ? 'selected' : '' ?>>Human Resource Management and Development</option>
+                                        <option value="Marketing"<?= (isset($employee['department']) && $employee['department'] === 'Marketing') ? 'selected' : '' ?>>Marketing</option>
+                                        <option value="Compliance"<?= (isset($employee['department']) && $employee['department'] === 'Compliance') ? 'selected' : '' ?>>Corporate Compliance</option>
                                         </select>
                                     </div>
                                     </div>

@@ -381,8 +381,12 @@ if (isset($_POST['btnSubmit'])) {
                                         <select id="department" name="department" class="form-control" required>
                                         <option value="">-- Select Department --</option>
                                         <option value="IT">Information Technology</option>
-                                        <option value=""></option>
-                                        <option value=""></option>
+                                        <option value="Sales">Sales</option>
+                                        <option value="Purchasing">Purchasing</option>
+                                        <option value="Accounting">Accounting</option>
+                                        <option value="HRMD">Human Resource Management and Development</option>
+                                        <option value="Marketing">Marketing</option>
+                                        <option value="Compliance">Corporate Compliance</option>
                                         </select>
                                     </div>
                                     </div>

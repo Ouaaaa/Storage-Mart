@@ -75,6 +75,30 @@ new DataTable("#asset_inventory", {
     handler: false,
   },
 });
+new DataTable("#asst-history", {
+  fixedHeader: { header: true },
+  order: [],
+  columnDefs: [
+    {
+      targets: [2, 3,4],
+      columnControl: [
+        "order",
+        ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
+      ],
+    },
+    {
+      targets: [0,1],
+      columnControl: [
+        "order",
+        ["search"],
+      ],
+    },
+  ],
+  ordering: {
+    indicators: false,
+    handler: false,
+  },
+});
 new DataTable("#tickets", {
   fixedHeader: { header: true },
   columnDefs: [

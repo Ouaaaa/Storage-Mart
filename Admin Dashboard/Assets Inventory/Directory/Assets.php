@@ -1,49 +1,32 @@
 <?php
-    require_once "config.php";
-    include "session-checker.php";
-    //For Displaying the User
-    $accountID = $_SESSION['account_id'];
-    $sql = "SELECT employee_id FROM tbltickets WHERE ticket_id = ?";
-    $username = ''; // Initialize to avoid Errors
+require_once "config.php";
+include "session-checker.php";
 
-    $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
+// For Displaying the User
+$accountID = $_SESSION['account_id'];
 
+$userQuery = "
+    SELECT e.employee_id, e.firstname, e.position
+    FROM tblaccounts a
+    JOIN tblemployee e ON a.account_id = e.account_id
+    WHERE a.account_id = ?
+";
 
-    if ($stmt = mysqli_prepare($link, $userQuery)) {
-        mysqli_stmt_bind_param($stmt, "i", $accountID);
-        mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
-        mysqli_stmt_fetch($stmt);
-        mysqli_stmt_close($stmt);
-    }
-    $_SESSION['username'] = $username;
+$employee_id = '';
+$loggedFirstname = '';
+$loggedUsertype = '';
 
-//     // For fetching the count of the inventory that is in the group 
-//     $fetchInventory = "
-//     SELECT 
-//         g.group_id,
-//         COUNT(i.inventory_id) AS totalItems,
-//         SUM(CASE WHEN i.status = 'ASSIGNED' THEN 1 ELSE 0 END) AS assigned,
-//         SUM(CASE WHEN i.status = 'UNASSIGNED' THEN 1 ELSE 0 END) AS unassigned
-//     FROM tblassets_group g
-//     LEFT JOIN tblassets_inventory i 
-//         ON g.group_id = i.group_id
-//         AND i.status NOT IN ('DISPOSE', 'LOST')
-//     GROUP BY g.group_id;
-//     ";
+if ($stmt = mysqli_prepare($link, $userQuery)) {
+    mysqli_stmt_bind_param($stmt, "i", $accountID);
+    mysqli_stmt_execute($stmt);
+    mysqli_stmt_bind_result($stmt, $employee_id, $loggedFirstname, $loggedUsertype);
+    mysqli_stmt_fetch($stmt);
+    mysqli_stmt_close($stmt);
+}
 
+$_SESSION['loggedFirstname'] = $loggedFirstname;
+$_SESSION['loggedUsertype'] = $loggedUsertype;
 
-//     $count = mysqli_query($link, $fetchInventory);
-//     //For Defining the count Items
-//     $countrow = mysqli_fetch_assoc($count);
-//     $totalItem = $countrow['totalItems'];
-//     $assigned = $countrow['assigned'];
-//     $unassigned = $countrow['unassigned'];
-//     if (!$count) {
-//     die("SQL Error (Inventory): " . mysqli_error($link));
-// }
-
-    // for fetching the Group of an Item
 $fetchModel = "
     SELECT 
         g.group_id,

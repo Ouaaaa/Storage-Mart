@@ -31,103 +31,108 @@ if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_close($stmt);
 }
 
-// --- FORM SUBMISSION --- 
+// --- FORM SUBMISSION ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
     $inventoryID = intval($_POST['inventory']);
     $itemInfo = trim($_POST['itemInfo']);
     $serialNumber = trim($_POST['serialNumber']);
     $yearPurchased = trim($_POST['year_purchased']);
     $status = isset($_POST['status']) ? trim($_POST['status']) : '';
-    $reason = isset($_POST['reason']) ? trim($_POST['reason']) : '';
+    $reason = isset($_POST['transferDetails']) ? trim($_POST['transferDetails']) : '';
     $createdby = $_SESSION['username'] ?? 'System';
 
-    // ✅ 1. Update tblassets_inventory (set status, info, serial, year)
-    // When the status is RETURNED, LOST, or DISPOSED, set employee_id to NULL
-    $employee_id = NULL; // Set to NULL when unassigning
-
-    // Check if the status is RETURNED, LOST, or DISPOSED
+    // Base update
     if (in_array($status, ['RETURNED', 'LOST', 'DISPOSED'])) {
+        $assignment_id = NULL;
         $sql = "UPDATE tblassets_inventory 
-                SET assignment_id = ?,itemInfo = ?, serialNumber = ?, year_purchased = ?, status = ?, employee_id = NULL 
+                SET assignment_id = ?, itemInfo = ?, serialNumber = ?, year_purchased = ?, status = ?, employee_id = NULL 
                 WHERE inventory_id = ?";
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt, "issssi",
+            $assignment_id,
+            $itemInfo,
+            $serialNumber,
+            $yearPurchased,
+            $status,
+            $inventoryID
+        );
     } else {
-        // Regular update for other statuses
         $sql = "UPDATE tblassets_inventory 
                 SET itemInfo = ?, serialNumber = ?, year_purchased = ?, status = ? 
                 WHERE inventory_id = ?";
-    }
-
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        mysqli_stmt_bind_param($stmt, "issssi", 
-            $assignment_id,
-            $itemInfo, 
-            $serialNumber, 
-            $yearPurchased, 
-            $status, 
+        $stmt = mysqli_prepare($link, $sql);
+        mysqli_stmt_bind_param($stmt, "ssssi",
+            $itemInfo,
+            $serialNumber,
+            $yearPurchased,
+            $status,
             $inventoryID
         );
-
-        if (mysqli_stmt_execute($stmt)) {
-
-            // ✅ 2. If status is RETURNED, insert record in tblassets_assignment
-            if ($status === 'RETURNED' && !empty($reason)) {
-                $transferDetails = "Reason for RETURNED: $reason";
-                $dateIssued = date("Y-m-d");
-                $dateReturned = date("Y-m-d");
-                $datecreated = date("Y-m-d H:i:s");
-
-                // Try to get employee info (based on current assignment if exists)
-                $employee_id = NULL;  // Make sure employee_id is NULL for returned items
-                $assignedTo = "Unassigned / Returned";
-
-                // Insert return record
-                $sqlInsert = "INSERT INTO tblassets_assignment 
-                              (employee_id, assignedTo, dateIssued, transferDetails, dateReturned, datecreated, createdby)
-                              VALUES (?, ?, ?, ?, ?, ?, ?)";
-                if ($stmtInsert = mysqli_prepare($link, $sqlInsert)) {
-                    mysqli_stmt_bind_param($stmtInsert, "issssss",
-                        $employee_id,
-                        $assignedTo,
-                        $dateIssued,
-                        $transferDetails,
-                        $dateReturned,
-                        $datecreated,
-                        $createdby
-                    );
-
-                    if (!mysqli_stmt_execute($stmtInsert)) {
-                        echo "<font color='red'>Error inserting return record: " . mysqli_error($link) . "</font>";
-                    }
-                    mysqli_stmt_close($stmtInsert);
-                }
-            }
-
-            // ✅ 3. Insert into tbllogs
-            $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
-                       VALUES (?, ?, ?, ?, ?, ?)";
-            if ($stmt3 = mysqli_prepare($link, $sqlLog)) {
-                $date = date("Y-m-d");
-                $time = date("h:i:sa");
-                $action = "Updated Item Asset ($inventoryID)";
-                $module = "Item Asset Management";
-                mysqli_stmt_bind_param($stmt3, "ssssss",
-                    $date,
-                    $time,
-                    $action,
-                    $module,
-                    $inventoryID,
-                    $createdby
-                );
-                mysqli_stmt_execute($stmt3);
-                mysqli_stmt_close($stmt3);
-            }
-
-            $notificationMessage = "Item Asset successfully updated!";
-        } else {
-            echo "<font color='red'>Error updating tblassets_inventory: " . mysqli_error($link) . "</font>";
-        }
-        mysqli_stmt_close($stmt);
     }
+
+    // Execute inventory update
+    if (mysqli_stmt_execute($stmt)) {
+
+        // ✅ Insert new assignment if RETURNED/LOST/DISPOSED
+        if (in_array($status, ['RETURNED', 'LOST', 'DISPOSED']) && !empty($reason)) {
+            $transferDetails = "Reason for $status: $reason";
+            $dateIssued = date("Y-m-d");
+            $dateReturned = date("Y-m-d");
+            $datecreated = date("Y-m-d H:i:s");
+            $employee_id = NULL;
+            $assignedTo = "Unassigned / $status";
+
+            // Insert into tblassets_assignment
+            $sqlInsert = "INSERT INTO tblassets_assignment 
+                          (employee_id,inventory_id, assignedTo, dateIssued, transferDetails, dateReturned, datecreated, createdby)
+                          VALUES (?, ?, ?, ?, ?, ?, ?, ?)";
+            $stmtInsert = mysqli_prepare($link, $sqlInsert);
+            mysqli_stmt_bind_param($stmtInsert, "iissssss",
+                $employee_id,
+                $inventoryID,
+                $assignedTo,
+                $dateIssued,
+                $transferDetails,
+                $dateReturned,
+                $datecreated,
+                $createdby
+            );
+            mysqli_stmt_execute($stmtInsert);
+
+            // ✅ Link new assignment back to inventory
+            $newAssignmentID = mysqli_insert_id($link);
+            mysqli_stmt_close($stmtInsert);
+
+            $updateInventorySQL = "UPDATE tblassets_inventory SET assignment_id = ? WHERE inventory_id = ?";
+            $stmtUpdateInv = mysqli_prepare($link, $updateInventorySQL);
+            mysqli_stmt_bind_param($stmtUpdateInv, "ii", $newAssignmentID, $inventoryID);
+            mysqli_stmt_execute($stmtUpdateInv);
+            mysqli_stmt_close($stmtUpdateInv);
+        }
+
+    // ✅ Log
+        $sqlLog = "INSERT INTO tbllogs (datelog, timelog, action, module, ID, performedby)
+                VALUES (?, ?, ?, ?, ?, ?)";
+        $stmt3 = mysqli_prepare($link, $sqlLog);
+        $date = date("Y-m-d");
+        $time = date("h:i:sa");
+        $action = "Updated Item Asset";
+        $module = "Item Asset Management";
+        mysqli_stmt_bind_param($stmt3, "ssssss",
+            $date, $time, $action, $module, $inventoryID, $createdby
+        );
+        mysqli_stmt_execute($stmt3);
+        mysqli_stmt_close($stmt3);
+
+        // ⭐ Redirect before HTML
+        $group_id = intval($_POST['group_id'] ?? ($_GET['group_id'] ?? 0));
+        header("Location: Assets-item.php?group_id=" . $group_id);
+        exit; //
+    } else {
+        echo "<font color='red'>Error updating tblassets_inventory: " . mysqli_error($link) . "</font>";
+    }
+
+    mysqli_stmt_close($stmt);
 }
 
 // --- LOAD INVENTORY DATA ---
@@ -146,9 +151,6 @@ else {
     }
 }
 ?>
-
-
-
 <html lang="en">
 
 <head>
@@ -375,64 +377,66 @@ else {
                             <h6 class="m-0 font-weight-bold text-primary">Update Item Asset</h6>
                         </div>
                         <div class="card-body">
-                            <div class="container mt-4">
-                                <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
-                                    <input type="hidden" name="inventory" value="<?php echo htmlspecialchars($inventory['inventory_id']); ?>">
-                                    <h1>Update Item Asset Details</h1>
-                                        <div class ="row mb-5">
-                                            <div class = "col-md-6">
-                                                <label for="assetNumber" class="form-label">Asset Number</label>
-                                                <input type="text" class ="form-control" id ="assetNumber" name="assetNumber" placeholder="Asset Number" value="<?php echo htmlspecialchars($inventory['assetNumber'] ?? ''); ?>" readonly>
-                                            </div>
-                                            <div class = "col-md-6">
-                                                <label for="status" class="form-label">Status</label>
-                                                <select id="status" name="status" class="form-control" required>
-                                                    <option value="UNASSIGNED" <?= ($inventory['status'] === 'UNASSIGNED') ? 'selected' : ''; ?>>Unassigned</option>
-                                                    <option value="ASSIGNED" <?= ($inventory['status'] === 'ASSIGNED') ? 'selected' : ''; ?>>Assigned</option>
-                                                    <option value="DISPOSED" <?= ($inventory['status'] === 'DISPOSED') ? 'selected' : ''; ?>>Disposed</option>
-                                                    <option value="LOST" <?= ($inventory['status'] === 'LOST') ? 'selected' : ''; ?>>Lost</option>
-                                                    <option value="RETURNED" <?= ($inventory['status'] === 'RETURNED') ? 'selected' : ''; ?>>Returned</option>
-                                                </select>
+                        <div class="container mt-4">
+                                <?php 
+                                $group_id = $_POST['group_id'] ?? ($_GET['group_id'] ?? 0);
+                                $group_id = intval($group_id);
+                                ?>
 
-                                            </div>
-                                        </div>
-                                     <div class ="row mb-5">
-                                            <div class="col-md-6">
-                                                <label for = "itemInfo" class ="form-label">Item general info</label>
-                                                <textarea id ="itemInfo" name="itemInfo" class="form-control" rows="6" maxlength="1000" required><?php echo htmlspecialchars($inventory['itemInfo'] ?? ''); ?></textarea>
-                                                <small class="form-text text-muted">Maximum 1000 characters.</small>
-                                            </div>
-                                            <div class="col-md-6">
-                                            <label for = "serialNumber" class ="form-label">Serial Number</label>
-                                                <input type="text" name="serialNumber" class="form-control" id="serialNumber" placeholder="Serial Number" value="<?php echo htmlspecialchars($inventory['serialNumber'] ?? '');?>"required>
-                                            </div>
+                            <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
+                                <input type="hidden" name="inventory" value="<?php echo htmlspecialchars($inventory['inventory_id']); ?>">
+                                <input type="hidden" name="group_id" value="<?php echo htmlspecialchars($group_id); ?>">
+                                <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="assetNumber" class="form-label">Asset Number</label>
+                                        <input type="text" class="form-control" id="assetNumber" name="assetNumber"
+                                               value="<?php echo htmlspecialchars($inventory['assetNumber'] ?? ''); ?>" readonly>
                                     </div>
-
-                                    <div class ="row mb-5">
-                                        <div class="col-md-6">
-                                            <label for = "year_purchased" class ="form-label">Year purchased</label>
-                                                <input type="text" name="year_purchased" class="form-control" id="year_purchased" placeholder="Year purchased" value="<?php echo htmlspecialchars(($inventory['year_purchased'] ?? ''));?>" required>
-                                        </div>
+                                    <div class="col-md-6">
+                                        <label for="status" class="form-label">Status</label>
+                                        <select id="status" name="status" class="form-control" required>
+                                            <option value="UNASSIGNED" <?= (($inventory['status'] ?? '') === 'UNASSIGNED') ? 'selected' : ''; ?>>Unassigned</option>
+                                            <option value="ASSIGNED" <?= (($inventory['status'] ?? '') === 'ASSIGNED') ? 'selected' : ''; ?>>Assigned</option>
+                                            <option value="DISPOSED" <?= (($inventory['status'] ?? '') === 'DISPOSED') ? 'selected' : ''; ?>>Disposed</option>
+                                            <option value="LOST" <?= (($inventory['status'] ?? '') === 'LOST') ? 'selected' : ''; ?>>Lost</option>
+                                            <option value="RETURNED" <?= (($inventory['status'] ?? '') === 'RETURNED') ? 'selected' : ''; ?>>Returned</option>
+                                        </select>
                                     </div>
-                                    <div class="row mb-5" id="reasonRow" style="display: none;">
-                                        <div class="col-md-12">
-                                            <label for="transferDetails" class="form-label">Reason</label>
-                                            <textarea class="form-control" id="transferDetails" name="transferDetails" rows="4" maxlength="1000"
-                                                    placeholder="Enter reason for Disposed or Lost"></textarea>
-                                            <small class="form-text text-muted">This reason will be stored in transfer history.</small>
-                                        </div>
+                                </div>
+
+                                <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="itemInfo" class="form-label">Item general info</label>
+                                        <textarea id="itemInfo" name="itemInfo" class="form-control" rows="6" maxlength="1000" required><?php echo htmlspecialchars($inventory['itemInfo'] ?? ''); ?></textarea>
                                     </div>
+                                    <div class="col-md-6">
+                                        <label for="serialNumber" class="form-label">Serial Number</label>
+                                        <input type="text" name="serialNumber" class="form-control" id="serialNumber"
+                                               value="<?php echo htmlspecialchars($inventory['serialNumber'] ?? ''); ?>" required>
+                                    </div>
+                                </div>
 
-                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                    <a href="Assets-item.php?group_id=<?= htmlspecialchars($inventory['group_id']); ?>" 
-                                    class="btn btn-danger"
-                                    onclick="return confirm('Cancel transfer and return to the previous list?');">
-                                    Cancel
-                                    </a>
-                                    </form>
-                            </div>
+                                <div class="row mb-5">
+                                    <div class="col-md-6">
+                                        <label for="year_purchased" class="form-label">Year purchased</label>
+                                        <input type="text" name="year_purchased" class="form-control" id="year_purchased"
+                                               value="<?php echo htmlspecialchars(($inventory['year_purchased'] ?? '')); ?>" required>
+                                    </div>
+                                </div>
 
+                                <div class="row mb-5" id="reasonRow" style="display:none;">
+                                    <div class="col-md-12">
+                                        <label for="transferDetails" class="form-label">Reason</label>
+                                        <textarea class="form-control" id="transferDetails" name="transferDetails" rows="4" maxlength="1000"
+                                                  placeholder="Enter reason for Disposed, Lost, or Returned"></textarea>
+                                    </div>
+                                </div>
+
+                                <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                <a href="Assets-item.php?group_id=<?php echo $group_id; ?>" class="btn btn-danger">Cancel</a>
+                            </form>
                         </div>
+                    </div>
                     </div>
                     
                 </div>
@@ -491,27 +495,28 @@ else {
 
     <!-- Page level custom scripts -->
     <script src="../../js/demo/datatables-demo.js"></script>
-
 <script>
-    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
-    if (notificationMessage !== "") {
-        alert(notificationMessage);
-        window.location.href = "Assets-item.php";
-    }
-</script>
-<script>
-document.getElementById("status").addEventListener("change", function() {
-    var status = this.value;
-    var reasonRow = document.getElementById("reasonRow");
+document.addEventListener("DOMContentLoaded", function() {
+    function toggleReasonRow() {
+        const status = document.getElementById("status").value;
+        const reasonRow = document.getElementById("reasonRow");
+        const reasonInput = document.getElementById("transferDetails");
 
-    if (status === "DISPOSED" || status === "LOST" || status ==="RETURNED") {
-        reasonRow.style.display = "block";
-        document.getElementById("reason").setAttribute("required", "required");
-    } else {
-        reasonRow.style.display = "none";
-        document.getElementById("reason").removeAttribute("required");
-        document.getElementById("reason").value = "";
+        if (status === "DISPOSED" || status === "LOST" || status === "RETURNED") {
+            reasonRow.style.display = "block";
+            reasonInput.setAttribute("required", "required");
+        } else {
+            reasonRow.style.display = "none";
+            reasonInput.removeAttribute("required");
+            reasonInput.value = "";
+        }
     }
+
+    // ✅ Run on page load
+    toggleReasonRow();
+
+    // ✅ Run whenever status changes
+    document.getElementById("status").addEventListener("change", toggleReasonRow);
 });
 </script>
 
