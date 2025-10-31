@@ -52,7 +52,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $transferDetails = $_POST['transferDetails'];
     $createdby = $_SESSION['username'];
     $dateIssued = date("Y-m-d");
-    $datecreated = date("Y-m-d H:i:s");
+    $datecreated = date("Y-m-d");
 
     if ($inventory_id <= 0) {
         echo "<script>alert('Error: Missing inventory ID!'); window.history.back();</script>";
