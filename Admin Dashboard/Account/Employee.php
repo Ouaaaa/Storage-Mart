@@ -3,18 +3,29 @@
     include "session-checker.php";
 
     $accountID = $_SESSION['account_id'];
-    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
 
-    if ($stmt = mysqli_prepare($link, $sql)) {
+    $userQuery = "
+        SELECT e.employee_id, e.firstname, e.position
+        FROM tblaccounts a
+        JOIN tblemployee e ON a.account_id = e.account_id
+        WHERE a.account_id = ?
+    ";
+
+    $employee_id = '';
+    $loggedFirstname = '';
+    $loggedUsertype = '';
+
+    if ($stmt = mysqli_prepare($link, $userQuery)) {
         mysqli_stmt_bind_param($stmt, "i", $accountID);
         mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $username);
+        mysqli_stmt_bind_result($stmt, $employee_id, $loggedFirstname, $loggedUsertype);
         mysqli_stmt_fetch($stmt);
         mysqli_stmt_close($stmt);
     }
 
-    $_SESSION['username'] = $username;
+    $_SESSION['loggedFirstname'] = $loggedFirstname;
+    $_SESSION['loggedUsertype'] = $loggedUsertype;
+
 
     // Handle delete request
     if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Decline') {
@@ -39,7 +50,7 @@
     $result = mysqli_query($link, $fetchQuery);
     $fetchEmployee = "
     SELECT e.employee_id, e.account_id, e.lastname, e.firstname, e.middlename,
-           e.department, e.email, e.createdby, e.datecreated,
+           e.department, e.position, e.email, e.createdby, e.datecreated,
            b.branchName
     FROM tblemployee e
     LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
@@ -85,10 +96,8 @@
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
-            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../index.html">
-                <div class="sidebar-brand-icon rotate-n-15">
-                </div>
-                <div class="sidebar-brand-text mx-3">Unipath</div>
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../index.php">
+                <img src="../img/logo.png" alt="Logo" style="width:100px; height:auto;">
             </a>
 
             <!-- Divider -->
@@ -243,7 +252,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?></span>
                                 <img class="img-profile rounded-circle"
                                     src="../img/undraw_profile.svg">
                             </a>
@@ -278,7 +287,7 @@
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="employee-table" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>Employee ID</th>
@@ -287,6 +296,7 @@
                                             <th>First name</th>
                                             <th>Middle name</th>
 											<th>Department</th>
+                                            <th>Position</th>
 											<th>Branch</th>
                                             <th>Email</th>
                                             <th>Created by</th>
@@ -301,6 +311,7 @@
                                             <th>First name</th>
                                             <th>Middle name</th>
 											<th>Department</th>
+                                            <th>Position</th>
 											<th>Branch</th>
                                             <th>Email</th>
                                             <th>Created by</th>
@@ -316,6 +327,7 @@
                                             <td><?= htmlspecialchars($row['firstname']) ?></td>
                                             <td><?= htmlspecialchars($row['middlename']) ?></td>
                                             <td><?= htmlspecialchars($row['department']) ?></td>
+                                            <td><?= htmlspecialchars($row['position']) ?></td>
                                             <td><?= htmlspecialchars($row['branchName']) ?></td>
                                             <td><?= htmlspecialchars($row['email']) ?></td>
                                             <td><?= htmlspecialchars($row['createdby']) ?></td>
@@ -388,7 +400,6 @@
 
     <!-- Page level custom scripts -->
     <script src="../js/demo/datatables-demo.js"></script>
-
 </body>
 
 </html>

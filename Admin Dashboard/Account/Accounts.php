@@ -3,21 +3,31 @@
     include "session-checker.php";
 
     $accountID = $_SESSION['account_id'];
-    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
 
-    if ($stmt = mysqli_prepare($link, $sql)) {
+    $userQuery = "
+        SELECT e.employee_id, e.firstname, e.position
+        FROM tblaccounts a
+        JOIN tblemployee e ON a.account_id = e.account_id
+        WHERE a.account_id = ?
+    ";
+
+    $employee_id = '';
+    $loggedFirstname = '';
+    $loggedUsertype = '';
+
+    if ($stmt = mysqli_prepare($link, $userQuery)) {
         mysqli_stmt_bind_param($stmt, "i", $accountID);
         mysqli_stmt_execute($stmt);
-        mysqli_stmt_bind_result($stmt, $username);
+        mysqli_stmt_bind_result($stmt, $employee_id, $loggedFirstname, $loggedUsertype);
         mysqli_stmt_fetch($stmt);
         mysqli_stmt_close($stmt);
     }
 
-    $_SESSION['username'] = $username;
+    $_SESSION['loggedFirstname'] = $loggedFirstname;
+    $_SESSION['loggedUsertype'] = $loggedUsertype;
+
 
     // Handle delete request
-// Handle delete request
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Delete') {
     $accountToDelete = $_POST['account_id'];
 
@@ -119,10 +129,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../index.php">
-                <div class="sidebar-brand-icon ">
-                    <img src="../img/logo.png" alt="Logo" style="width:40px; height:auto;">
-                </div>
-                <div class="sidebar-brand-text mx-3">Storage Mart</div>
+                <img src="../img/logo.png" alt="Logo" style="width:100px; height:auto;">
             </a>
 
             <!-- Divider -->
@@ -277,7 +284,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?></span>
                                 <img class="img-profile rounded-circle"
                                     src="../img/undraw_profile.svg">
                             </a>

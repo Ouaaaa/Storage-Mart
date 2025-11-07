@@ -387,6 +387,8 @@ if (isset($_POST['btnSubmit'])) {
                                         <option value="HRMD">Human Resource Management and Development</option>
                                         <option value="Marketing">Marketing</option>
                                         <option value="Compliance">Corporate Compliance</option>
+                                        <option value="Operations">Operations</option>
+                                        <option value="Digital Marketing">Digital Marketing</option>
                                         </select>
                                     </div>
                                     </div>

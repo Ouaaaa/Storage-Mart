@@ -145,5 +145,52 @@ new DataTable("#asset-ticket", {
     handler: false,
   },
 });
-
+new DataTable("#employee-table", {
+  fixedHeader: { header: true },
+  order: [],
+  columnDefs: [
+    {
+      targets: [ 5, 6, 7, 10],
+      columnControl: [
+        "order",
+        ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
+      ],
+    },
+    {
+      targets: [0,1,2,3,4,8,9],
+      columnControl: [
+        "order",
+        ["search"],
+      ],
+    },
+  ],
+  ordering: {
+    indicators: false,
+    handler: false,
+  },
+});
+new DataTable("#pendings", {
+  fixedHeader: { header: true },
+  order: [],
+  columnDefs: [
+    {
+      targets: [ 2,3,5, 6,9],
+      columnControl: [
+        "order",
+        ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
+      ],
+    },
+    {
+      targets: [0,1,7,8],
+      columnControl: [
+        "order",
+        ["search"],
+      ],
+    },
+  ],
+  ordering: {
+    indicators: false,
+    handler: false,
+  },
+});
 new DataTable();

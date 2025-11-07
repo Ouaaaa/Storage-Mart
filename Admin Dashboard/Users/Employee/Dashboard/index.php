@@ -213,26 +213,27 @@ if ($stmt = mysqli_prepare($link, $sqlAssets)) {
                 </div>
 
                 <!-- Ticket Status Pie Chart -->
-                <div class="card shadow mb-4">
-                    <div class="card-header py-3">
-                        <h6 class="m-0 font-weight-bold text-primary">Ticket Status Overview</h6>
-                    </div>
-                    <div class="card-body text-center">
-                        <canvas id="ticketChart" width="400" height="200"></canvas>
+                <div class="container">
+                    <div class="row">
+                        <div class="col">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Ticket Status Overview</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <canvas id="ticketChart" width="100px" height="100px"></canvas>
+                            </div>
+                        </div>
+                        <div class="col">
+                            <div class="card-header py-3">
+                                <h6 class="m-0 font-weight-bold text-primary">Ticket Status Overview</h6>
+                            </div>
+                            <div class="card-body text-center">
+                                <canvas id="ticketChart" width="100px" height="100px"></canvas>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
-
-
-                <!-- Ticket Status Pie Chart -->
-                <div class="card shadow mb-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Ticket Status Overview</h6>
-                </div>
-                <div class="card-body text-center">
-                    <canvas id="ticketChart" width="400" height="200"></canvas>
-                </div>
-                </div>
 
                 <!-- End Page Content -->
             </div>

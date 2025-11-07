@@ -5,31 +5,30 @@ include("session-checker.php");
 // --- SESSION: get logged user info ---
 $inventory = [];
 $username = '';
-$accountID = $_SESSION['account_id'] ?? 0;
+// For Displaying the User
+$accountID = $_SESSION['account_id'];
 
-// Fetch username
-$sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-if ($stmtuser = mysqli_prepare($link, $sql)) {
-    mysqli_stmt_bind_param($stmtuser, "i", $accountID);
-    mysqli_stmt_execute($stmtuser);
-    mysqli_stmt_bind_result($stmtuser, $dbUsername);
-    mysqli_stmt_fetch($stmtuser);
-    mysqli_stmt_close($stmtuser);
-    $_SESSION['username'] = $dbUsername;
-}
+$userQuery = "
+    SELECT e.employee_id, e.firstname, e.position
+    FROM tblaccounts a
+    JOIN tblemployee e ON a.account_id = e.account_id
+    WHERE a.account_id = ?
+";
 
-// Fetch firstname & usertype for display
-$userQuery = "SELECT e.firstname, a.usertype 
-              FROM tblaccounts a 
-              JOIN tblemployee e ON a.account_id = e.employee_id  
-              WHERE a.account_id = ?";
+$employee_id = '';
+$loggedFirstname = '';
+$loggedUsertype = '';
+
 if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_bind_param($stmt, "i", $accountID);
     mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
+    mysqli_stmt_bind_result($stmt, $employee_id, $loggedFirstname, $loggedUsertype);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
 }
+
+$_SESSION['loggedFirstname'] = $loggedFirstname;
+$_SESSION['loggedUsertype'] = $loggedUsertype;
 
 // --- FORM SUBMISSION ---
 if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
@@ -432,9 +431,14 @@ else {
                                     </div>
                                 </div>
 
-                                <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
-                                <a href="Assets-item.php?group_id=<?php echo $group_id; ?>" class="btn btn-danger">Cancel</a>
-                            </form>
+                                    <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
+                                    <a href="Assets-item.php?group_id=<?= htmlspecialchars($assets['group_id']); ?>" 
+                                    class="btn btn-danger"
+                                    onclick="return confirm('Cancel transfer and return to the previous list?');">
+                                    Cancel
+                                    </a>
+
+                                    </form>
                         </div>
                     </div>
                     </div>
@@ -495,6 +499,13 @@ else {
 
     <!-- Page level custom scripts -->
     <script src="../../js/demo/datatables-demo.js"></script>
+    <script>
+    var notificationMessage = "<?php echo isset($notificationMessage) ? $notificationMessage : ''; ?>";
+    if (notificationMessage !== "") {
+        alert(notificationMessage);
+        window.location.href = "Assets.php";
+    }
+</script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     function toggleReasonRow() {

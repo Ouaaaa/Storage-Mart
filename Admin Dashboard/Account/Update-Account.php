@@ -445,6 +445,8 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['btnSubmit'])) {
                                         <option value="HRMD"<?= (isset($employee['department']) && $employee['department'] === 'HRMD') ? 'selected' : '' ?>>Human Resource Management and Development</option>
                                         <option value="Marketing"<?= (isset($employee['department']) && $employee['department'] === 'Marketing') ? 'selected' : '' ?>>Marketing</option>
                                         <option value="Compliance"<?= (isset($employee['department']) && $employee['department'] === 'Compliance') ? 'selected' : '' ?>>Corporate Compliance</option>
+                                        <option value="Operations"<?= (isset($employee['department']) && $employee['department'] === 'Operations') ? 'selected' : '' ?>>Operations</option>
+                                        <option value="Digital Marketing"<?= (isset($employee['department']) && $employee['department'] === 'Digital Marketing') ? 'selected' : '' ?>>Digital Marketing</option>
                                         </select>
                                     </div>
                                     </div>

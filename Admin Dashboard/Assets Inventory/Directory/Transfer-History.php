@@ -1,24 +1,30 @@
     <?php
         require_once "config.php";
         include "session-checker.php";
-        //Get the group_id from the URL parameter
-        $group_id = isset($_GET['group_id']) ? intval($_GET['group_id']) : 0;
-
-        //For Displaying the User
+        // For Displaying the User
         $accountID = $_SESSION['account_id'];
-        $username = ''; // Initialize to avoid Errors
 
-        $userQuery = "SELECT  e.firstname, a.usertype FROM tblaccounts a JOIN tblemployee e ON a.account_id = e.employee_id  WHERE a.account_id = ?";
+        $userQuery = "
+            SELECT e.employee_id, e.firstname, e.position
+            FROM tblaccounts a
+            JOIN tblemployee e ON a.account_id = e.account_id
+            WHERE a.account_id = ?
+        ";
 
+        $employee_id = '';
+        $loggedFirstname = '';
+        $loggedUsertype = '';
 
         if ($stmt = mysqli_prepare($link, $userQuery)) {
             mysqli_stmt_bind_param($stmt, "i", $accountID);
             mysqli_stmt_execute($stmt);
-            mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
+            mysqli_stmt_bind_result($stmt, $employee_id, $loggedFirstname, $loggedUsertype);
             mysqli_stmt_fetch($stmt);
             mysqli_stmt_close($stmt);
         }
-        $_SESSION['username'] = $username;
+
+        $_SESSION['loggedFirstname'] = $loggedFirstname;
+        $_SESSION['loggedUsertype'] = $loggedUsertype;
 
 // ✅ Get the selected inventory_id from URL
 $inventory_id = isset($_GET['inventory_id']) ? intval($_GET['inventory_id']) : 0;

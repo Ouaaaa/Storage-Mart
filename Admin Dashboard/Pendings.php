@@ -202,10 +202,10 @@ if (!$result) {
 
     <!-- Custom styles for this template -->
     <link href="css/sb-admin-2.min.css" rel="stylesheet">
-        <link rel="icon" href="img/favicon.ico" type="image/x-icon">
-
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
     <!-- Custom styles for this page -->
     <link href="vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="vendor/datatables/dataTables.min.css" rel="stylesheet">
 
 </head>
 
@@ -219,9 +219,7 @@ if (!$result) {
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-                <div class="sidebar-brand-icon rotate-n-15">
-                </div>
-                <div class="sidebar-brand-text mx-3">Storage Mart</div>
+                <img src="img/logo.png" alt="Logo" style="width:100px; height:auto;">
             </a>
 
             <!-- Divider -->
@@ -252,8 +250,8 @@ if (!$result) {
                 <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
                     <div class="bg-white py-2 collapse-inner rounded">
                         <h6 class="collapse-header">User:</h6>
-                        <a class="collapse-item" href="Accounts.php">Accounts</a>
-                        <a class="collapse-item" href="Employee.php">Employee</a>
+                        <a class="collapse-item" href="Account/Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="Account/Employee.php">Employee</a>
                     </div>
                 </div>
             </li>
@@ -265,7 +263,7 @@ if (!$result) {
                 </a>
             </li>
             <li class="nav-item">
-                <a class="nav-link" href="Assets.php">
+                <a class="nav-link" href="Assets Inventory/Directory/Assets.php">
                     <i class="fas fa-archive"></i>
                     <span>Assets Directory </span>
                 </a>
@@ -412,7 +410,7 @@ if (!$result) {
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="pendings" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>Ticket ID</th>
@@ -618,7 +616,7 @@ if (!$result) {
 
     <!-- Page level plugins -->
     <script src="vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="vendor/datatables/dataTables.bootstrap4.min.js"></script>
+    <script src="vendor/datatables/dataTables.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="js/demo/datatables-demo.js"></script>

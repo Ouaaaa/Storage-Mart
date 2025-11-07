@@ -1,29 +1,30 @@
 <?php
     require_once "config.php";
     include "session-checker.php";
-
     $accountID = $_SESSION['account_id'];
-    $sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-    $username = ''; // Initialize the variable to avoid undefined variable errors
 
-    if ($stmt = mysqli_prepare($link, $sql)) {
-        // Bind the parameter for account_id
+    $userQuery = "
+        SELECT e.employee_id, e.firstname, e.position
+        FROM tblaccounts a
+        JOIN tblemployee e ON a.account_id = e.account_id
+        WHERE a.account_id = ?
+    ";
+
+    $employee_id = '';
+    $loggedFirstname = '';
+    $loggedUsertype = '';
+
+    if ($stmt = mysqli_prepare($link, $userQuery)) {
         mysqli_stmt_bind_param($stmt, "i", $accountID);
-
-        // Execute the query
         mysqli_stmt_execute($stmt);
-
-        // Bind the result to the variable $firstname
-        mysqli_stmt_bind_result($stmt, $username);
-
-        // Fetch the result
+        mysqli_stmt_bind_result($stmt, $employee_id, $loggedFirstname, $loggedUsertype);
         mysqli_stmt_fetch($stmt);
-
-        // Close the statement
         mysqli_stmt_close($stmt);
     }
 
-    // Store the result in session for reuse
+    $_SESSION['loggedFirstname'] = $loggedFirstname;
+    $_SESSION['loggedUsertype'] = $loggedUsertype;
+
     
     //sql for counting all the user 
     $userCount = 0;
@@ -32,8 +33,6 @@
         $row = mysqli_fetch_array(result: $result);
         $userCount = $row[0];
     }
-
-    $_SESSION['username'] = $username;
     
     //sql for counting all the tickets
     $ticketCount = 0;
@@ -84,11 +83,8 @@
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
-                <div class="sidebar-brand-icon rotate-n-15">
-                </div>
-                <div class="sidebar-brand-text mx-3">Storage Mart</div>
+                <img src="img/logo.png" alt="Logo" style="width:100px; height:auto;">
             </a>
-
             <!-- Divider -->
             <hr class="sidebar-divider my-0">
 
@@ -209,7 +205,7 @@
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?php echo htmlspecialchars($_SESSION['username']); ?></span>
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small"><?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?></span>
                                 <img class="img-profile rounded-circle"
                                     src="img/undraw_profile.svg">
                             </a>

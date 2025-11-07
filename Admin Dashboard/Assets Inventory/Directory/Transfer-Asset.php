@@ -3,34 +3,30 @@ require_once "config.php";
 include("session-checker.php");
 
 $assets = [];
+// For Displaying the User
 $accountID = $_SESSION['account_id'];
 
-// 🔹 Fetch logged-in username
-$sql = "SELECT username FROM tblaccounts WHERE account_id = ?";
-if ($stmtuser = mysqli_prepare($link, $sql)) {
-    mysqli_stmt_bind_param($stmtuser, "i", $accountID);
-    mysqli_stmt_execute($stmtuser);
-    mysqli_stmt_bind_result($stmtuser, $dbUsername);
-    mysqli_stmt_fetch($stmtuser);
-    mysqli_stmt_close($stmtuser);
-    $_SESSION['username'] = $dbUsername;
-}
-
-// 🔹 Display user info (firstname + usertype)
 $userQuery = "
-    SELECT e.firstname, a.usertype 
-    FROM tblaccounts a 
-    JOIN tblemployee e ON a.account_id = e.employee_id  
+    SELECT e.employee_id, e.firstname, e.position
+    FROM tblaccounts a
+    JOIN tblemployee e ON a.account_id = e.account_id
     WHERE a.account_id = ?
 ";
+
+$employee_id = '';
+$loggedFirstname = '';
+$loggedUsertype = '';
+
 if ($stmt = mysqli_prepare($link, $userQuery)) {
     mysqli_stmt_bind_param($stmt, "i", $accountID);
     mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $loggedFirstname, $loggedUsertype);
+    mysqli_stmt_bind_result($stmt, $employee_id, $loggedFirstname, $loggedUsertype);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
 }
 
+$_SESSION['loggedFirstname'] = $loggedFirstname;
+$_SESSION['loggedUsertype'] = $loggedUsertype;
 // 🔹 Get asset info
 if (isset($_GET['inventory_id'])) {
     $inventory_id = intval($_GET['inventory_id']);
