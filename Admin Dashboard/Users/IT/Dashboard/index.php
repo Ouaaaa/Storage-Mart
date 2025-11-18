@@ -83,7 +83,7 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
             <!-- Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="index.php">
                 <div class="sidebar-brand-icon rotate-n-15"></div>
-                <div class="sidebar-brand-text mx-3">Storage Mart</div>
+                <img src="../../../img/logo.png" alt="Logo" style="width:100px; height:auto;">
             </a>
 
             <hr class="sidebar-divider my-0">
@@ -100,16 +100,23 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
             <div class="sidebar-heading">Interface</div>
 
             <li class="nav-item">
-                <a class="nav-link" href="../Tickets/IT-Tickets.php">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-ticket-alt"></i>
-                    <span>Ticket</span>
+                    <span>Ticket</span>	
                 </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Ticket:</h6>
+                        <a class="collapse-item" href="../Tickets/IT-Tickets.php">In Progress</a>
+                        <a class="collapse-item" href="../Tickets/Resolve.php">Resolve</a>
+                    </div>
+                </div>
             </li>
-
             <li class="nav-item">
                 <a class="nav-link" href="../Asset/Assets.php">
                     <i class="fas fa-archive"></i>
-                    <span>Assets</span>
+                    <span>My Assets</span>
                 </a>
             </li>
 
@@ -231,7 +238,7 @@ if ($result = mysqli_query($link, "SELECT COUNT(*) FROM tbltickets WHERE status=
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../../../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>

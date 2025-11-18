@@ -204,7 +204,7 @@ if (!$result) {
         <link rel="icon" href="../../../img/favicon.ico" type="image/x-icon">
 
     <!-- Custom styles for this page -->
-    <link href="../../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
+    <link href="../../../vendor/datatables/dataTables.min.css" rel="stylesheet">
 
 </head>
 
@@ -220,7 +220,7 @@ if (!$result) {
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../Dashboard/index.php">
                 <div class="sidebar-brand-icon rotate-n-15">
                 </div>
-                <div class="sidebar-brand-text mx-3">Storage Mart</div>
+                <img src="../../../img/logo.png" alt="Logo" style="width:100px; height:auto;">
             </a>
 
             <!-- Divider -->
@@ -241,11 +241,19 @@ if (!$result) {
                 Interface
             </div>
 			
-			<li class="nav-item active">
-                <a class="nav-link" href="IT-Tickets.php">
+            <li class="nav-item active">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-ticket-alt"></i>
-                    <span>Ticket</span>
+                    <span>Ticket</span>	
                 </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Ticket:</h6>
+                        <a class="collapse-item" href="#">In Progress</a>
+                        <a class="collapse-item" href="Resolve.php">Resolve</a>
+                    </div>
+                </div>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="../Asset/Assets.php">
@@ -360,20 +368,20 @@ if (!$result) {
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="dataTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="IT-TicketDatables" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>Ticket #</th>
                                             <th>Category</th>
                                             <th>Priority</th>
                                             <th>Concern Details</th>
-											<th>Status</th>
+											                      <th>Status</th>
                                             <th>Remarks</th>
                                             <th>Employee Name</th>
                                             <th>Branch</th>
-											<th>Date Filed</th>
+											                      <th>Date Filed</th>
                                             <th>Asset Info</th>
-											<th>Actions</th>
+											                      <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
@@ -382,13 +390,13 @@ if (!$result) {
                                             <th>Category</th>
                                             <th>Priority</th>
                                             <th>Concern Details</th>
-											<th>Status</th>
+											                      <th>Status</th>
                                             <th>Remarks</th>
                                             <th>Employee Name</th>
                                             <th>Branch</th>
-											<th>Date Filed</th>
+											                      <th>Date Filed</th>
                                             <th>Asset Info</th>
-											<th>Actions</th>
+										                      	<th>Actions</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
@@ -656,17 +664,27 @@ if (!$result) {
   </div>
 </div> -->
 
-<!-- ✅ Scripts -->
-<script src="../../../vendor/jquery/jquery.min.js"></script>
-<script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
-<script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
-<script src="../../../vendor/datatables/dataTables.bootstrap4.min.js"></script>
-<script src="../../../js/sb-admin-2.min.js"></script>
+        <!-- Bootstrap core JavaScript-->
+        <script src="../../../vendor/jquery/jquery.min.js"></script>
+        <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+
+        <!-- Core plugin JavaScript-->
+        <script src="../../../vendor/jquery-easing/jquery.easing.min.js"></script>
+
+        <!-- Custom scripts for all pages-->
+        <script src="../../../js/sb-admin-2.min.js"></script>
+
+        <!-- Page level plugins -->
+        <script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
+        <script src="../../../vendor/datatables/dataTables.min.js"></script>
+
+        <!-- Page level custom scripts -->
+        <script src="../../../js/demo/datatables-demo.js"></script>
 
 <script>
 $(document).ready(function() {
   // Initialize datatable
-  $('#dataTable').DataTable();
+  $('#IT-TicketDatables').DataTable();
 
   // Handle ticket action modal
   $('.openModalBtn').click(function() {

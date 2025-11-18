@@ -94,9 +94,8 @@ if ($stmtasset = mysqli_prepare($link, $fetchAssets)) {
                 <!-- Sidebar - Brand -->
                 <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../Dashboard/index.php">
                     <div class="sidebar-brand-icon ">
-                        <img src="../../../img/logo.png" alt="Logo" style="width:40px; height:auto;">
+                        <img src="../../../img/logo.png" alt="Logo" style="width:100px; height:auto;">
                     </div>
-                    <div class="sidebar-brand-text mx-3">Storage Mart</div>
                 </a>
 
                 <!-- Divider -->
@@ -117,15 +116,23 @@ if ($stmtasset = mysqli_prepare($link, $fetchAssets)) {
                     Interface
                 </div>			
                 <li class="nav-item">
-                    <a class="nav-link" href="../Tickets/IT-Tickets.php">
+                    <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                        aria-expanded="true" aria-controls="collapseTwo">
                         <i class="fas fa-ticket-alt"></i>
-                        <span>Ticket</span>
+                        <span>Ticket</span>	
                     </a>
+                    <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                        <div class="bg-white py-2 collapse-inner rounded">
+                            <h6 class="collapse-header">Ticket:</h6>
+                            <a class="collapse-item" href="../Tickets/IT-Tickets.php">In Progress</a>
+                            <a class="collapse-item" href="../Tickets/Resolve.php">Resolve</a>
+                        </div>
+                    </div>
                 </li>
                 <li class="nav-item active">
                     <a class="nav-link" href="Assets.php">
                         <i class="fas fa-archive"></i>
-                        <span>Assets</span>
+                        <span>My Assets</span>
                     </a>
                 </li>
                 <!-- Divider -->

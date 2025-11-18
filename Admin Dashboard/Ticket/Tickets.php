@@ -70,7 +70,6 @@ $result = mysqli_query($link, $sqlQuery);
     <meta name="author" content="">
 
     <title>Storage Mart Tickets - Tables</title>
-
     <!-- Custom fonts for this template -->
     <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link
@@ -295,7 +294,7 @@ $result = mysqli_query($link, $sqlQuery);
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="ticketsTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="logsTicket" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>Ticket #</th>
@@ -448,42 +447,82 @@ $result = mysqli_query($link, $sqlQuery);
 
     <!-- Page level custom scripts -->
     <script src="../js/demo/datatables-demo.js"></script>
+    
 <script>
-$(document).ready(function() {
-    $('#ticketsTable').DataTable();
+  // --- Main list table (page) ---
+  document.addEventListener('DOMContentLoaded', () => {
+    if (document.querySelector('#logsTicket')) {
+      new DataTable('#logsTicket', {
+        fixedHeader: { header: true },
+        order: [],
+        columnDefs: [
+          {
+            targets: [2,3, 4, 5], // Category, Priority, Date Filed
+            columnControl: ["order", ["searchList","spacer","orderAsc","orderDesc","orderClear"]],
+          },
+          {
+            targets: [0, 1, 6], // Employee, Branch, Action
+            columnControl: ["order", ["search"]],
+          },
+        ],
+        ordering: { indicators: false, handler: false },
+      });
+    }
+  });
 
-    $('.viewBtn').on('click', function() {
-        const id = $(this).data('ticketid');
-        $('#ticket_number').val($(this).data('ticketnum'));
-        $('#employee').val($(this).data('employee'));
-        $('#priority').val($(this).data('priority'));
-        $('#status').val($(this).data('status'));
+  // --- Modal history table (inside modal) ---
+  let historyDT = null;
 
-        $('#ticketHistoryTable tbody').empty();
+  $(document).on('click', '.viewBtn', function () {
+    const id = $(this).data('ticketid');
 
-        $.get('fetch_ticket_history.php', { ticket_id: id }, function(data) {
-            const history = JSON.parse(data);
-            if (history.length > 0) {
-                history.forEach(row => {
-                    $('#ticketHistoryTable tbody').append(`
-                        <tr>
-                            <td>${row.action_details}</td>
-                            <td>${row.performed_by}</td>
-                            <td>${row.old_status}</td>
-                            <td>${row.new_status}</td>
-                            <td>${row.date_logged}</td>
-                        </tr>
-                    `);
-                });
-            } else {
-                $('#ticketHistoryTable tbody').append(`<tr><td colspan="5" class="text-center">No history found.</td></tr>`);
-            }
+    // Fill header fields
+    $('#ticket_number').val($(this).data('ticketnum'));
+    $('#employee').val($(this).data('employee'));
+    $('#priority').val($(this).data('priority'));
+    $('#status').val($(this).data('status'));
+
+    // Clear previous rows and destroy previous DT instance (if any)
+    $('#ticketHistoryTable tbody').empty();
+    if (historyDT) { historyDT.destroy(); historyDT = null; }
+
+    // Fetch rows, then show modal and init DataTable AFTER it's visible
+    $.get('fetch_ticket_history.php', { ticket_id: id }, function (data) {
+      const history = JSON.parse(data || '[]');
+      if (history.length) {
+        history.forEach(row => {
+          $('#ticketHistoryTable tbody').append(`
+            <tr>
+              <td>${row.action_details}</td>
+              <td>${row.performed_by}</td>
+              <td>${row.old_status}</td>
+              <td>${row.new_status}</td>
+              <td>${row.date_logged}</td>
+            </tr>
+          `);
         });
+      } else {
+        $('#ticketHistoryTable tbody').append(
+          `<tr><td colspan="5" class="text-center">No history found.</td></tr>`
+        );
+      }
 
-        $('#viewTicketModal').modal('show');
+      // Show modal first
+      $('#viewTicketModal').modal('show');
+
+      // When modal is fully shown (has layout), initialize DataTable
+      $('#viewTicketModal').one('shown.bs.modal', function () {
+        historyDT = new DataTable('#ticketHistoryTable', {
+          fixedHeader: { header: true },
+          order: [],
+          // add columnControl here too if you want it on the modal table
+          // columnDefs: [...]
+        });
+      });
     });
-});
+  });
 </script>
+
 
 
                                        

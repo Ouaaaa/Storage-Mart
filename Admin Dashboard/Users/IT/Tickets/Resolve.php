@@ -8,71 +8,44 @@ $accountID = $_SESSION['account_id'];
 // Fetch user info for display
 // ==========================
 $fetchUser = "
-    SELECT e.firstname, e.position, e.employee_id
+    SELECT e.firstname, e.position 
     FROM tblaccounts a
     JOIN tblemployee e ON a.account_id = e.account_id
     WHERE a.account_id = ?
 ";
 $loggedfirstname = '';
 $loggedPosition = '';
-$employee_id = 0;
-
 if ($stmt = mysqli_prepare($link, $fetchUser)) {
     mysqli_stmt_bind_param($stmt, 'i', $accountID);
     mysqli_stmt_execute($stmt);
-    mysqli_stmt_bind_result($stmt, $loggedfirstname, $loggedPosition, $employee_id);
+    mysqli_stmt_bind_result($stmt, $loggedfirstname, $loggedPosition);
     mysqli_stmt_fetch($stmt);
     mysqli_stmt_close($stmt);
 }
-
 $_SESSION['loggedfirstname'] = $loggedfirstname;
 $_SESSION['loggedPosition'] = $loggedPosition;
-
-// ==========================
-// Handle delete request (optional)
-// ==========================
-if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['action'] == 'Decline') {
-    $accountToDelete = $_POST['account_id'];
-
-    $deleteSQL = "DELETE FROM tblaccounts WHERE account_id = ?";
-    if ($stmt = mysqli_prepare($link, $deleteSQL)) {
-        mysqli_stmt_bind_param($stmt, "i", $accountToDelete);
-        if (mysqli_stmt_execute($stmt)) {
-            header("Location: " . $_SERVER['PHP_SELF']);
-            exit();
-        } else {
-            echo "<script>alert('Error deleting account.');</script>";
-        }
-        mysqli_stmt_close($stmt);
-    }
-}
-
-// ==========================
-// Fetch all tickets for this employee
-// ==========================
-$sqlQuery = "
-SELECT 
-    t.ticket_id, 
-    t.ticket_number, 
-    CONCAT(e.lastname, ', ', e.firstname) AS employee_name,
-    t.category, 
-    t.priority, 
-    t.status, 
-    t.date_filed, 
+$fetchTechnical = "
+  SELECT 
+    t.ticket_id,
+    t.ticket_number,
+    CONCAT(e.lastname, ', ', e.firstname, ' ', LEFT(e.middlename, 1), '.') AS employee_name,
+    CONCAT(g.groupName, ' - ' , i.itemInfo) AS asset,
     b.branchName,
-    t.concern_details
-FROM tbltickets t
-JOIN tblemployee e ON t.employee_id = e.employee_id
-LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
-WHERE e.employee_id = ?
-ORDER BY t.date_filed DESC
+    tt.technical_purpose,
+    tt.action_taken,
+    tt.result,
+    tt.remarks,
+    tt.date_performed
+  FROM tbltickets t 
+  JOIN tblticket_technical tt ON t.ticket_id = tt.ticket_id
+  JOIN tblemployee e ON t.employee_id = e.employee_id
+  JOIN tblassets_inventory i ON  t.inventory_id = i.inventory_id
+  LEFT JOIN tblassets_group g ON i.group_id = g.group_id  
+  JOIN tblbranch b ON e.branch_id = b.branch_id
+  WHERE t.status = 'Resolved'
 ";
-
-if ($stmt = mysqli_prepare($link, $sqlQuery)) {
-    mysqli_stmt_bind_param($stmt, "i", $employee_id);
-    mysqli_stmt_execute($stmt);
-    $result = mysqli_stmt_get_result($stmt);
-} else {
+$result = mysqli_query($link, $fetchTechnical);
+if (!$result) {
     die("SQL Error: " . mysqli_error($link));
 }
 ?>
@@ -87,7 +60,7 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>Storage Mart Tickets - Tables</title>
+    <title>Storage Mart | IT Resolve Tickets - Tables</title>
 
     <!-- Custom fonts for this template -->
     <link href="../../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -97,9 +70,9 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
 
     <!-- Custom styles for this template -->
     <link href="../../../css/sb-admin-2.min.css" rel="stylesheet">
-    <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
+        <link rel="icon" href="../../../img/favicon.ico" type="image/x-icon">
+
     <!-- Custom styles for this page -->
-    <link href="../../../vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">
     <link href="../../../vendor/datatables/dataTables.min.css" rel="stylesheet">
 
 </head>
@@ -109,13 +82,14 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
     <!-- Page Wrapper -->
     <div id="wrapper">
 
+        <!-- Sidebar -->
         <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../Dashboard/index.php">
-                <div class="sidebar-brand-icon ">
-                    <img src="../../../img/logo.png" alt="Logo" style="width:100px; height:auto;">
+                <div class="sidebar-brand-icon rotate-n-15">
                 </div>
+                <img src="../../../img/logo.png" alt="Logo" style="width:100px; height:auto;">
             </a>
 
             <!-- Divider -->
@@ -135,16 +109,24 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
             <div class="sidebar-heading">
                 Interface
             </div>
-			<li class="nav-item active">
-                <a class="nav-link" href="Tickets.php">
+            <li class="nav-item active">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    aria-expanded="true" aria-controls="collapseTwo">
                     <i class="fas fa-ticket-alt"></i>
-                    <span>Ticket</span>
+                    <span>Ticket</span>	
                 </a>
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Ticket:</h6>
+                        <a class="collapse-item" href="IT-Tickets.php">In Progress</a>
+                        <a class="collapse-item" href="#">Resolve</a>
+                    </div>
+                </div>
             </li>
             <li class="nav-item">
                 <a class="nav-link" href="../Asset/Assets.php">
                     <i class="fas fa-archive"></i>
-                    <span>Assets</span>
+                    <span>My Assets</span>
                 </a>
             </li>
             <!-- Divider -->
@@ -218,10 +200,8 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
                         <li class="nav-item dropdown no-arrow">
                             <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                 data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                               <span class="mr-2 d-none d-lg-inline text-gray-600 small">
-                                   <?= htmlspecialchars($loggedfirstname) . " (" . htmlspecialchars($loggedPosition) . ")" ?>
-                                </span>
-
+                                <span class="mr-2 d-none d-lg-inline text-gray-600 small">                                    
+                                    <?= htmlspecialchars($loggedfirstname) . " (" . htmlspecialchars($loggedPosition) . ")" ?></span>
                                 <img class="img-profile rounded-circle"
                                     src="../../../img/undraw_profile.svg">
                             </a>
@@ -243,64 +223,67 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
 
-                    <!-- Page Heading -->
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables is a third party plugin that is used to generate the demo table below.
-                        For more information about DataTables, please visit the <a target="_blank"
-                            href="https://datatables.net">official DataTables documentation</a>.</p>
-
-                    <!-- Main conctent -->
+                    <!-- DataTales Example -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
-                            <h6 class="m-0 font-weight-bold text-primary">List of Tickets</h6>
+                            <h6 class="m-0 font-weight-bold text-primary">List of Resolve Tickets</h6>
                         </div>
                         <div class="card-body">
                             <div class="table-responsive">
-                                <table class="table table-bordered" id="ticketsTable" width="100%" cellspacing="0">
+                                <table class="table table-bordered" id="ticketTables" width="100%" cellspacing="0">
                                     <thead>
                                         <tr>
                                             <th>Ticket #</th>
-                                            <th>Concern Details</th>
+                                            <th>Employee Name</th>
+                                            <th>Asset</th>
                                             <th>Branch</th>
-                                            <th>Category</th>
-                                            <th>Priority</th>
-                                            <th>Status</th>
-                                            <th>Date Filed</th>
+											                      <th>Technical Purpose</th>
+                                            <th>Action Taken</th>
+                                            <th>Result</th>
+											                      <th>Remarks</th>
+                                            <th>Date Performed</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
                                     <tfoot>
                                         <tr>
                                             <th>Ticket #</th>
-                                            <th>Concern Details</th>
+                                            <th>Employee Name</th>
+                                            <th>Asset</th>
                                             <th>Branch</th>
-                                            <th>Category</th>
-                                            <th>Priority</th>
-                                            <th>Status</th>
-                                            <th>Date Filed</th>
+											                      <th>Technical Purpose</th>
+                                            <th>Action Taken</th>
+                                            <th>Result</th>
+											                      <th>Remarks</th>
+                                            <th>Date Performed</th>
                                             <th>Action</th>
                                         </tr>
                                     </tfoot>
                                     <tbody>
                                         <?php while ($row = mysqli_fetch_assoc($result)) { ?>
-                                            <tr>
+                                            <tr>  
                                                 <td><?= htmlspecialchars($row['ticket_number']) ?></td>
-                                                <td><?= htmlspecialchars($row['concern_details']) ?></td>
+                                                <td><?= htmlspecialchars($row['employee_name']) ?></td>
+                                                <td><?= htmlspecialchars($row['asset']) ?></td>
                                                 <td><?= htmlspecialchars($row['branchName']) ?></td>
-                                                <td><?= htmlspecialchars($row['category']) ?></td>
-                                                <td><?= htmlspecialchars($row['priority']) ?></td>
-                                                <td><?= htmlspecialchars($row['status']) ?></td>
-                                                <td><?= htmlspecialchars($row['date_filed']) ?></td>
+                                                <td><?= htmlspecialchars($row['technical_purpose']) ?></td>
+                                                <td><?= htmlspecialchars($row['action_taken']) ?></td>
+                                                <td><?= htmlspecialchars($row['result']) ?></td>
+                                                <td><?= htmlspecialchars($row['remarks']) ?></td>
+                                                <td><?= htmlspecialchars($row['date_performed']) ?></td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-primary viewBtn" 
-                                                        data-ticketid="<?= $row['ticket_id'] ?>" 
-                                                        data-ticketnum="<?= htmlspecialchars($row['ticket_number']) ?>"
-                                                        data-employee="<?= htmlspecialchars($row['employee_name']) ?>"
-                                                        data-branch="<?= htmlspecialchars($row['branchName']) ?>"
-                                                        data-priority="<?= htmlspecialchars($row['priority']) ?>"
-                                                        data-status="<?= htmlspecialchars($row['status']) ?>">
-                                                        View
-                                                    </button>
+                                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                                        data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                    <span class="mr-2 d-none d-lg-inline text-gray-600 ">
+                                                        Action</span>
+                                                    </a>
+                                                    <!-- Dropdown - User Information -->
+                                                    <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown">
+                                                    <a href="../../../generatePDF/generate_technical.php?ticket_id=<?= $row['ticket_id'] ?>" class="dropdown-item">
+                                                        <i class="fas fa-file-word a-fw mr-2 text-black-400"></i> Generate Technical Report
+                                                    </a>
+                                                    </div>
+
                                                 </td>
                                             </tr>
                                         <?php } ?>
@@ -309,10 +292,7 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
                             </div>
                         </div>
                     </div>
-                </div>
-        </div>
-        </div>
-        
+
                 </div>
                 <!-- /.container-fluid -->
 
@@ -347,119 +327,28 @@ if ($stmt = mysqli_prepare($link, $sqlQuery)) {
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../../../../public/Login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
     </div>
-<!-- View Ticket Modal -->
-<div class="modal fade" id="viewTicketModal" tabindex="-1" aria-labelledby="viewTicketLabel" aria-hidden="true">
-  <div class="modal-dialog modal-xl modal-dialog-centered">
-    <div class="modal-content">
-        <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title" id="viewTicketLabel">Ticket History</h5>
-            <button type="button" class="close text-white" data-dismiss="modal">&times;</button>
-        </div>
-        <div class="modal-body">
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label>Ticket Number</label>
-                    <input type="text" id="ticket_number" class="form-control" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label>Status</label>
-                    <input type="text" id="status" class="form-control" readonly>
-                </div>
-            </div>
-            <div class="row mb-3">
-                <div class="col-md-6">
-                    <label>Employee</label>
-                    <input type="text" id="employee" class="form-control" readonly>
-                </div>
-                <div class="col-md-6">
-                    <label>Priority</label>
-                    <input type="text" id="priority" class="form-control" readonly>
-                </div>
-            </div>
 
-            <h6 class="mt-4">History Records</h6>
-            <div class="table-responsive">
-                <table class="table table-bordered" id="ticketHistoryTable" width="100%" cellspacing="0">
-                    <thead>
-                        <tr>
-                            <th>Action Taken</th>
-                            <th>Technician</th>
-                            <th>Old Status</th>
-                            <th>New Status</th>
-                            <th>Date</th>
-                        </tr>
-                    </thead>
-                    <tbody></tbody>
-                </table>
-            </div>
-        </div>
-        <div class="modal-footer">
-            <button class="btn btn-secondary" data-dismiss="modal">Close</button>
-        </div>
-    </div>
-  </div>
-</div>
+        <!-- Bootstrap core JavaScript-->
+        <script src="../../../vendor/jquery/jquery.min.js"></script>
+        <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Bootstrap core JavaScript-->
-    <script src="../../../vendor/jquery/jquery.min.js"></script>
-    <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <!-- Core plugin JavaScript-->
+        <script src="../../../vendor/jquery-easing/jquery.easing.min.js"></script>
 
-    <!-- Core plugin JavaScript-->
-    <script src="../../../vendor/jquery-easing/jquery.easing.min.js"></script>
+        <!-- Custom scripts for all pages-->
+        <script src="../../../js/sb-admin-2.min.js"></script>
 
-    <!-- Custom scripts for all pages-->
-    <script src="../../../js/sb-admin-2.min.js"></script>
+        <!-- Page level plugins -->
+        <script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
+        <script src="../../../vendor/datatables/dataTables.min.js"></script>
 
-    <!-- Page level plugins -->
-    <script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="../../../vendor/datatables/dataTables.min.js"></script>
-
-    <!-- Page level custom scripts -->
-    <script src="../js/demo/datatables-demo.js"></script>
-<script>
-$(document).ready(function() {
-    $('#ticketsTable').DataTable();
-
-    $('.viewBtn').on('click', function() {
-        const id = $(this).data('ticketid');
-        $('#ticket_number').val($(this).data('ticketnum'));
-        $('#employee').val($(this).data('employee'));
-        $('#priority').val($(this).data('priority'));
-        $('#status').val($(this).data('status'));
-
-        $('#ticketHistoryTable tbody').empty();
-
-        $.get('fetch_ticket_history.php', { ticket_id: id }, function(data) {
-            const history = JSON.parse(data);
-            if (history.length > 0) {
-                history.forEach(row => {
-                    $('#ticketHistoryTable tbody').append(`
-                        <tr>
-                            <td>${row.action_details}</td>
-                            <td>${row.performed_by}</td>
-                            <td>${row.old_status}</td>
-                            <td>${row.new_status}</td>
-                            <td>${row.date_logged}</td>
-                        </tr>
-                    `);
-                });
-            } else {
-                $('#ticketHistoryTable tbody').append(`<tr><td colspan="5" class="text-center">No history found.</td></tr>`);
-            }
-        });
-
-        $('#viewTicketModal').modal('show');
-    });
-});
-</script>
-
-
-                                       
+        <!-- Page level custom scripts -->
+        <script src="../../../js/demo/datatables-demo.js"></script>
 </body>
 
 </html>

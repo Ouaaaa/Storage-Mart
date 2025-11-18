@@ -181,9 +181,8 @@ if (isset($_POST['btnSubmit'])) {
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../Dashboard/index.php">
                 <div class="sidebar-brand-icon ">
-                    <img src="../../../img/logo.png" alt="Logo" style="width:40px; height:auto;">
+                    <img src="../../../img/logo.png" alt="Logo" style="width:100px; height:auto;">
                 </div>
-                <div class="sidebar-brand-text mx-3">Storage Mart</div>
             </a>
 
             <!-- Divider -->

@@ -358,7 +358,7 @@ if ($_SERVER["REQUEST_METHOD"] == "POST" && isset($_POST['action']) && $_POST['a
                                                         Action</span>
                                                     </a>
                                                     <!-- Dropdown - User Information -->
-                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                                                    <div class="dropdown-menu dropdown-menu-right shadow " aria-labelledby="userDropdown">
                                                         <!-- Update -->
                                                         <a class="dropdown-item" href="Update-Account.php?account_id=<?= $row['account_id']; ?>">
                                                             <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>

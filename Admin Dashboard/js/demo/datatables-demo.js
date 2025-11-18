@@ -1,7 +1,4 @@
 // Call the dataTables jQuery plugin
-$(document).ready(function () {
-  $("#dataTable").DataTable();
-});
 new DataTable("#asset", {
   fixedHeader: { header: true },
   columnDefs: [
@@ -193,4 +190,68 @@ new DataTable("#pendings", {
     handler: false,
   },
 });
-new DataTable();
+new DataTable("#ticketTables", {
+  fixedHeader: { header: true },
+  order: [],
+  columnDefs: [
+    {
+      targets: [2, 3, 5, 6],
+      columnControl: [
+        "order",
+        ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
+      ],
+    },
+    {
+      targets: [0, 1, 7],
+      columnControl: [
+        "order",
+        ["search"],
+      ],
+    },
+  ],
+  ordering: {
+    indicators: false,
+    handler: false,
+  },
+});
+new DataTable("#IT-TicketDatables", {
+  fixedHeader: { header: true },
+  order: [],
+  columnDefs: [
+    {
+      targets: [2, 3, 5, 6],
+      columnControl: [
+        "order",
+        ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
+      ],
+    },
+  ],
+  ordering: {
+    indicators: false,
+    handler: false,
+  },
+});
+new DataTable("#logsResolveTable", {
+  fixedHeader: { header: true },
+  order: [],
+  columnDefs: [
+    {
+      targets: [2, 3, 5, 6],
+      columnControl: [
+        "order",
+        ["searchList", "spacer", "orderAsc", "orderDesc", "orderClear"],
+      ],
+    },
+    {
+      targets: [0, 1, 7],
+      columnControl: [
+        "order",
+        ["search"],
+      ],
+    },
+  ],
+  ordering: {
+    indicators: false,
+    handler: false,
+  },
+});

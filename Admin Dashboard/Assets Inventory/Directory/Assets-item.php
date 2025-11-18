@@ -350,7 +350,7 @@ if (!$result) {
                                                     <span class="mr-2 d-none d-lg-inline text-gray-600 ">
                                                         Action</span>
                                                 </a>
-                                                    <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in" aria-labelledby="userDropdown">
+                                                    <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown">
                                                         <!-- Update -->
                                                         <a class="dropdown-item" href="Update-Item.php?inventory_id=<?= $row['inventory_id']; ?>">
                                                             <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i>
