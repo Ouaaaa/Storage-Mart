@@ -395,46 +395,21 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
                                 <form action="<?php echo htmlspecialchars($_SERVER["PHP_SELF"]); ?>" method="POST">
                                     <input type="hidden" name="item_id" value="<?php echo htmlspecialchars($assets['inventory_id']); ?>">
                                     <h1>Transfer Details</h1>
-                                    <div class ="row mb-5">
-                                        <div class = "col-md-6">
-                                            <label for="assignedTo" class="form-label">Transfer to</label>
-                                                <select id="employee_id" name="employee_id" class="form-control" required>
-                                                <option value="">-- Select Employee --</option>
-                                                    <?php 
-                                                        $sql = "
-                                                            SELECT e.employee_id,
-                                                                CONCAT(e.lastname, ', ', e.firstname, ' ', IFNULL(e.middlename, '')) AS full_name,
-                                                                b.branchName,
-                                                                b.branchCode
-                                                            FROM tblemployee e
-                                                            LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
-                                                            ORDER BY e.lastname ASC
-                                                        ";
-
-                                                        $result = mysqli_query($link, $sql);
-                                                        
-                                                        if($result && mysqli_num_rows($result) > 0){
-                                                            while ($row = mysqli_fetch_assoc($result)) {
-                                                                $displaytext = $row['employee_id'] . " - " . $row['full_name'];
-                                                                echo '<option value="'.$row['employee_id'].'"
-                                                                            data-branchName="'.$row['branchName'].'"
-                                                                            data-branchCode="'.$row['branchCode'].'">'
-                                                                            .$displaytext.
-                                                                    '</option>';
-                                                            }
-
-                                                            mysqli_free_result($result);
-                                                        } else {
-                                                            echo "<option value=''>No categories available</option>";
-                                                        }
-                                                    ?>
-                                                </select>
+                                    <div class="row mb-5">
+                                        <div class="col-md-6">
+                                            <label for="employee_search" class="form-label">Search Employee</label>
+                                            <div class="input-group">
+                                                <input type="text" id="employee_search" class="form-control" placeholder="Type employee name or ID">
+                                                <button type="button" class="btn btn-primary" id="btnSearchEmployee">Search</button>
+                                            </div>
+                                            <input type="hidden" id="employee_id" name="employee_id">
                                         </div>
-                                        <div class = "col-md-6">
+                                        <div class="col-md-6">
                                             <label for="branchName" class="form-label">Employee Branch</label>
-                                            <input type="text" class ="form-control" id ="branchName" name="branchName" placeholder="Employee Branch" value="<?php echo htmlspecialchars($branch['branchName'] ?? ''); ?>" readonly>
+                                            <input type="text" class="form-control" id="branchName" name="branchName" placeholder="Employee Branch" readonly>
                                         </div>
                                     </div>
+
                                     <div class ="row mb-5">
                                             <div class="col-md-6">
                                                 <label for = "transferDetails" class ="form-label">Transfer Details</label>
@@ -544,6 +519,39 @@ document.getElementById("employee_id").addEventListener("change", function() {
     var selectedOption = this.options[this.selectedIndex];
     var branchName = selectedOption.getAttribute("data-branchName") || "";
     document.getElementById("branchName").value = branchName;
+});
+
+</script>
+<script>
+    $(document).ready(function() {
+    $('#btnSearchEmployee').on('click', function() {
+        var query = $('#employee_search').val().trim();
+        if (query === "") {
+            alert("Please enter employee name or ID.");
+            return;
+        }
+
+        $.ajax({
+            url: 'search-employee.php',
+            type: 'GET',
+            data: { q: query },
+            dataType: 'json',
+            success: function(response) {
+                if(response.success) {
+                    $('#employee_id').val(response.employee_id);
+                    $('#employee_search').val(response.full_name);
+                    $('#branchName').val(response.branchName);
+                } else {
+                    alert(response.message);
+                    $('#employee_id').val('');
+                    $('#branchName').val('');
+                }
+            },
+            error: function() {
+                alert('Error fetching employee data.');
+            }
+        });
+    });
 });
 
 </script>

@@ -231,7 +231,7 @@ new DataTable("#IT-TicketDatables", {
     handler: false,
   },
 });
-new DataTable("#logsResolveTable", {
+new DataTable("#resolvedTable", {
   fixedHeader: { header: true },
   order: [],
   columnDefs: [

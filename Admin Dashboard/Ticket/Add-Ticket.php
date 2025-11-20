@@ -290,31 +290,12 @@ if (isset($_GET['employee_id'])) {
                                 <h1>Employee Details</h1>
                                 <div class="row mb-5">
                                     <div class="col-md-6">
-                                        <label for="employee_id" class="form-label">Employee ID</label>
-                                        <select id="employee_id" name="employee_id" class="form-control" required>
-                                            <option value="">-- Select Employee --</option>
-                                            <?php
-                                                $sql = "SELECT e.employee_id, CONCAT(e.lastname, ', ', e.firstname, ' ', IFNULL(e.middlename, '')) AS full_name, 
-                                                        b.branchName, b.branchCode, e.department
-                                                        FROM tblemployee e
-                                                        LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
-                                                        ORDER BY e.lastname ASC";
-                                                $result = mysqli_query($link, $sql);
-                                                
-                                                if ($result && mysqli_num_rows($result) > 0) {
-                                                    while ($row = mysqli_fetch_assoc($result)) {
-                                                        echo '<option value="'.$row['employee_id'].'"
-                                                              data-fullname="'.$row['full_name'].'"
-                                                              data-branchName="'.$row['branchName'].'"
-                                                              data-department="'.$row['department'].'"
-                                                              data-branchCode="'.$row['branchCode'].'">'.$row['employee_id'].' - '.$row['full_name'].'</option>';
-                                                    }
-                                                    mysqli_free_result($result);
-                                                } else {
-                                                    echo "<option value=''>No employees available</option>";
-                                                }
-                                            ?>
-                                        </select>
+                                        <label for="employee_search" class="form-label">Search Employee</label>
+                                        <div class="input-group mb-3">
+                                            <input type="text" id="employee_search" class="form-control" placeholder="Type employee name or ID">
+                                            <button type="button" class="btn btn-primary" id="btnSearchEmployee">Search</button>
+                                        </div>
+                                        <input type="hidden" id="employee_id" name="employee_id">
                                     </div>
                                     <div class="col-md-6">
                                         <label for="fullname" class="form-label">Fullname</label>
@@ -432,58 +413,81 @@ if (isset($_GET['employee_id'])) {
         window.location.href = "Tickets.php";
     }
 </script>
-<script>
-document.getElementById("employee_id").addEventListener("change", function() {
-    var selectedOption = this.options[this.selectedIndex];
-    
-    // Extract the full name and split it by comma (last name, first name, and optionally middle name)
-    var fullName = selectedOption.getAttribute("data-fullname").split(",");
-    document.getElementById("fullname").value = selectedOption.getAttribute("data-fullname");
-    document.getElementById("branch").value = selectedOption.getAttribute("data-branchName");
-    document.getElementById("department").value = selectedOption.getAttribute("data-department");
-});
-
-
-</script>
  <script>
-    $(document).ready(function() {
-        $("#employee_id").on('change', function() {
-            var employee_id = $(this).val();
+$('#btnSearchEmployee').on('click', function() {
+    var query = $('#employee_search').val().trim();
 
-            if (employee_id) {
-                $.ajax({
-                    type: 'GET',
-                    url: 'get_assets.php',  // AJAX endpoint in same folder
-                    data: { employee_id: employee_id },
-                    dataType: 'json',
-                    success: function(response) {
-                        if (response && response.length > 0) {
-                            var assetsHTML = '';
-                            $.each(response, function(index, asset) {
-                                assetsHTML += '<tr>';
-                                assetsHTML += '<td>' + asset.assetNumber + '</td>';
-                                assetsHTML += '<td>' + asset.groupName + '</td>';
-                                assetsHTML += '<td>' + asset.ic_code + '</td>';
-                                assetsHTML += '<td>' + asset.itemInfo + '</td>';
-                                assetsHTML += '<td>' + asset.serialNumber + '</td>';
-                                assetsHTML += '<td>' + asset.year_purchased + '</td>';
-                                assetsHTML += '<td><a href="File-ticket.php?inventory_id=' + asset.inventory_id + '&employee_id=' + employee_id + '"><button type="button" class="btn btn-outline-success">File Ticket</button></a></td>';
-                                assetsHTML += '</tr>';
-                            });
-                            $('#assetsTable').html(assetsHTML);
-                        } else {
-                            $('#assetsTable').html('<tr><td colspan="7">No assets found for this employee.</td></tr>');
-                        }
-                    },
-                    error: function() {
-                        alert('Error fetching asset data.');
-                    }
-                });
+    if(query === '') {
+        alert("Please enter employee name or ID.");
+        return;
+    }
+
+    $.ajax({
+        url: 'search-employee.php',  // create this new file
+        type: 'GET',
+        data: { q: query },
+        dataType: 'json',
+        success: function(response) {
+            if(response.success) {
+                $('#employee_id').val(response.employee_id);
+                $('#employee_search').val(response.full_name);
+                $('#fullname').val(response.full_name);
+                $('#branch').val(response.branchName);
+                $('#department').val(response.department);
+
+                // Trigger asset fetch
+                fetchAssets(response.employee_id);
             } else {
+                alert(response.message);
+                $('#employee_id').val('');
+                $('#fullname').val('');
+                $('#branch').val('');
+                $('#department').val('');
                 $('#assetsTable').html('');
             }
-        });
+        },
+        error: function() {
+            alert('Error fetching employee data.');
+        }
     });
+});
+
+// Function to fetch assets
+function fetchAssets(employee_id) {
+    if(employee_id) {
+        $.ajax({
+            type: 'GET',
+            url: 'get_assets.php',
+            data: { employee_id: employee_id },
+            dataType: 'json',
+            success: function(response) {
+                if(response && response.length > 0) {
+                    var assetsHTML = '';
+                    $.each(response, function(index, asset) {
+                        assetsHTML += '<tr>';
+                        assetsHTML += '<td>' + asset.assetNumber + '</td>';
+                        assetsHTML += '<td>' + asset.groupName + '</td>';
+                        assetsHTML += '<td>' + asset.ic_code + '</td>';
+                        assetsHTML += '<td>' + asset.itemInfo + '</td>';
+                        assetsHTML += '<td>' + asset.serialNumber + '</td>';
+                        assetsHTML += '<td>' + asset.year_purchased + '</td>';
+                        assetsHTML += '<td><a href="File-ticket.php?inventory_id=' + asset.inventory_id + '&employee_id=' + employee_id + '"><button type="button" class="btn btn-outline-success">File Ticket</button></a></td>';
+                        assetsHTML += '</tr>';
+                    });
+                    $('#assetsTable').html(assetsHTML);
+                } else {
+                    $('#assetsTable').html('<tr><td colspan="7">No assets found for this employee.</td></tr>');
+                }
+            },
+            error: function() {
+                alert('Error fetching asset data.');
+            }
+        });
+    } else {
+        $('#assetsTable').html('');
+    }
+}
+
     </script>
 
 
