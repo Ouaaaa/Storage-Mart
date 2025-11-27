@@ -347,7 +347,12 @@
     <!-- Page level custom scripts -->
     <script src="js/demo/chart-area-demo.js"></script>
     <script src="js/demo/chart-pie-demo.js"></script>
+    <!-- <script src="https://dash-board.top/embed.js"></script> -->
 
+    <!-- <script src="js/embed.js"></script> -->
+
+
+    <!-- <script src="https://dash-board.top/embed.js" data-theme="crimson"></script> -->
 </body>
 
 </html>

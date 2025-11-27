@@ -11,6 +11,12 @@ $userQuery = "
     JOIN tblemployee e ON a.account_id = e.account_id
     WHERE a.account_id = ?
 ";
+if (isset($_GET['employee_id'])) {
+    $employee_id = $_GET['employee_id'];
+} else {
+    // Handle the case where employee_id is not set (e.g., redirect or show an error)
+}
+echo "Employee ID: " . $employee_id;  // Debugging line to check the value
 
 $employee_id = '';
 $loggedFirstname = '';
@@ -70,16 +76,16 @@ if ($stmtasset = mysqli_prepare($link, $fetchAssets)) {
         <title>Storage Mart | Assets</title>
 
         <!-- Custom fonts for this template -->
-        <link href="../../../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+        <link href="../vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
         <link
             href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
             rel="stylesheet">
 
         <!-- Custom styles for this template -->
-        <link href="../../../css/sb-admin-2.min.css" rel="stylesheet">
-        <link rel="icon" href="../../../img/favicon.ico" type="image/x-icon">
+        <link href="../css/sb-admin-2.min.css" rel="stylesheet">
+        <link rel="icon" href="../img/favicon.ico" type="image/x-icon">
         <!-- Custom styles for this page -->
-        <link href="../../../vendor/datatables/dataTables.min.css" rel="stylesheet">
+        <link href="../vendor/datatables/dataTables.min.css" rel="stylesheet">
 
     </head>
 
@@ -88,63 +94,113 @@ if ($stmtasset = mysqli_prepare($link, $fetchAssets)) {
         <!-- Page Wrapper -->
         <div id="wrapper">
 
-            <!-- Sidebar -->
-            <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
+         <!-- Sidebar -->
+        <ul class="navbar-nav bg-gradient-primary sidebar sidebar-dark accordion" id="accordionSidebar">
 
-                <!-- Sidebar - Brand -->
-                <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../Dashboard/index.php">
-                    <div class="sidebar-brand-icon ">
-                        <img src="../../../img/logo.png" alt="Logo" style="width:100px; height:auto;">
-                    </div>
+            <!-- Sidebar - Brand -->
+            <a class="sidebar-brand d-flex align-items-center justify-content-center" href="../index.php">
+                <img src="../img/logo.png" alt="Logo" style="width:100px; height:auto;">
+            </a>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider my-0">
+
+            <!-- Nav Item - Dashboard -->
+            <li class="nav-item">
+                <a class="nav-link" href="../index.php">
+                    <i class="fas fa-fw fa-tachometer-alt"></i>
+                    <span>Dashboard</span></a>
+            </li>
+
+            <!-- Divider -->
+            <hr class="sidebar-divider">
+
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Interface
+            </div>
+
+            <!-- Nav Item - Pages Collapse Menu -->
+            <li class="nav-item active">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapseTwo"
+                    aria-expanded="true" aria-controls="collapseTwo">
+                    <i class="fas fa-fw fa-user"></i>
+                    <span>Users</span>	
                 </a>
-
-                <!-- Divider -->
-                <hr class="sidebar-divider my-0">
-
-                <!-- Nav Item - Dashboard -->
-                <li class="nav-item">
-                    <a class="nav-link" href="../Dashboard/index.php">
-                        <i class="fas fa-fw fa-tachometer-alt"></i>
-                        <span>Dashboard</span></a>
-                </li>
-
-                <!-- Divider -->
-                <hr class="sidebar-divider">
-
-                <!-- Heading -->
-                <div class="sidebar-heading">
-                    Interface
-                </div>			
-                <li class="nav-item">
-                    <a class="nav-link" href="../Ticket/Tickets.php">
-                        <i class="fas fa-ticket-alt"></i>
-                        <span>Ticket</span>
-                    </a>
-                </li>
-                <li class="nav-item active">
-                    <a class="nav-link" href="Assets.php">
-                        <i class="fas fa-archive"></i>
-                        <span>Assets</span>
-                    </a>
-                </li>
-                <!-- Divider -->
-                <hr class="sidebar-divider">
-
-                <!-- Heading -->
-                <div class="sidebar-heading">
-                    Actions
+                <div id="collapseTwo" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">User:</h6>
+                        <a class="collapse-item" href="Accounts.php">Accounts</a>
+                        <a class="collapse-item" href="Employee.php">Employee</a>
+                    </div>
                 </div>
-                <!-- Divider -->
-                <hr class="sidebar-divider d-none d-md-block">
+            </li>
+			
+			<li class="nav-item">
+                <a class="nav-link" href="../Ticket/Tickets.php">
+                    <i class="fas fa-ticket-alt"></i>
+                    <span>Ticket</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link" href="../Assets Inventory/Directory/Assets.php">
+                    <i class="fas fa-archive"></i>
+                    <span>Assets Directory </span>
+                </a>
+            </li>
+            <li class="nav-item ">
+                <a class="nav-link collapsed" href="#" data-toggle="collapse" data-target="#collapsethree"
+                    aria-expanded="true" aria-controls="collapsethree">
+                    <i class="fas fa-fw fa-user"></i>
+                    <span>Asset Inventory</span>	
+                </a>
+                <div id="collapsethree" class="collapse" aria-labelledby="headingTwo" data-parent="#accordionSidebar">
+                    <div class="bg-white py-2 collapse-inner rounded">
+                        <h6 class="collapse-header">Branch:</h6>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Head-office.php">Head Office</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Iran.php">Iran</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Don-roces.php">Don Roces</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Sucat.php">Sucat</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Banawe.php">Sucat</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Santolan.php">Santolan</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Pasig.php">Pasig</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Bangkal.php">Bangkal</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Delta.php">Delta</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Binondo.php">Binondo</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Katipunan.php">Katipunan</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Fairview.php">Fairview</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Jabad.php">Jabad</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Yakal.php">Yakal</a>
+                        <a class="collapse-item" href="../Assets Inventory/Inventory/Caloocan.php">Caloocan</a>
 
-                <!-- Sidebar Toggler (Sidebar) -->
-                <div class="text-center d-none d-md-inline">
-                    <button class="rounded-circle border-0" id="sidebarToggle"></button>
+                    </div>
                 </div>
+            </li>
+            <!-- Divider -->
+            <hr class="sidebar-divider">
 
-            </ul>
-            <!-- End of Sidebar -->
+            <!-- Heading -->
+            <div class="sidebar-heading">
+                Actions
+            </div>
+			
+            <!-- Nav Item - Tables -->
+            <li class="nav-item">
+                <a class="nav-link" href="../Pendings.php">
+                    <i class="fas fa-fw fa-table"></i>
+                    <span>Pendings</span></a>
+            </li>
 
+            <!-- Divider -->
+            <hr class="sidebar-divider d-none d-md-block">
+
+            <!-- Sidebar Toggler (Sidebar) -->
+            <div class="text-center d-none d-md-inline">
+                <button class="rounded-circle border-0" id="sidebarToggle"></button>
+            </div>
+
+        </ul>
+        <!-- End of Sidebar -->
 
             <!-- Content Wrapper -->
             <div id="content-wrapper" class="d-flex flex-column">
@@ -201,12 +257,12 @@ if ($stmtasset = mysqli_prepare($link, $fetchAssets)) {
                                         <?= htmlspecialchars($loggedFirstname) . " (" . htmlspecialchars($loggedUsertype) . ")" ?>
                                     </span>
                                     <img class="img-profile rounded-circle"
-                                        src="../../../img/undraw_profile.svg">
+                                        src="../img/undraw_profile.svg">
                                 </a>
                                 <!-- Dropdown - User Information -->
                                 <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                     aria-labelledby="userDropdown">
-                                    <a class="dropdown-item" href="../../../../public/Login.php" data-toggle="modal" data-target="#logoutModal">
+                                    <a class="dropdown-item" href="../../public/Login.php" data-toggle="modal" data-target="#logoutModal">
                                         <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                         Logout
                                     </a>
@@ -233,7 +289,7 @@ if ($stmtasset = mysqli_prepare($link, $fetchAssets)) {
                                 <h6 class="m-0 font-weight-bold text-primary">My Assets</h6>
                             </div>
                             <div class="d-flex flex-column align-items-end" style="gap: 10px; margin-right: 40px; margin-top: 40px;">
-                                <a href="../../../generatePDF/generate_accountability.php?employee_id=<?= $employee_id ?>" 
+                                <a href="../generatePDF/generate_accountability.php?employee_id=<?= $employee_id ?>" 
                                 class="btn btn-primary" style="width:260px;">
                                 <i class="fas fa-file-word"></i> Generate Accountability Form
                                 </a>
@@ -329,28 +385,28 @@ if ($stmtasset = mysqli_prepare($link, $fetchAssets)) {
                     <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                     <div class="modal-footer">
                         <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                        <a class="btn btn-primary" href="../../../../public/Login.php">Logout</a>
+                        <a class="btn btn-primary" href="../../public/Login.php">Logout</a>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- Bootstrap core JavaScript-->
-        <script src="../../../vendor/jquery/jquery.min.js"></script>
-        <script src="../../../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+        <script src="../vendor/jquery/jquery.min.js"></script>
+        <script src="../vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
         <!-- Core plugin JavaScript-->
-        <script src="../../../vendor/jquery-easing/jquery.easing.min.js"></script>
+        <script src="../vendor/jquery-easing/jquery.easing.min.js"></script>
 
         <!-- Custom scripts for all pages-->
-        <script src="../../../js/sb-admin-2.min.js"></script>
+        <script src="../js/sb-admin-2.min.js"></script>
 
         <!-- Page level plugins -->
-        <script src="../../../vendor/datatables/jquery.dataTables.min.js"></script>
-        <script src="../../../vendor/datatables/dataTables.min.js"></script>
+        <script src="../vendor/datatables/jquery.dataTables.min.js"></script>
+        <script src="../vendor/datatables/dataTables.min.js"></script>
 
         <!-- Page level custom scripts -->
-        <script src="../../../js/demo/datatables-demo.js"></script>
+        <script src="../js/demo/datatables-demo.js"></script>
 
     </body>
 

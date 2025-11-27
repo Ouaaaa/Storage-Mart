@@ -301,23 +301,9 @@
                                             <th>Email</th>
                                             <th>Created by</th>
                                             <th>Date created</th>
+                                            <th>Action</th>
                                         </tr>
                                     </thead>
-                                    <tfoot>
-                                        <tr>
-                                            <th>Employee ID</th>
-											<th>Account ID</th>
-                                            <th>Last name</th>
-                                            <th>First name</th>
-                                            <th>Middle name</th>
-											<th>Department</th>
-                                            <th>Position</th>
-											<th>Branch</th>
-                                            <th>Email</th>
-                                            <th>Created by</th>
-                                            <th>Date created</th>
-                                        </tr>
-                                    </tfoot>
                                     <tbody>
                                         <?php while ($row = mysqli_fetch_assoc($res)) { ?>
                                         <tr>
@@ -332,6 +318,19 @@
                                             <td><?= htmlspecialchars($row['email']) ?></td>
                                             <td><?= htmlspecialchars($row['createdby']) ?></td>
                                             <td><?= htmlspecialchars($row['datecreated']) ?></td>
+                                                <td>
+                                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
+                                                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        <span class="mr-2 d-none d-lg-inline text-gray-600 ">
+                                                            Action</span>
+                                                    </a>
+                                                        <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown">
+                                                            <a class="dropdown-item" href="View-Assets.php?employee_id=<?= $row['employee_id']; ?>">
+                                                                <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
+                                                                View Asset
+                                                            </a>
+                                                        </div>
+                                                </td>
                                         </tr>
                                         <?php } ?>
                                     </tbody>

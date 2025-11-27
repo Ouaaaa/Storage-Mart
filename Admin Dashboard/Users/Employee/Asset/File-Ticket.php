@@ -61,7 +61,7 @@ $notification = "";
 // Handle form submission
 if (isset($_POST['btnSubmit'])) {
     // Generate unique ticket number
-    $ticket_number = 'TCK-' . date('YmdHis') . '-' . rand(100, 999);
+    $ticket_number = 'STM-' . date('Ymd') . '-' . rand(100, 999);
 
     // Gather form data
     $employee_id = $_POST['employee_id'];      

