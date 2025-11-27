@@ -7,12 +7,13 @@ if (isset($_GET['ticket_id'])) {
     $sql = "
         SELECT 
             th.action_details,
-            CONCAT(e.lastname, ', ', e.firstname) AS performed_by,
+            CONCAT(e2.lastname, ', ', e2.firstname) AS assigned_to, 
             th.old_status,
             th.new_status,
             th.date_logged
         FROM tblticket_history th
-        LEFT JOIN tblemployee e ON th.performed_by = e.employee_id
+        LEFT JOIN tbltickets t ON th.ticket_id = t.ticket_id
+        LEFT JOIN tblemployee e2 ON t.assigned_to = e2.employee_id
         WHERE th.ticket_id = ?
         ORDER BY th.date_logged DESC
     ";

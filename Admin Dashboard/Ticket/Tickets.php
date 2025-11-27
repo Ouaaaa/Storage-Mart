@@ -45,16 +45,47 @@ $_SESSION['loggedPosition'] = $loggedPosition;
     }
     //All tickets query
 $sqlQuery = "
-SELECT t.ticket_id, t.ticket_number, 
-       CONCAT(e.lastname, ', ', e.firstname) AS employee_name,
-       t.category, t.priority, t.status, t.date_filed, b.branchName
+SELECT 
+    t.ticket_id, 
+    t.ticket_number, 
+    CONCAT(e.lastname, ', ', e.firstname) AS employee_name,
+    t.category, 
+    t.priority, 
+    t.status, 
+    t.date_filed, 
+    b.branchName,
+    t.assigned_to AS assigned_to_id,
+    CONCAT(a2.firstname, ' ', a2.lastname) AS assigned_to_name
 FROM tbltickets t
 JOIN tblemployee e ON t.employee_id = e.employee_id
 LEFT JOIN tblbranch b ON e.branch_id = b.branch_id
+LEFT JOIN tblemployee a2 ON t.assigned_to = a2.employee_id
 ORDER BY t.date_filed DESC
 ";
 
 $result = mysqli_query($link, $sqlQuery);
+if (!$result) {
+    die("SQL Error (tickets): " . mysqli_error($link));
+}
+
+
+$result = mysqli_query($link, $sqlQuery);
+// --- Prevent assigned_to changes if ticket is already resolved --- //
+$checkStatusSQL = "SELECT status FROM tbltickets WHERE ticket_id = ?";
+if ($stmtCheck = mysqli_prepare($link, $checkStatusSQL)) {
+    mysqli_stmt_bind_param($stmtCheck, "i", $ticket_id);
+    mysqli_stmt_execute($stmtCheck);
+    mysqli_stmt_bind_result($stmtCheck, $currentStatus);
+    mysqli_stmt_fetch($stmtCheck);
+    mysqli_stmt_close($stmtCheck);
+}
+
+if ($currentStatus === 'Resolved') {
+    // Block the change
+    $_SESSION['error'] = "This ticket is already resolved and cannot be reassigned.";
+    header("Location: " . $_SERVER['PHP_SELF']);
+    exit();
+}
 
 
 ?>
@@ -304,6 +335,7 @@ $result = mysqli_query($link, $sqlQuery);
                                             <th>Priority</th>
                                             <th>Status</th>
                                             <th>Date Filed</th>
+                                            <th>Assigned To</th>
                                             <th>Action</th>
                                         </tr>
                                     </thead>
@@ -317,19 +349,33 @@ $result = mysqli_query($link, $sqlQuery);
                                                 <td><?= htmlspecialchars($row['priority']) ?></td>
                                                 <td><?= htmlspecialchars($row['status']) ?></td>
                                                 <td><?= htmlspecialchars($row['date_filed']) ?></td>
+                                                <td><?= htmlspecialchars($row['assigned_to_name'] ?: 'Unassigned') ?></td>
                                                 <td>
-                                                    <button class="btn btn-sm btn-primary viewBtn" 
-                                                        data-ticketid="<?= $row['ticket_id'] ?>" 
+                                                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown<?= $row['ticket_id'] ?>" role="button"
+                                                    data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                                                        <span class="mr-2 d-none d-lg-inline text-gray-600">Action</span>
+                                                    </a>
+                                                    <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown<?= $row['ticket_id'] ?>">
+                                                        <a href="#" class="dropdown-item viewBtn" data-action="View"
+                                                        data-ticketid="<?= $row['ticket_id'] ?>"
                                                         data-ticketnum="<?= htmlspecialchars($row['ticket_number']) ?>"
                                                         data-employee="<?= htmlspecialchars($row['employee_name']) ?>"
                                                         data-branch="<?= htmlspecialchars($row['branchName']) ?>"
                                                         data-priority="<?= htmlspecialchars($row['priority']) ?>"
                                                         data-status="<?= htmlspecialchars($row['status']) ?>">
-                                                        View
-                                                    </button>
+                                                            <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i> View
+                                                        </a>
+
+                                                        <!-- Update assignment button: includes current assigned id -->
+                                                        <a href="#" class="dropdown-item openUpdateAssignBtn" data-ticket-id="<?= $row['ticket_id']; ?>"
+                                                        data-assignedid="<?= htmlspecialchars($row['assigned_to_id']) ?>">
+                                                            <i class="fas fa-edit fa-sm fa-fw mr-2 text-black-400"></i> Update Assignment
+                                                        </a>
+                                                    </div>
                                                 </td>
                                             </tr>
                                         <?php } ?>
+
                                     </tbody>
                                 </table>
                             </div>
@@ -430,6 +476,55 @@ $result = mysqli_query($link, $sqlQuery);
     </div>
   </div>
 </div>
+<!-- Update Assignment Modal -->
+<div class="modal fade" id="updateAssignModal" tabindex="-1" role="dialog" aria-labelledby="updateAssignLabel" aria-hidden="true">
+  <div class="modal-dialog modal-dialog-centered" role="document">
+    <form method="POST" action="edit_ticket_action.php" id="updateAssignForm">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="updateAssignLabel">Update Ticket Assignment</h5>
+          <button type="button" class="close text-white" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+
+        <div class="modal-body">
+          <input type="hidden" name="ticket_id" id="update_ticket_id" value="">
+
+          <div class="form-group">
+            <label>Assign To (IT Staff)</label>
+            <select class="form-control" name="assigned_to" id="assigned_to_select" required>
+              <option value="">-- Select IT Staff --</option>
+              <?php
+              // Populate IT staff list
+              $itQuery = mysqli_query($link, "SELECT employee_id, firstname, lastname FROM tblemployee WHERE department = 'IT' ORDER BY firstname, lastname");
+              while ($it = mysqli_fetch_assoc($itQuery)) {
+                  $eid = (int)$it['employee_id'];
+                  $ename = htmlspecialchars($it['firstname'] . ' ' . $it['lastname']);
+                  echo "<option value=\"{$eid}\">{$ename}</option>";
+              }
+              ?>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label>Remarks (optional)</label>
+            <textarea class="form-control" name="remarks" rows="3" placeholder="Add a short note (optional)"></textarea>
+          </div>
+
+          <div class="alert alert-info small">
+            Note: Reassignment is <strong>not allowed</strong> if ticket status = <em>Resolved</em>.
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Assignment</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
 
     <!-- Bootstrap core JavaScript-->
     <script src="../vendor/jquery/jquery.min.js"></script>
@@ -471,60 +566,128 @@ $result = mysqli_query($link, $sqlQuery);
   });
 
   // --- Modal history table (inside modal) ---
-  let historyDT = null;
+  // Replace your current viewBtn handler with this ready-to-paste block
+let historyDT = null;
 
-  $(document).on('click', '.viewBtn', function () {
-    const id = $(this).data('ticketid');
+$(document).on('click', '.viewBtn', function () {
+  const id = $(this).data('ticketid');
+  console.log('View clicked — ticket id =', id);
 
-    // Fill header fields
-    $('#ticket_number').val($(this).data('ticketnum'));
-    $('#employee').val($(this).data('employee'));
-    $('#priority').val($(this).data('priority'));
-    $('#status').val($(this).data('status'));
+  if (!id || parseInt(id, 10) <= 0) {
+    alert('Invalid ticket id. Please refresh and try again.');
+    return;
+  }
 
-    // Clear previous rows and destroy previous DT instance (if any)
-    $('#ticketHistoryTable tbody').empty();
-    if (historyDT) { historyDT.destroy(); historyDT = null; }
+  // Fill header fields (optional)
+  $('#ticket_number').val($(this).data('ticketnum') || '');
+  $('#employee').val($(this).data('employee') || '');
+  $('#priority').val($(this).data('priority') || '');
+  $('#status').val($(this).data('status') || '');
 
-    // Fetch rows, then show modal and init DataTable AFTER it's visible
-    $.get('fetch_ticket_history.php', { ticket_id: id }, function (data) {
-      const history = JSON.parse(data || '[]');
-      if (history.length) {
-        history.forEach(row => {
-          $('#ticketHistoryTable tbody').append(`
-            <tr>
-              <td>${row.action_details}</td>
-              <td>${row.performed_by}</td>
-              <td>${row.old_status}</td>
-              <td>${row.new_status}</td>
-              <td>${row.date_logged}</td>
-            </tr>
-          `);
-        });
-      } else {
-        $('#ticketHistoryTable tbody').append(
-          `<tr><td colspan="5" class="text-center">No history found.</td></tr>`
-        );
+  // 1) Clear previous rows and safely destroy previous DataTable
+  try {
+    if (historyDT && typeof historyDT.destroy === 'function') {
+      historyDT.destroy();
+    }
+  } catch (err) {
+    console.warn('Error destroying previous DataTable instance:', err);
+  }
+  historyDT = null;
+  $('#ticketHistoryTable tbody').empty();
+
+  // 2) Show loading row and open modal (so user sees immediate feedback)
+  $('#ticketHistoryTable tbody').html('<tr><td colspan="5" class="text-center">Loading...</td></tr>');
+  $('#viewTicketModal').modal('show');
+
+  // 3) Fetch history
+  $.ajax({
+    url: 'fetch_ticket_history.php',
+    method: 'GET',
+    data: { ticket_id: id },
+    dataType: 'json',
+    cache: false,
+    timeout: 10000,
+    success: function (history) {
+      console.log('fetch_ticket_history response:', history);
+
+      // Ensure the modal is still open (optional)
+      if (!$('#viewTicketModal').hasClass('show')) {
+        // modal closed by user; do nothing
       }
 
-      // Show modal first
-      $('#viewTicketModal').modal('show');
+      // Validate response
+      if (!Array.isArray(history) || history.length === 0) {
+        $('#ticketHistoryTable tbody').html('<tr><td colspan="5" class="text-center">No history found.</td></tr>');
+      } else {
+        const rowsHtml = history.map(row => {
+          const action = row.action_details || '';
+          const tech = row.assigned_to || '';
+          const oldS = row.old_status || '';
+          const newS = row.new_status || '';
+          const date = row.date_logged || '';
+          return `<tr>
+                    <td>${action}</td>
+                    <td>${tech}</td>
+                    <td>${oldS}</td>
+                    <td>${newS}</td>
+                    <td>${date}</td>
+                  </tr>`;
+        }).join('');
+        $('#ticketHistoryTable tbody').html(rowsHtml);
+      }
 
-      // When modal is fully shown (has layout), initialize DataTable
-      $('#viewTicketModal').one('shown.bs.modal', function () {
-        historyDT = new DataTable('#ticketHistoryTable', {
-          fixedHeader: { header: true },
-          order: [],
-          // add columnControl here too if you want it on the modal table
-          // columnDefs: [...]
-        });
-      });
-    });
+      // 4) Initialize DataTable AFTER the rows are in the DOM
+      // Use a tiny timeout to ensure layout settled (helps with some bootstrap modal timing)
+      setTimeout(function () {
+        try {
+          historyDT = new DataTable('#ticketHistoryTable', {
+            fixedHeader: { header: true },
+            order: [],
+            destroy: true // allow re-init safely (redundant with manual destroy above)
+          });
+        } catch (err) {
+          console.warn('Failed to init DataTable:', err);
+        }
+      }, 50);
+    },
+    error: function (xhr, status, err) {
+      console.error('fetch_ticket_history error:', status, err, xhr);
+      $('#ticketHistoryTable tbody').html('<tr><td colspan="5" class="text-center text-danger">Failed to load history.</td></tr>');
+    }
   });
+});
+
 </script>
 
 
+<script>
+    // Open Update Assignment modal and populate fields
+$(document).on('click', '.openUpdateAssignBtn', function (e) {
+  e.preventDefault();
 
+  const ticketId = $(this).data('ticket-id');
+  const assignedId = $(this).data('assignedid') || '';
+
+  if (!ticketId) {
+    alert('Invalid ticket id.');
+    return;
+  }
+
+  // Set hidden ticket id
+  $('#update_ticket_id').val(ticketId);
+
+  // Preselect assigned_to (if any)
+  if (assignedId) {
+    $('#assigned_to_select').val(assignedId);
+  } else {
+    $('#assigned_to_select').val('');
+  }
+
+  // Show modal
+  $('#updateAssignModal').modal('show');
+});
+
+</script>
                                        
 </body>
 
