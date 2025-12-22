@@ -33,7 +33,7 @@ $base = rtrim(BASE_URL, '/');
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <!-- Custom styles for this template -->
-    <link href="<?= htmlspecialchars($base) ?>/assets/css/StorageMart.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/storagemart.css" rel="stylesheet">
 </head>
 
 <body id="page-top">

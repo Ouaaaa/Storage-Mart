@@ -19,7 +19,7 @@ $base = rtrim(BASE_URL, '/');
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="<?= htmlspecialchars($base) ?>/assets/css/StorageMart.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/storagemart.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
     <link href="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/dataTables.bootstrap4.min.css" rel="stylesheet">

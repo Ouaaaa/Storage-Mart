@@ -17,7 +17,7 @@ class AuthController {
             @mkdir(dirname($this->logFile), 0755, true);
         }
 
-        // compute base path (e.g. /Storage-Mart-copy/StorageMart/public)
+        // compute base path (e.g. /Storage-Mart-copy/storagemart/public)
         $this->base = BASE_URL;
         if ($this->base === '') $this->base = '/';
     }

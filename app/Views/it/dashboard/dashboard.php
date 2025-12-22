@@ -15,7 +15,7 @@ $base = rtrim(BASE_URL, '/');
     <link href="https://fonts.googleapis.com/css?family=Nunito:200,300,400,600,700,800,900" rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="<?= htmlspecialchars($base)?>/assets/css/StorageMart.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars($base)?>/assets/css/storagemart.css" rel="stylesheet">
 </head>
 
 <body id="page-top">

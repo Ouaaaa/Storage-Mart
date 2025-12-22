@@ -11,7 +11,7 @@ $base = rtrim(BASE_URL, '/');
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>StorageMart | File Ticket Employee</title>
+    <title>Storage Mart | File Ticket Employee</title>
 
     <!-- Custom fonts for this template -->
     <link href="<?= htmlspecialchars($base) ?>/assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -20,7 +20,7 @@ $base = rtrim(BASE_URL, '/');
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="<?= htmlspecialchars($base) ?>/assets/css/StorageMart.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/storagemart.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/input.css" rel="stylesheet">
     <!-- Custom styles for this page -->
 

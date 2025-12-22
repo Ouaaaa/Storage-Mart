@@ -6,7 +6,7 @@ $base = rtrim(BASE_URL, '/');
 
             <!-- Sidebar - Brand -->
             <a class="sidebar-brand d-flex align-items-center justify-content-center" href="<?= htmlspecialchars($base) ?>/admin">
-                <img src="<?= htmlspecialchars($base) ?>/assets/img/storagemart-logo.png" alt="StorageMart Logo" style="width:100px; height:auto;">
+                <img src="<?= htmlspecialchars($base) ?>/assets/img/storagemart-logo.png" alt="storagemart Logo" style="width:100px; height:auto;">
             </a>
             <!-- Divider -->
             <hr class="sidebar-divider my-0">

@@ -20,7 +20,7 @@ $base = rtrim(BASE_URL, '/');
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="<?= htmlspecialchars($base) ?>/assets/css/StorageMart.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/storagemart.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/input.css" rel="stylesheet">
 
 </head>

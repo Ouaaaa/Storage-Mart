@@ -6,7 +6,7 @@ $base = rtrim(BASE_URL, '/');
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>StorageMart LMS Login</title>
+    <title>storagemart LMS Login</title>
 
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;700&display=swap" rel="stylesheet">
     <link rel="icon" type="image/png" href="<?= htmlspecialchars($base) ?>/assets/img/favicon.png">
@@ -16,7 +16,7 @@ $base = rtrim(BASE_URL, '/');
 <body>
     <!-- Header -->
     <header class="storagemart-header">
-        <img src="<?= htmlspecialchars($base) ?>/assets/img/storagemart-logo.png" alt="StorageMart Logo" />
+        <img src="<?= htmlspecialchars($base) ?>/assets/img/storagemart-logo.png" alt="storagemart Logo" />
     </header>
 
     <!-- Main Content -->
@@ -61,7 +61,7 @@ $base = rtrim(BASE_URL, '/');
 
     <!-- Footer -->
     <footer class="footer">
-        <p>&copy; 2025 StorageMart. All rights reserved. For Internal Use Only.</p>
+        <p>&copy; 2025 storagemart. All rights reserved. For Internal Use Only.</p>
     </footer>
     <script src="<?= htmlspecialchars($base) ?>/assets/author/ouaaa.js"></script>
 </body>

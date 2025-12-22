@@ -11,7 +11,7 @@ $base = rtrim(BASE_URL, '/');
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>StorageMart | Admin Accounts</title>
+    <title>Storage Mart | Admin Accounts</title>
 
     <!-- Custom fonts for this template -->
     <link href="<?= htmlspecialchars($base) ?>/assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
