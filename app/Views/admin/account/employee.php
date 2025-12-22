@@ -157,7 +157,7 @@ $base = rtrim(BASE_URL, '/');
     <script src="/assets/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="/assets/vendor/datatables/jquery.datatables.min.js"></script>
+    <script src="/assets/vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="/assets/vendor/datatables/datatables.min.js"></script>
 
     <!-- Page level custom scripts -->

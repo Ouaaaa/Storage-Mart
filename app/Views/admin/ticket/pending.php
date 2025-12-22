@@ -30,7 +30,7 @@ $base = rtrim(BASE_URL, '/');
     <!-- Page Wrapper -->
     <div id="wrapper">
             <?php 
-            $activePage = 'tickets';
+            $activePage = 'pendings';
             require_once __DIR__ . '/../../partials/admin/sidebar_topbar.php';?>
 
                 <!-- Begin Page Content -->
@@ -206,7 +206,7 @@ $base = rtrim(BASE_URL, '/');
     <script src="<?= htmlspecialchars($base) ?>/assets/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/jquery.datatables.min.js"></script>
+    <script src="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/jquery.dataTables.min.js"></script>
     <script src="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/datatables.min.js"></script>
 
     <!-- Page level custom scripts -->
