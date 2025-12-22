@@ -8,13 +8,16 @@ $db_name = getenv('MYSQLDATABASE') ?: 'storagemart';
 $db_user = getenv('MYSQLUSER') ?: 'root';
 $db_pass = getenv('MYSQLPASSWORD') ?: '';
 
-$dsn = "mysql:host=$db_host;port=$db_port;dbname=$db_name;charset=utf8mb4";
-
 try {
-    $pdo = new PDO($dsn, $db_user, $db_pass, [
-        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
-    ]);
+    $pdo = new PDO(
+        "mysql:host=$db_host;port=$db_port;dbname=$db_name;charset=utf8mb4",
+        $db_user,
+        $db_pass,
+        [
+            PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+        ]
+    );
 } catch (PDOException $e) {
-    die("Database connection failed");
+    die('Database connection failed');
 }
 
