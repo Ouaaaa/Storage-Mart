@@ -1,18 +1,19 @@
 <?php
-// define database connection
-define('DB_SERVER', '127.0.0.1');
-define('DB_USERNAME', 'josh');
-define('DB_PASSWORD', 'ricafort');
-define('DB_NAME', 'storagemart');
 
-// attempt to connect
-$link = mysqli_connect(DB_SERVER, DB_USERNAME, DB_PASSWORD, DB_NAME);
+define('BASE_URL', '');
 
-// check connection
-if ($link === false) {
-    die("ERROR: Could not connect " . mysqli_connect_error());
+
+$host = getenv('MYSQLHOST');
+$port = getenv('MYSQLPORT');
+$db   = getenv('MYSQL_DATABASE'); // IMPORTANT
+$user = getenv('MYSQLUSER');
+$pass = getenv('MYSQLPASSWORD');
+
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
+} catch (PDOException $e) {
+    die("Database connection failed");
 }
-
-// set time zone
-date_default_timezone_set("Asia/Manila");
-?>
