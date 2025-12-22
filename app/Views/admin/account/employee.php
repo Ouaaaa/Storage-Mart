@@ -13,15 +13,15 @@ $base = rtrim(BASE_URL, '/');
 
     <title>Storage Mart Employee - Tables</title>
     <!-- Custom fonts for this template -->
-    <link href="<?= htmlspecialchars($base)?>/assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="/assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
     <link
         href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i"
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="<?= htmlspecialchars($base) ?>/assets/css/StorageMart.css" rel="stylesheet">
-    <link rel="icon" href="<?= htmlspecialchars($base) ?>/assets/img/favicon.ico" type="image/x-icon">
-    <link href="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/dataTables.min.css" rel="stylesheet">
+    <link href="/assets/css/StorageMart.css" rel="stylesheet">
+    <link rel="icon" href="/assets/img/favicon.ico" type="image/x-icon">
+    <link href="/assets/vendor/datatables/dataTables.min.css" rel="stylesheet">
 </head>
 
 <body id="page-top">
@@ -88,7 +88,7 @@ $base = rtrim(BASE_URL, '/');
                                                             Action</span>
                                                     </a>
                                                         <div class="dropdown-menu dropdown-menu-right shadow" aria-labelledby="userDropdown">
-                                                            <a class="dropdown-item" href="<?= htmlspecialchars($base) ?>/admin/assets/view?employee_id=<?= $row['employee_id']; ?>">
+                                                            <a class="dropdown-item" href="/admin/assets/view?employee_id=<?= $row['employee_id']; ?>">
                                                                 <i class="fas fa-eye fa-sm fa-fw mr-2 text-black-400"></i>
                                                                 View Asset
                                                             </a>
@@ -141,27 +141,27 @@ $base = rtrim(BASE_URL, '/');
                 <div class="modal-body">Select "Logout" below if you are ready to end your current session.</div>
                 <div class="modal-footer">
                     <button class="btn btn-secondary" type="button" data-dismiss="modal">Cancel</button>
-                    <a class="btn btn-primary" href="<?= htmlspecialchars($base) ?>/logout">Logout</a>
+                    <a class="btn btn-primary" href="/logout">Logout</a>
                 </div>
             </div>
         </div>
     </div>
 
     <!-- Bootstrap core JavaScript-->
-    <script src="<?= htmlspecialchars($base) ?>/assets/vendor/jquery/jquery.min.js"></script>
-    <script src="<?= htmlspecialchars($base) ?>/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
+    <script src="/assets/vendor/jquery/jquery.min.js"></script>
+    <script src="/assets/vendor/bootstrap/js/bootstrap.bundle.min.js"></script>
 
     <!-- Core plugin JavaScript-->
-    <script src="<?= htmlspecialchars($base) ?>/assets/vendor/jquery-easing/jquery.easing.min.js"></script>
+    <script src="/assets/vendor/jquery-easing/jquery.easing.min.js"></script>
     <!-- Custom scripts for all pages-->
-    <script src="<?= htmlspecialchars($base) ?>/assets/js/sb-admin-2.min.js"></script>
+    <script src="/assets/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/dataTables.min.js"></script>
+    <script src="/assets/vendor/datatables/jquery.dataTables.min.js"></script>
+    <script src="/assets/vendor/datatables/dataTables.min.js"></script>
 
     <!-- Page level custom scripts -->
-    <script src="<?= htmlspecialchars($base) ?>/assets/js/demo/datatables-demo.js"></script>
+    <script src="/assets/js/demo/datatables-demo.js"></script>
 </body>
 
 </html>
