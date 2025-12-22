@@ -17,3 +17,9 @@ try {
 } catch (PDOException $e) {
     die("Database connection failed");
 }
+
+$link = mysqli_connect($host, $user, $pass, $db);
+
+if (!$link) {
+    die("Database connection failed: " . mysqli_connect_error());
+}
