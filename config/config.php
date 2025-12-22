@@ -1,8 +1,7 @@
 <?php
 
-define('BASE_URL', '');
+define('BASE_URL', ''); // keep this as you already fixed routing
 
-// Railway MySQL environment variables
 $db_host = getenv('MYSQLHOST');
 $db_port = getenv('MYSQLPORT') ?: 3306;
 $db_name = getenv('MYSQLDATABASE');
@@ -17,5 +16,6 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
 } catch (PDOException $e) {
+    // TEMP for debugging — remove later
     die("Database connection failed");
 }
