@@ -19,7 +19,7 @@ $base = rtrim(BASE_URL, '/');
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="/assets/css/StorageMart.css" rel="stylesheet">
+    <link href="/assets/css/storagemart.css" rel="stylesheet">
     <link rel="icon" href="/assets/img/favicon.ico" type="image/x-icon">
     <link href="/assets/vendor/datatables/dataTables.min.css" rel="stylesheet">
 </head>
