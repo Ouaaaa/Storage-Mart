@@ -33,24 +33,24 @@ $fullname = trim("$firstname $middlename $lastname");
 // ✅ 3. Fetch employee’s assigned assets with latest dateReturned
 $assets = [];
 $sqlAssets = "
-    SELECT 
-        i.assetNumber, 
-        i.serialNumber, 
-        i.itemInfo, 
-        i.createdby, 
-        a.datecreated AS dateIssued,
-        (
-            SELECT aa.dateReturned 
-            FROM tblassets_assignment aa 
-            WHERE aa.inventory_id = i.inventory_id
-            ORDER BY aa.datecreated DESC
-            LIMIT 1
-        ) AS latestReturned
-    FROM tblassets_inventory i
-    LEFT JOIN tblassets_assignment a ON i.inventory_id = a.inventory_id 
-    WHERE a.employee_id = ?
-    GROUP BY i.inventory_id
-    ORDER BY i.assetNumber ASC
+SELECT 
+    i.assetNumber,
+    i.serialNumber,
+    i.itemInfo,
+    i.createdby,
+    a.datecreated AS dateIssued,
+    a.dateReturned
+FROM tblassets_inventory i
+INNER JOIN (
+    SELECT inventory_id, MAX(datecreated) AS max_date
+    FROM tblassets_assignment
+    WHERE employee_id = ?
+    GROUP BY inventory_id
+) x ON x.inventory_id = i.inventory_id
+INNER JOIN tblassets_assignment a
+    ON a.inventory_id = x.inventory_id
+   AND a.datecreated = x.max_date
+ORDER BY i.assetNumber ASC
 ";
 if ($stmtAssets = mysqli_prepare($link, $sqlAssets)) {
     mysqli_stmt_bind_param($stmtAssets, "i", $employee_id);
