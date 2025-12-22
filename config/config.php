@@ -1,15 +1,7 @@
 <?php
 
 define('BASE_URL', '');
-echo '<pre>';
-var_dump([
-    'MYSQLHOST'      => getenv('MYSQLHOST'),
-    'MYSQLPORT'      => getenv('MYSQLPORT'),
-    'MYSQL_DATABASE' => getenv('MYSQL_DATABASE'),
-    'MYSQLUSER'      => getenv('MYSQLUSER'),
-    'MYSQLPASSWORD'  => getenv('MYSQLPASSWORD') ? 'SET' : 'NOT SET'
-]);
-exit;
+
 
 $host = getenv('MYSQLHOST');
 $port = getenv('MYSQLPORT');
