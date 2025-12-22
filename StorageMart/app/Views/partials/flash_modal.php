@@ -6,6 +6,9 @@
 $flashSuccess = $_SESSION['flash_success'] ?? '';
 $flashError   = $_SESSION['flash_error'] ?? '';
 unset($_SESSION['flash_success'], $_SESSION['flash_error']);
+
+
+$base = rtrim(BASE_URL, '/');
 ?>
 
 <!-- Notification Modal -->

@@ -23,6 +23,11 @@ $uri = '/' . trim($uri, '/'); // now '/login', '/admin', '/admin/account', etc.
 file_put_contents(__DIR__ . '/debug.log', date('c') . " NORMALIZED_URI=" . $uri . PHP_EOL, FILE_APPEND);
 
 // ROUTES
+// HOME ROUTE
+if ($uri === '/' || $uri === '') {
+    header('Location: /login');
+    exit;
+}
 
 // LOGIN POST (exact match)
 if ($uri === '/login-post') {

@@ -1,9 +1,5 @@
 <?php
-// compute a base path that points to the public folder (works in subfolders)
-$base = rtrim(dirname($_SERVER['SCRIPT_NAME']), '/\\');
-if ($base === '') {
-    $base = '/';
-}
+$base = rtrim(BASE_URL, '/');
 ?>
 <!DOCTYPE html>
 <html lang="en">

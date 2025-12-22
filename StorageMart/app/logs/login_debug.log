@@ -1337,3 +1337,21 @@
 [2025-12-19 02:08:48] Stored password appears plain; performing direct compare (legacy)
 [2025-12-19 02:08:48] Plaintext compare succeeded
 [2025-12-19 02:08:48] Login successful for smiran.rolandjosh; usertype=EMPLOYEE
+[2025-12-22 04:17:22] Entered login() method. METHOD=POST POST=["txtUsername","txtPassword","btnLogin"]
+[2025-12-22 04:17:22] Attempt login for username='admin'
+[2025-12-22 04:17:22] findByUsername returned: FOUND
+[2025-12-22 04:17:22] Stored password appears plain; performing direct compare (legacy)
+[2025-12-22 04:17:22] Plaintext compare succeeded
+[2025-12-22 04:17:22] Login successful for admin; usertype=ADMIN
+[2025-12-22 13:33:04] Entered login() method. METHOD=POST POST=["txtUsername","txtPassword","btnLogin"]
+[2025-12-22 13:33:04] Attempt login for username='admin'
+[2025-12-22 13:33:04] findByUsername returned: FOUND
+[2025-12-22 13:33:04] Stored password appears plain; performing direct compare (legacy)
+[2025-12-22 13:33:04] Plaintext compare succeeded
+[2025-12-22 13:33:04] Login successful for admin; usertype=ADMIN
+[2025-12-22 13:43:35] Entered login() method. METHOD=POST POST=["txtUsername","txtPassword","btnLogin"]
+[2025-12-22 13:43:35] Attempt login for username='smiran.rolandjosh'
+[2025-12-22 13:43:35] findByUsername returned: FOUND
+[2025-12-22 13:43:35] Stored password appears plain; performing direct compare (legacy)
+[2025-12-22 13:43:35] Plaintext compare succeeded
+[2025-12-22 13:43:35] Login successful for smiran.rolandjosh; usertype=EMPLOYEE

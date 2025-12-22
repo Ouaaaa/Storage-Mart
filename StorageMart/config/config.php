@@ -1,13 +1,15 @@
 <?php
 
-define('BASE_URL', '/Storage-Mart-copy/StorageMart/public');
-// config/config.php — use PDO (recommended)
-$db_host = '127.0.0.1';
-$db_name = 'storagemart';     // your DB name
-$db_user = 'root';           // your DB user
-$db_pass = '';               // your DB password
+define('BASE_URL', '');
 
-$dsn = "mysql:host={$db_host};dbname={$db_name};charset=utf8mb4";
+// Railway MySQL environment variables
+$db_host = getenv('MYSQLHOST');
+$db_port = getenv('MYSQLPORT') ?: 3306;
+$db_name = getenv('MYSQLDATABASE');
+$db_user = getenv('MYSQLUSER');
+$db_pass = getenv('MYSQLPASSWORD');
+
+$dsn = "mysql:host={$db_host};port={$db_port};dbname={$db_name};charset=utf8mb4";
 
 try {
     $pdo = new PDO($dsn, $db_user, $db_pass, [
@@ -15,6 +17,5 @@ try {
         PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
     ]);
 } catch (PDOException $e) {
-    echo "Database connection error: " . $e->getMessage();
-    exit;
+    die("Database connection failed");
 }

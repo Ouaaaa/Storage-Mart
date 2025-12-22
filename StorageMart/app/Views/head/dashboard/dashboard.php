@@ -12,6 +12,9 @@ $resolvedDepartmentTickets= $resolvedDepartmentTickets?? 0;
 
 // If you don’t track this yet
 $inProgressTickets = max(0, $totalTickets - ($pendingTickets + $resolvedTickets));
+
+$base = rtrim(BASE_URL, '/');
+
 ?>
 
 

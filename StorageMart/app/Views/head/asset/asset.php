@@ -2,6 +2,7 @@
 // Defensive defaults
 $assets = $assets ?? [];
 $employee_id = $employee_id ?? null;
+$base = rtrim(BASE_URL, '/');
 ?>
 
 <!DOCTYPE html>

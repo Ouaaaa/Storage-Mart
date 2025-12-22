@@ -2,8 +2,11 @@
     <div class="alert alert-success">
         You already rated this ticket. Thank you! 😊
     </div>
+    
 <?php else: ?>
-
+<?php
+$base = rtrim(BASE_URL, '/');
+?>
 <form method="POST" action="<?= htmlspecialchars($base) ?>/employee/tickets/rate" id="rateTicketForm">
     <input type="hidden" name="ticket_id" value="<?= (int)$ticketId ?>">
 

@@ -1,6 +1,8 @@
 <?php
 $count = $count ?? 0;
 $notifications = $notifications ?? [];
+
+$base = rtrim(BASE_URL, '/');
 ?>
 
 
