@@ -3,6 +3,6 @@
     "builder": "NIXPACKS"
   },
   "deploy": {
-    "startCommand": "php -S 0.0.0.0:$PORT -t Storage-Mart/public"
+    "startCommand": "php -S 0.0.0.0:$PORT -t public"
   }
 }
