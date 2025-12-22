@@ -3,11 +3,11 @@
 define('BASE_URL', '');
 echo '<pre>';
 var_dump([
-    'MYSQLHOST' => getenv('MYSQLHOST'),
-    'MYSQLPORT' => getenv('MYSQLPORT'),
-    'MYSQLDATABASE' => getenv('MYSQLDATABASE'),
-    'MYSQLUSER' => getenv('MYSQLUSER'),
-    'MYSQLPASSWORD' => getenv('MYSQLPASSWORD') ? 'SET' : 'NOT SET'
+    'MYSQLHOST'      => getenv('MYSQLHOST'),
+    'MYSQLPORT'      => getenv('MYSQLPORT'),
+    'MYSQL_DATABASE' => getenv('MYSQL_DATABASE'),
+    'MYSQLUSER'      => getenv('MYSQLUSER'),
+    'MYSQLPASSWORD'  => getenv('MYSQLPASSWORD') ? 'SET' : 'NOT SET'
 ]);
 exit;
 
