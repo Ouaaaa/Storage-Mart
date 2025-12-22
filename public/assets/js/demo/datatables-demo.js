@@ -1,4 +1,4 @@
-// Call the dataTables jQuery plugin
+// Call the datatables jQuery plugin
 new DataTable("#asset", {
   fixedHeader: { header: true },
   columnDefs: [

@@ -21,7 +21,7 @@ $base = rtrim(BASE_URL, '/');
     <!-- Custom styles for this template -->
     <link href="/assets/css/storagemart.css" rel="stylesheet">
     <link rel="icon" href="/assets/img/favicon.ico" type="image/x-icon">
-    <link href="/assets/vendor/datatables/dataTables.min.css" rel="stylesheet">
+    <link href="/assets/vendor/datatables/datatables.min.css" rel="stylesheet">
 </head>
 
 <body id="page-top">
@@ -157,8 +157,8 @@ $base = rtrim(BASE_URL, '/');
     <script src="/assets/js/sb-admin-2.min.js"></script>
 
     <!-- Page level plugins -->
-    <script src="/assets/vendor/datatables/jquery.dataTables.min.js"></script>
-    <script src="/assets/vendor/datatables/dataTables.min.js"></script>
+    <script src="/assets/vendor/datatables/jquery.datatables.min.js"></script>
+    <script src="/assets/vendor/datatables/datatables.min.js"></script>
 
     <!-- Page level custom scripts -->
     <script src="/assets/js/demo/datatables-demo.js"></script>
