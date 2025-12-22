@@ -11,20 +11,17 @@ var_dump([
 ]);
 exit;
 
-$host = $_ENV['MYSQLHOST'] ?? getenv('MYSQLHOST');
-$port = $_ENV['MYSQLPORT'] ?? getenv('MYSQLPORT') ?? 3306;
-$db   = $_ENV['MYSQLDATABASE'] ?? getenv('MYSQLDATABASE');
-$user = $_ENV['MYSQLUSER'] ?? getenv('MYSQLUSER');
-$pass = $_ENV['MYSQLPASSWORD'] ?? getenv('MYSQLPASSWORD');
+$host = getenv('MYSQLHOST');
+$port = getenv('MYSQLPORT');
+$db   = getenv('MYSQL_DATABASE'); // IMPORTANT
+$user = getenv('MYSQLUSER');
+$pass = getenv('MYSQLPASSWORD');
 
-if (!$host || !$db || !$user) {
-    die('Database environment variables not set');
+try {
+    $dsn = "mysql:host=$host;port=$port;dbname=$db;charset=utf8mb4";
+    $pdo = new PDO($dsn, $user, $pass, [
+        PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION
+    ]);
+} catch (PDOException $e) {
+    die("Database connection failed");
 }
-
-$conn = new mysqli($host, $user, $pass, $db, $port);
-
-if ($conn->connect_error) {
-    die('Database connection failed: ' . $conn->connect_error);
-}
-
-return $conn;
