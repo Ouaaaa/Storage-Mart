@@ -83,13 +83,14 @@ $base = rtrim(BASE_URL, '/');
                                     <tbody>
                                         <?php foreach ($items as $row): ?>
                                         <tr>
-                                            <td><?= htmlspecialchars($row['itemInfo']);?> </td>
-                                            <td><?= htmlspecialchars($row['assetNumber']);?> </td>
-                                            <td><?= htmlspecialchars($row['serialNumber']);?> </td>
-                                            <td><?= htmlspecialchars($row['branchName']); ?></td>
-                                            <td><?= htmlspecialchars($row['status']);?> </td>
-                                            <td><?= htmlspecialchars($row['employeeName']); ?></td>
-                                            <td><?= htmlspecialchars($row['transferDetails']); ?></td>
+                                            <td><?= htmlspecialchars($row['itemInfo'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($row['assetNumber'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($row['serialNumber'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($row['branchName'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($row['status'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($row['employeeName'] ?? '') ?></td>
+                                            <td><?= htmlspecialchars($row['transferDetails'] ?? '') ?></td>
+
                                             <td>
                                                 <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button"
                                                         data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
