@@ -285,14 +285,6 @@ class Asset extends BaseModel {
                 ]);
 
                 if (!$ok2) { $this->pdo->rollBack(); return false; }
-
-                // 3) link assignment_id back to inventory
-                $newAssignmentId = (int) $this->pdo->lastInsertId();
-                $sqlUpd = "UPDATE {$this->tblassets} SET assignment_id = :assignment_id WHERE inventory_id = :inventory_id";
-                $stmt3 = $this->pdo->prepare($sqlUpd);
-                $ok3 = $stmt3->execute([':assignment_id' => $newAssignmentId, ':inventory_id' => $inventoryID]);
-                if (!$ok3) { $this->pdo->rollBack(); return false; }
-
                 $this->pdo->commit();
                 return true;
             } else {
