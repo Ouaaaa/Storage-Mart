@@ -273,15 +273,16 @@ class Asset extends BaseModel {
 
                 // employee_id is NULL (unassigned) for returned/lost/disposed in legacy
                 $ok2 = $stmt2->execute([
-                    ':employee_id' => 0,
+                    ':employee_id'    => 0,
                     ':inventory_id'   => $inventoryID,
                     ':assignedTo'     => "Unassigned / {$status}",
                     ':dateIssued'     => $dateIssued,
                     ':transferDetails'=> $transferDetails,
                     ':dateReturned'   => $dateReturned,
                     ':datecreated'    => $now,
-                    ':createdby'      => $performedByAccountId ?? 'SYSTEM',
+                    ':createdby'      => (int)($performedByAccountId ?? 0),
                 ]);
+
                 if (!$ok2) { $this->pdo->rollBack(); return false; }
 
                 // 3) link assignment_id back to inventory
@@ -314,10 +315,23 @@ class Asset extends BaseModel {
                 return true;
             }
         } catch (\Throwable $e) {
-            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            // optionally log $e->getMessage()
+            file_put_contents(
+                __DIR__ . '/../../../public/update_item_debug.log',
+                date('c') . PHP_EOL .
+                'ERROR: ' . $e->getMessage() . PHP_EOL .
+                'INVENTORY ID: ' . $inventoryID . PHP_EOL .
+                'STATUS: ' . $status . PHP_EOL .
+                '--------------------------' . PHP_EOL,
+                FILE_APPEND
+            );
+
+            if ($this->pdo->inTransaction()) {
+                $this->pdo->rollBack();
+            }
+
             return false;
         }
+
     }
     public function fetchInventoryById(int $inventoryId): ?array
     {
