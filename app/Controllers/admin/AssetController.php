@@ -544,17 +544,19 @@ class AssetController extends AuthController {
             $_SESSION['flash_error'] = 'Invalid CSRF token.'; $this->redirect('/admin/assets'); return;
         }
 
-        $inventoryID = isset($_POST['inventory_id']) ? (int) $_POST['inventory_id'] : 0;
+        $inventoryID = isset($_POST['inventory_id']) ? (int) $_POST['inventory_id'] : 0;    
         $itemInfo = trim($_POST['itemInfo'] ?? '');
         $serialNumber = trim($_POST['serialNumber'] ?? '');
         $yearPurchased = trim($_POST['year_purchased'] ?? '');
         $status = trim($_POST['status'] ?? '');
         $reason = trim($_POST['transferDetails'] ?? '');
 
-        if ($inventoryID <= 0 || $itemInfo === '' || $serialNumber === '') {
+        if ($inventoryID <= 0 || $itemInfo === '' || $serialNumber === '' || $yearPurchased === '') {
             $_SESSION['flash_error'] = 'Please complete required fields.';
-            $this->redirect('/admin/assets/item?group_id=' . (int)($_POST['group_id'] ?? 0)); return;
+            $this->redirect('/admin/assets/item?group_id=' . (int)($_POST['group_id'] ?? 0));
+            return;
         }
+
 
         $assetModel = new Asset();
         $ok = $assetModel->updateItem($inventoryID, $itemInfo, $serialNumber, $yearPurchased, $status, $reason, $_SESSION['account_id'] ?? null);

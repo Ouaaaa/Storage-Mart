@@ -16,7 +16,7 @@ class Asset extends BaseModel {
         FROM {$this->tblgroup} g 
         JOIN {$this->tblcategory} c ON g.category_id = c.category_id 
         LEFT JOIN {$this->tblassets} i ON g.group_id = i.group_id 
-        AND i.status NOT IN ('DISPOSE','LOST') 
+        AND i.status NOT IN ('DISPOSED','LOST') 
         GROUP BY g.group_id, g.groupName, g.description, c.categoryName
         ORDER BY g.group_id ASC; ";
         $stmt = $this->pdo->prepare($sql);
@@ -273,7 +273,7 @@ class Asset extends BaseModel {
 
                 // employee_id is NULL (unassigned) for returned/lost/disposed in legacy
                 $ok2 = $stmt2->execute([
-                    ':employee_id'    => null,
+                    ':employee_id' => 0,
                     ':inventory_id'   => $inventoryID,
                     ':assignedTo'     => "Unassigned / {$status}",
                     ':dateIssued'     => $dateIssued,
