@@ -49,7 +49,7 @@ $base = rtrim(BASE_URL, '/');
                         <div class="container mt-4">
                             <form action="<?= htmlspecialchars($base) ?>/admin/assets/item/update" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                <input type="hidden" name="inventory" value="<?= (int)($inventory['inventory_id'] ?? 0) ?>">
+                                <input type="hidden" name="inventory_id" value="<?= (int)($inventory['inventory_id'] ?? 0) ?>">
                                 <input type="hidden" name="group_id" value="<?= (int)($inventory['group_id'] ?? ($_GET['group_id'] ?? 0)) ?>">
                                 <div class="row mb-5">
                                     <div class="col-md-6">
