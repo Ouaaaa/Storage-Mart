@@ -11,31 +11,54 @@ if (!isset($_GET['ticket_id'])) {
 $ticket_id = intval($_GET['ticket_id']);
 
 $sql = "
+
 SELECT 
     t.ticket_number,
     t.concern_details,
     t.priority,
     t.date_filed,
     t.status,
+
     e.firstname AS emp_firstname,
     e.middlename AS emp_middlename,
     e.lastname AS emp_lastname,
     e.position AS emp_position,
+
     b.branchName,
+
     tt.technical_purpose,
     tt.action_taken,
     tt.result,
     tt.remarks,
     tt.date_performed,
+
     it.firstname AS it_firstname,
     it.lastname AS it_lastname
+
 FROM tbltickets t
-JOIN tblemployee e ON t.employee_id = e.employee_id
-JOIN tblbranch b ON e.branch_id = b.branch_id
-JOIN tblticket_technical tt ON t.ticket_id = tt.ticket_id
-JOIN tblemployee it ON tt.performed_by = it.employee_id
+
+JOIN tblemployee e 
+    ON t.employee_id = e.employee_id
+
+JOIN tblbranch b 
+    ON e.branch_id = b.branch_id
+
+JOIN (
+    SELECT ticket_id, MAX(date_performed) AS max_date
+    FROM tblticket_technical
+    GROUP BY ticket_id
+) x ON x.ticket_id = t.ticket_id
+
+JOIN tblticket_technical tt
+    ON tt.ticket_id = x.ticket_id
+   AND tt.date_performed = x.max_date
+
+JOIN tblemployee it 
+    ON tt.performed_by = it.employee_id
+
 WHERE t.ticket_id = ?
 ";
+
 
 $stmt = mysqli_prepare($link, $sql);
 mysqli_stmt_bind_param($stmt, "i", $ticket_id);

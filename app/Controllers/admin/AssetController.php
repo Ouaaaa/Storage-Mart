@@ -544,7 +544,7 @@ class AssetController extends AuthController {
             $_SESSION['flash_error'] = 'Invalid CSRF token.'; $this->redirect('/admin/assets'); return;
         }
 
-        $inventoryID = isset($_POST['inventory']) ? (int) $_POST['inventory'] : 0;
+        $inventoryID = isset($_POST['inventory_id']) ? (int) $_POST['inventory_id'] : 0;
         $itemInfo = trim($_POST['itemInfo'] ?? '');
         $serialNumber = trim($_POST['serialNumber'] ?? '');
         $yearPurchased = trim($_POST['year_purchased'] ?? '');
