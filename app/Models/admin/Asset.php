@@ -244,7 +244,7 @@ class Asset extends BaseModel {
             if (in_array($status, ['RETURNED', 'DISPOSED', 'LOST'])) {
                 // 1) update inventory: clear assignment & employee
                 $sqlUp = "UPDATE {$this->tblassets}
-                    SET assignment_id = NULL,
+                    SET assignment_id = 0,
                         itemInfo = :itemInfo,
                         serialNumber = :serialNumber,
                         year_purchased = :yearPurchased,
