@@ -16,7 +16,7 @@ class Asset extends BaseModel {
         FROM {$this->tblgroup} g 
         JOIN {$this->tblcategory} c ON g.category_id = c.category_id 
         LEFT JOIN {$this->tblassets} i ON g.group_id = i.group_id 
-        AND i.status NOT IN ('DISPOSED','LOST') 
+        AND i.status NOT IN ('DISPOSE','LOST') 
         GROUP BY g.group_id, g.groupName, g.description, c.categoryName
         ORDER BY g.group_id ASC; ";
         $stmt = $this->pdo->prepare($sql);
@@ -244,14 +244,13 @@ class Asset extends BaseModel {
             if (in_array($status, ['RETURNED', 'DISPOSED', 'LOST'])) {
                 // 1) update inventory: clear assignment & employee
                 $sqlUp = "UPDATE {$this->tblassets}
-                    SET assignment_id = 0,
-                        itemInfo = :itemInfo,
-                        serialNumber = :serialNumber,
-                        year_purchased = :yearPurchased,
-                        status = :status,
-                        employee_id = 0
-                    WHERE inventory_id = :inventory_id";
-
+                        SET assignment_id = NULL,
+                            itemInfo = :itemInfo,
+                            serialNumber = :serialNumber,
+                            year_purchased = :yearPurchased,
+                            status = :status,
+                            employee_id = NULL
+                        WHERE inventory_id = :inventory_id";
                 $stmt = $this->pdo->prepare($sqlUp);
                 $ok = $stmt->execute([
                     ':itemInfo'     => $itemInfo,
@@ -274,17 +273,24 @@ class Asset extends BaseModel {
 
                 // employee_id is NULL (unassigned) for returned/lost/disposed in legacy
                 $ok2 = $stmt2->execute([
-                    ':employee_id'    => 0,
+                    ':employee_id'    => null,
                     ':inventory_id'   => $inventoryID,
                     ':assignedTo'     => "Unassigned / {$status}",
                     ':dateIssued'     => $dateIssued,
                     ':transferDetails'=> $transferDetails,
                     ':dateReturned'   => $dateReturned,
                     ':datecreated'    => $now,
-                    ':createdby'      => (int)($performedByAccountId ?? 0),
+                    ':createdby'      => $performedByAccountId ?? 'SYSTEM',
                 ]);
-
                 if (!$ok2) { $this->pdo->rollBack(); return false; }
+
+                // 3) link assignment_id back to inventory
+                $newAssignmentId = (int) $this->pdo->lastInsertId();
+                $sqlUpd = "UPDATE {$this->tblassets} SET assignment_id = :assignment_id WHERE inventory_id = :inventory_id";
+                $stmt3 = $this->pdo->prepare($sqlUpd);
+                $ok3 = $stmt3->execute([':assignment_id' => $newAssignmentId, ':inventory_id' => $inventoryID]);
+                if (!$ok3) { $this->pdo->rollBack(); return false; }
+
                 $this->pdo->commit();
                 return true;
             } else {
@@ -308,23 +314,10 @@ class Asset extends BaseModel {
                 return true;
             }
         } catch (\Throwable $e) {
-            file_put_contents(
-                __DIR__ . '/../../../public/update_item_debug.log',
-                date('c') . PHP_EOL .
-                'ERROR: ' . $e->getMessage() . PHP_EOL .
-                'INVENTORY ID: ' . $inventoryID . PHP_EOL .
-                'STATUS: ' . $status . PHP_EOL .
-                '--------------------------' . PHP_EOL,
-                FILE_APPEND
-            );
-
-            if ($this->pdo->inTransaction()) {
-                $this->pdo->rollBack();
-            }
-
+            if ($this->pdo->inTransaction()) $this->pdo->rollBack();
+            // optionally log $e->getMessage()
             return false;
         }
-
     }
     public function fetchInventoryById(int $inventoryId): ?array
     {

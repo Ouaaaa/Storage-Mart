@@ -1,6 +1,3 @@
-<?php
-$base = rtrim(BASE_URL, '/');
-?>
 <html lang="en">
 
 <head>
@@ -11,7 +8,7 @@ $base = rtrim(BASE_URL, '/');
     <meta name="description" content="">
     <meta name="author" content="">
 
-    <title>storagemart | Update Item</title>
+    <title>StorageMart | Update Item</title>
 
     <!-- Custom fonts for this template -->
     <link href="<?= htmlspecialchars($base) ?>/assets/vendor/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
@@ -20,7 +17,7 @@ $base = rtrim(BASE_URL, '/');
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
-    <link href="<?= htmlspecialchars($base) ?>/assets/css/storagemart.css" rel="stylesheet">
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/StorageMart.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/input.css" rel="stylesheet">
 
 </head>
@@ -49,7 +46,7 @@ $base = rtrim(BASE_URL, '/');
                         <div class="container mt-4">
                             <form action="<?= htmlspecialchars($base) ?>/admin/assets/item/update" method="POST">
                                 <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
-                                <input type="hidden" name="inventory_id" value="<?= (int)($inventory['inventory_id'] ?? 0) ?>">
+                                <input type="hidden" name="inventory" value="<?= (int)($inventory['inventory_id'] ?? 0) ?>">
                                 <input type="hidden" name="group_id" value="<?= (int)($inventory['group_id'] ?? ($_GET['group_id'] ?? 0)) ?>">
                                 <div class="row mb-5">
                                     <div class="col-md-6">
