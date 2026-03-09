@@ -510,6 +510,11 @@ class AssetController extends AuthController {
             $this->redirect('/login'); return;
         }
 
+        // Only serve the edit form on GET
+        if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+            http_response_code(405); echo 'Method Not Allowed'; return;
+        }
+
         $inventoryId = isset($_GET['inventory_id']) ? (int) $_GET['inventory_id'] : 0;
         if ($inventoryId <= 0) {
             $_SESSION['flash_error'] = 'Invalid inventory id.';
@@ -517,8 +522,7 @@ class AssetController extends AuthController {
         }
 
         $assetModel = new Asset();
-        // fetch the inventory row — create a new method or a quick inline query in model if not present
-        $inventory = $assetModel->fetchInventoryById($inventoryId); // implement this in the model if needed
+        $inventory = $assetModel->fetchInventoryById($inventoryId);
 
         if (!$inventory) {
             $_SESSION['flash_error'] = 'Item not found.';
@@ -529,14 +533,13 @@ class AssetController extends AuthController {
         $base = $ctx['base'];
         $loggedFirstname = $ctx['loggedFirstname'];
         $loggedPosition = $ctx['loggedPosition'];
-                $notificationData = $this->loadNotifications();
-
+        $notificationData = $this->loadNotifications();
         $count = $notificationData['count'];
         $notifications = $notificationData['notifications'];
+
         if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
         $csrf_token = $_SESSION['csrf_token'];
 
-        // pass $inventory to view
         require_once __DIR__ . '/../../Views/admin/asset/update_item.php';
     }
     // Store Updated Asset Item Here
@@ -561,9 +564,22 @@ class AssetController extends AuthController {
         $status = trim($_POST['status'] ?? '');
         $reason = trim($_POST['transferDetails'] ?? '');
 
-        if ($inventoryID <= 0 || $itemInfo === '' || $serialNumber === '') {
-            $_SESSION['flash_error'] = 'Please complete required fields.';
-            $this->redirect('/admin/assets/item?group_id=' . (int)($_POST['group_id'] ?? 0)); return;
+        if ($inventoryID <= 0 || $itemInfo === '' || $serialNumber === '' || $yearPurchased === '') {
+            $_SESSION['flash_error'] = 'Please complete all required fields (Item Info, Serial Number, Year Purchased).';
+            $this->redirect('/admin/assets/item/edit?inventory_id=' . $inventoryID); return;
+        }
+
+        // Validate year_purchased is a 4-digit year
+        if (!preg_match('/^\d{4}$/', $yearPurchased) || (int)$yearPurchased < 1900 || (int)$yearPurchased > (int)date('Y')) {
+            $_SESSION['flash_error'] = 'Year Purchased must be a valid 4-digit year (e.g. 2023).';
+            $this->redirect('/admin/assets/item/edit?inventory_id=' . $inventoryID); return;
+        }
+
+        // Require reason for DISPOSED, LOST, RETURNED
+        $statusUpper = strtoupper($status);
+        if (in_array($statusUpper, ['DISPOSED', 'LOST', 'RETURNED']) && $reason === '') {
+            $_SESSION['flash_error'] = 'A reason is required when setting status to Disposed, Lost, or Returned.';
+            $this->redirect('/admin/assets/item/edit?inventory_id=' . $inventoryID); return;
         }
 
         $assetModel = new Asset();
@@ -592,7 +608,7 @@ class AssetController extends AuthController {
             $logger->log('Update Item', 'Item Asset', "Inventory {$inventoryID}", $_SESSION['username'] ?? 'Unknown');
             $_SESSION['flash_success'] = 'Item updated successfully.';
         } else {
-            $_SESSION['flash_error'] = 'Error updating item.';
+            $_SESSION['flash_error'] = 'Error updating item. Please try again.';
         }
 
         // redirect back to item list for the group

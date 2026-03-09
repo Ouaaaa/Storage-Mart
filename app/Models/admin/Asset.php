@@ -314,7 +314,7 @@ class Asset extends BaseModel {
             }
         } catch (\Throwable $e) {
             if ($this->pdo->inTransaction()) $this->pdo->rollBack();
-            // optionally log $e->getMessage()
+            error_log('[StorageMart] updateItem error: ' . $e->getMessage());
             return false;
         }
     }
