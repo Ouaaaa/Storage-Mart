@@ -50,7 +50,7 @@ class TicketController extends AuthController
         // CSRF
         if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== ($_SESSION['csrf_token'] ?? '')) {
             $_SESSION['flash_error'] = "Invalid form token.";
-            $this->redirect('/it/assets');
+            $this->redirect('/it/tickets');
             return;
         }
 
@@ -83,11 +83,6 @@ class TicketController extends AuthController
             'priority'        => $priority,
             'created_by'      => $accountId
         ]);
-        if (!$employeeId) {
-            $_SESSION['flash_error'] = "Unable to determine your employee record.";
-            $this->redirect('/employee/assets');
-            return;
-        }
 
         /* ✅ GET EMPLOYEE DEPARTMENT SAFELY */
         $employee = $itModel->getEmployeeById($employeeId);
@@ -95,7 +90,7 @@ class TicketController extends AuthController
 
         if (!$department) {
             $_SESSION['flash_error'] = "Unable to determine department.";
-            $this->redirect('/employee/assets');
+            $this->redirect('/it/assets');
             return;
         }
 

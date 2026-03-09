@@ -46,6 +46,7 @@ class NotificationModel extends BaseModel
 
     public function getLatest($userId, $limit = 5)
     {
+        $limit = (int)$limit;
         $stmt = $this->pdo->prepare(
             "SELECT * FROM notifications
              WHERE user_id = ?

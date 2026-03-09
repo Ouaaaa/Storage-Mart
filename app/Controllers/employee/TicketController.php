@@ -84,12 +84,6 @@ class EmployeeTicketController extends AuthController
             'created_by'      => $accountId
         ]);
 
-        if (!$employeeId) {
-            $_SESSION['flash_error'] = "Unable to determine your employee record.";
-            $this->redirect('/employee/assets');
-            return;
-        }
-
         /* ✅ GET EMPLOYEE DEPARTMENT SAFELY */
         $employee = $employeeModel->getEmployeeById($employeeId);
         $department = $employee['department'] ?? null;

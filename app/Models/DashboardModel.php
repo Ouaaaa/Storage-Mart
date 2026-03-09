@@ -51,7 +51,7 @@ class DashboardModel extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public function getItTicketResolutionTimes()
+    public function getItTicketResolutionTimes(int $employeeId)
     {
         $sql = "
             SELECT *
@@ -62,6 +62,7 @@ class DashboardModel extends BaseModel
                     last_updated
                 FROM {$this->tbltickets}
                 WHERE status = 'Resolved'
+                AND assigned_to = :employee_id
                 AND last_updated IS NOT NULL
                 ORDER BY last_updated DESC
                 LIMIT 10
@@ -70,7 +71,7 @@ class DashboardModel extends BaseModel
         ";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(); // ✅ NO PARAMS
+        $stmt->execute(['employee_id' => $employeeId]);
         return $stmt->fetchAll(PDO::FETCH_ASSOC);
     }
 

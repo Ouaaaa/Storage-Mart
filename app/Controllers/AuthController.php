@@ -149,8 +149,8 @@ class AuthController {
         $base = $this->base ?? '/';
 
         // default values from session (fall back to username/usertype)
-        $firstname = $_SESSION['firstname'] ?? ($_SESSION['firstname'] ?? '');
-        $position  = $_SESSION['position'] ?? ($_SESSION['position'] ?? '');
+        $firstname = $_SESSION['firstname'] ?? '';
+        $position  = $_SESSION['position'] ?? '';
 
         // If we already cached nicer values, use them
         if (!empty($_SESSION['display_firstname'])) {
