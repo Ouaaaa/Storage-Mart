@@ -268,6 +268,10 @@ if (strpos($uri, '/head') === 0) {
         $headTicket->index();
     } elseif ($sub === 'tickets/create') {
         $headTicket->create();
+    } elseif ($sub === 'tickets/rate' && $_SERVER['REQUEST_METHOD'] === 'GET') {
+        $headTicket->rate();
+    } elseif ($sub === 'tickets/rate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
+        $headTicket->storeRating();
     } elseif ($sub === 'employee') {
         $head->department();
     } else {

@@ -184,6 +184,92 @@ class headTicketController extends AuthController
 
         // redirect
         $this->redirect('/head/tickets');
+    }
 
+    public function rate()
+    {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        $ticketId = (int)($_GET['id'] ?? 0);
+        if (!$ticketId) {
+            http_response_code(400);
+            echo 'Invalid ticket.';
+            return;
+        }
+
+        require_once __DIR__ . '/../../Models/employee/Employee.php';
+        require_once __DIR__ . '/../../Models/employee/TicketRatingModel.php';
+
+        $employeeModel = new Employee();
+        $employeeId = $employeeModel->getEmployeeIdByAccountId((int)$_SESSION['account_id']);
+
+        $ratingModel = new TicketRatingModel();
+        $alreadyRated = $ratingModel->hasRated($ticketId, $employeeId);
+
+        $ctx = $this->getLoggedUserContext();
+        $base = $ctx['base'];
+        $loggedFirstname = $ctx['loggedFirstname'];
+        $loggedPosition  = $ctx['loggedPosition'];
+
+        $notificationData = $this->loadNotifications();
+        $count = $notificationData['count'];
+        $notifications = $notificationData['notifications'];
+
+        require __DIR__ . '/../../Views/head/ticket/rate.php';
+    }
+
+    public function storeRating()
+    {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        require_once __DIR__ . '/../../Models/employee/Employee.php';
+        require_once __DIR__ . '/../../Models/employee/TicketRatingModel.php';
+        require_once __DIR__ . '/../../Models/employee/Ticket.php';
+
+        $accountId = (int)$_SESSION['account_id'];
+        $ticketId  = (int)($_POST['ticket_id'] ?? 0);
+
+        if (!$ticketId) {
+            $_SESSION['flash_error'] = 'Invalid ticket.';
+            $this->redirect('/head/dashboard');
+            return;
+        }
+
+        $employeeModel = new Employee();
+        $employeeId = $employeeModel->getEmployeeIdByAccountId($accountId);
+
+        if (!$employeeId) {
+            $_SESSION['flash_error'] = 'Employee not found.';
+            $this->redirect('/head/dashboard');
+            return;
+        }
+
+        $ticketModel = new EmployeeTicket();
+        $itId = $ticketModel->getAssignedTo($ticketId);
+
+        if (!$itId) {
+            $_SESSION['flash_error'] = 'Ticket is not assigned yet.';
+            $this->redirect('/head/dashboard');
+            return;
+        }
+
+        $ratingModel = new TicketRatingModel();
+
+        if ($ratingModel->hasRated($ticketId, $employeeId)) {
+            $_SESSION['flash_error'] = 'You have already rated this ticket.';
+            $this->redirect('/head/dashboard');
+            return;
+        }
+
+        $ratingModel->create(
+            $ticketId,
+            $employeeId,
+            $itId,
+            $_POST['rating'],
+            $_POST['comment'] ?? ''
+        );
+
+        $_SESSION['flash_success'] = 'Thank you for rating IT support!';
+        $this->redirect('/head/dashboard');
     }
 }

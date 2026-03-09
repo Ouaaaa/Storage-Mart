@@ -227,7 +227,7 @@ document.querySelectorAll('.notification-item').forEach(item => {
         this.classList.add('notification-read');
 
         // Rating → modal
-        if (url.includes('/employee/tickets/rate')) {
+        if (url.includes('/head/tickets/rate')) {
             fetch(url)
               .then(res => res.text())
               .then(html => {
@@ -240,5 +240,3 @@ document.querySelectorAll('.notification-item').forEach(item => {
     });
 });
 </script>
-
-

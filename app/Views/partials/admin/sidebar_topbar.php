@@ -189,8 +189,12 @@ document.querySelectorAll('.notification-item').forEach(item => {
             this.classList.remove('notification-unread');
             this.classList.add('notification-read');
 
-            // 🔀 ROLE-BASED REDIRECT
-            if (relatedId) {
+            // 🔀 ROLE-BASED REDIRECT — always redirect using action_url stored in DB
+            const url = this.href;
+            if (url && url !== '#' && !url.endsWith('#')) {
+                window.location.href = url;
+            } else if (relatedId) {
+                // Fallback: redirect by role if no action_url
                 if (role === 'IT') {
                     window.location.href = '<?= $base ?>/it/tickets';
                 } else if (role === 'ADMIN') {

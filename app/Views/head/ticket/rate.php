@@ -6,7 +6,7 @@
 <?php
 $base = rtrim(BASE_URL, '/');
 ?>
-<form method="POST" action="<?= htmlspecialchars($base) ?>/employee/tickets/rate" id="rateTicketForm">
+<form method="POST" action="<?= htmlspecialchars($base) ?>/head/tickets/rate" id="rateTicketForm">
     <input type="hidden" name="ticket_id" value="<?= (int)$ticketId ?>">
 
     <div class="form-group">
