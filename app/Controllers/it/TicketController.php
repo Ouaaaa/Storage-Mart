@@ -103,7 +103,7 @@ class TicketController extends AuthController
 
         // 🔗 Link IT users will click
         $base = $this->getLoggedUserContext()['base'];
-        $actionUrl = $base . '/it/tickets';
+        $actionUrl = '/it/tickets';
 
         // 🔕 Do not notify the ticket filer
         $currentAccountId = (int) $_SESSION['account_id'];
@@ -289,7 +289,7 @@ class TicketController extends AuthController
                     'Your ticket has been resolved. Click to rate IT support.',
                     'fa-star',
                     'success',
-                    $base . '/employee/tickets/rate?id=' . $ticketId,
+                    '/employee/tickets/rate?id=' . $ticketId,
                     $ticketId
                 );
 

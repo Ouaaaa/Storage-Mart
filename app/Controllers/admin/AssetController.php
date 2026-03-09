@@ -573,7 +573,7 @@ class AssetController extends AuthController {
                     "Asset {$targets['assetNumber']} details were updated.",
                     'fa-edit',
                     'warning',
-                    $base . '/head/dashboard',
+                    '/head/dashboard',
                     $inventoryID
                 );
             }
@@ -673,7 +673,7 @@ class AssetController extends AuthController {
                         "A new asset ({$targets['assetNumber']}) has been assigned to you.",
                         'fa-box',
                         'info',
-                        $base . '/employee/assets',
+                        '/employee/assets',
                         $inventoryId
                     );
                 }
@@ -685,7 +685,7 @@ class AssetController extends AuthController {
                         "Asset {$targets['assetNumber']} has been transferred to your department.",
                         'fa-exchange-alt',
                         'primary',
-                        $base . '/head/dashboard',
+                        '/head/dashboard',
                         $inventoryId
                     );
                 }

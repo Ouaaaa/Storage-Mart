@@ -103,7 +103,7 @@ class EmployeeTicketController extends AuthController
 
         // 🔗 Link IT users will click
         $base = $this->getLoggedUserContext()['base'];
-        $actionUrl = $base . '/it/tickets';
+        $actionUrl = '/it/tickets';
 
         // 🔕 Do not notify the ticket filer
         $currentAccountId = (int) $_SESSION['account_id'];

@@ -206,30 +206,28 @@ document.querySelectorAll('.notification-item').forEach(item => {
         const url = this.href;
         const notifId = this.dataset.id;
 
-        // Mark as read in DB
+        // Mark as read in DB, then redirect/show modal
         fetch('<?= $base ?>/notifications/read', {
             method: 'POST',
             headers: {'Content-Type': 'application/x-www-form-urlencoded'},
             body: 'id=' + notifId
+        }).then(() => {
+            // Update UI instantly
+            this.classList.remove('notification-unread');
+            this.classList.add('notification-read');
+
+            // Rating → modal
+            if (url.includes('/employee/tickets/rate')) {
+                fetch(url)
+                  .then(res => res.text())
+                  .then(html => {
+                      document.getElementById('rateTicketModalBody').innerHTML = html;
+                      $('#rateTicketModal').modal('show');
+                  });
+            } else {
+                window.location.href = url;
+            }
         });
-
-        // 🔥 Update UI instantly
-        this.classList.remove('notification-unread');
-        this.classList.add('notification-read');
-
-        // Rating → modal
-        if (url.includes('/employee/tickets/rate')) {
-            fetch(url)
-              .then(res => res.text())
-              .then(html => {
-                  document.getElementById('rateTicketModalBody').innerHTML = html;
-                  $('#rateTicketModal').modal('show');
-              });
-        } else {
-            window.location.href = url;
-        }
     });
 });
 </script>
-
-

@@ -444,7 +444,7 @@ class TicketController extends AuthController
                 "Your ticket {$targets['ticket_number']} has been APPROVED.",
                 'fa-check-circle',
                 'success',
-                $base . '/employee/tickets',
+                '/employee/tickets',
                 $ticket_id
             );
         }
@@ -456,7 +456,7 @@ class TicketController extends AuthController
                 "Ticket {$targets['ticket_number']} has been APPROVED.",
                 'fa-check-circle',
                 'success',
-                $base . '/head/dashboard',
+                '/head/dashboard',
                 $ticket_id
             );
         }
@@ -512,7 +512,7 @@ class TicketController extends AuthController
                 "Your ticket {$targets['ticket_number']} has been DECLINED.",
                 'fa-times-circle',
                 'danger',
-                $base . '/employee/tickets',
+                '/employee/tickets',
                 $ticket_id
             );
         }
@@ -524,7 +524,7 @@ class TicketController extends AuthController
                 "Ticket {$targets['ticket_number']} has been DECLINED.",
                 'fa-times-circle',
                 'danger',
-                $base . '/head/dashboard',
+                '/head/dashboard',
                 $ticket_id
             );
         }
