@@ -1,3 +1,6 @@
+<?php
+$base = rtrim(BASE_URL, '/');
+?>
 <html lang="en">
 
 <head>
