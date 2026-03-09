@@ -71,7 +71,7 @@ $base = rtrim(BASE_URL, '/');
                                     </div>
                                     <button type="submit" class="btn btn-primary" name="btnSubmit">Submit</button>
                                     <button type="button" class="btn btn-danger"
-                                        onclick="window.location.href='Assets-item.php?group_id=<?= htmlspecialchars($_GET['group_id']); ?>'">
+                                        onclick="window.location.href='<?= htmlspecialchars($base) ?>/admin/assets/item?group_id=<?= htmlspecialchars($_GET['group_id'] ?? '0') ?>'">
                                         Cancel
                                     </button>
 

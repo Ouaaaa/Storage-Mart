@@ -20,6 +20,7 @@ $base = rtrim(BASE_URL, '/');
         rel="stylesheet">
 
     <!-- Custom styles for this template -->
+    <link href="<?= htmlspecialchars($base) ?>/assets/css/sb-admin-2.min.css" rel="stylesheet">
     <link href="<?= htmlspecialchars($base) ?>/assets/css/storagemart.css" rel="stylesheet">
     <link rel="icon" href="<?= htmlspecialchars($base) ?>/assets/img/favicon.ico" type="image/x-icon">
     <link href="<?= htmlspecialchars($base) ?>/assets/vendor/datatables/datatables.min.css" rel="stylesheet">
@@ -88,7 +89,7 @@ $base = rtrim(BASE_URL, '/');
                                                 <td><?= htmlspecialchars($row['assignedTo']);?> </td>
                                                 <td><?= htmlspecialchars($row['transferDetails']);?> </td>
                                                 <td><?= htmlspecialchars($row['dateIssued']); ?></td>
-                                                <td><?= htmlspecialchars($row['dateReturned']);?> </td>
+                                                <td><?= htmlspecialchars($row['dateReturned'] ?? '');?> </td>
                                                 <td><?= htmlspecialchars($row['createdby']); ?></td>
                                             </tr>
                                             <?php endforeach; ?>

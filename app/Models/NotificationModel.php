@@ -84,4 +84,25 @@ class NotificationModel extends BaseModel
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
 
+    /**
+     * Same as getTicketRecipients but returns account_id + usertype
+     * so callers can send role-specific action_urls.
+     */
+    public function getTicketRecipientsWithType(string $department): array
+    {
+        $sql = "
+            SELECT DISTINCT a.account_id, a.usertype
+            FROM {$this->tblaccounts} a
+            JOIN {$this->tblemployee} e ON a.account_id = e.account_id
+            WHERE 
+                a.usertype IN ('IT', 'ADMIN')
+                OR (a.usertype = 'HEAD' AND e.department = :department)
+        ";
+
+        $stmt = $this->pdo->prepare($sql);
+        $stmt->execute([':department' => $department]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
+
 }
