@@ -179,7 +179,7 @@ $base = rtrim(BASE_URL, '/');
                     </div>
                 </div>
         <div class="table-responsive">
-          <table class="table table-bordered" id="employeeTicketsTable" width="100%">
+          <table class="table table-bordered" id="employeeTicketsTable" width="100%" data-dt-ignore="true">
             <thead>
               <tr>
                 <th>Ticket #</th>
@@ -219,7 +219,7 @@ $base = rtrim(BASE_URL, '/');
                     </div>
                 </div>
         <div class="table-responsive">
-          <table class="table table-bordered" id="employeeAssetsTable" width="100%">
+          <table class="table table-bordered" id="employeeAssetsTable" data-dt-ignore="true" width="100%">
             <thead>
               <tr>
                 <th>Asset #</th>
@@ -259,7 +259,7 @@ $base = rtrim(BASE_URL, '/');
                     </div>
                 </div>
         <div class="table-responsive">
-          <table class="table table-bordered" id="assetTicketsTable" width="100%">
+          <table class="table table-bordered" id="assetTicketsTable" data-dt-ignore="true"  width="100%">
             <thead>
               <tr>
                 <th>Ticket #</th>
@@ -276,6 +276,19 @@ $base = rtrim(BASE_URL, '/');
     </div>
   </div>
 </div>
+<script>
+(function () {
+    const originalDataTable = window.DataTable;
+
+    window.DataTable = function (selector, options) {
+        const el = document.querySelector(selector);
+        if (el && el.dataset.dtIgnore === "true") {
+            return; // ⛔ skip auto-init
+        }
+        return new originalDataTable(selector, options);
+    };
+})();
+</script>
 
     <!-- Bootstrap core JavaScript-->
     <script src="<?= htmlspecialchars($base) ?>/assets/vendor/jquery/jquery.min.js"></script>
