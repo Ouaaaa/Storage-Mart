@@ -126,8 +126,6 @@ if (strpos($uri, '/admin') === 0) {
         $asset->transferHistory();
     } elseif ($sub === 'pendings') {
         $ticket->pendings();
-    } elseif ($sub === 'tickets') {
-        $ticket->ticket(); // existing route if any
     } elseif ($sub === 'tickets/pending' || $sub === 'tickets/pendings') {
         $ticket->pendings();
     } elseif ($sub === 'tickets/approve-assign' && $_SERVER['REQUEST_METHOD'] === 'POST') {
@@ -182,6 +180,7 @@ if (strpos($uri, '/employee') === 0) {
     }
     exit;
 }
+
 //IT  prefix routes
 if (strpos($uri, '/it') === 0) {
 
@@ -189,7 +188,7 @@ if (strpos($uri, '/it') === 0) {
     require_once __DIR__ . '/../app/Controllers/it/AssetController.php';
     require_once __DIR__ . '/../app/Controllers/it/TicketController.php';
 
-    $it = new ItController();
+    $it = new itController();
     $asset    = new AssetController();
     $ticket   = new TicketController();
 
@@ -226,16 +225,37 @@ if (strpos($uri, '/it') === 0) {
 // Head PREFIX routes
 if (strpos($uri, '/head') === 0) {
 
+    // FIX: Removed upfront mass-instantiation of all controllers.
+    // Previously ALL three controllers were instantiated before the route was
+    // matched. Each calls AuthController::__construct() → new Account() → DB
+    // query, and could buffer warnings/output that corrupted AJAX JSON responses.
+    // Now only the controller needed for the matched route is loaded and created.
+
+    $sub = trim(substr($uri, strlen('/head')), '/');
+
+    // --- AJAX-only endpoints: load ONLY HeadEmployeeController ---
+    if ($sub === 'employee/tickets' || $sub === 'employee/assets' || $sub === 'employee/assets/tickets') {
+        require_once __DIR__ . '/../app/Controllers/head/headEmployeeController.php';
+        $headEmployee = new HeadEmployeeController();
+        if ($sub === 'employee/tickets') {
+            $headEmployee->tickets();
+        } elseif ($sub === 'employee/assets') {
+            $headEmployee->assets();
+        } elseif ($sub === 'employee/assets/tickets') {
+            $headEmployee->assetTickets();
+        }
+        exit;
+    }
+
+    // --- All other HEAD routes ---
     require_once __DIR__ . '/../app/Controllers/head/headController.php';
     require_once __DIR__ . '/../app/Controllers/head/headAssetController.php';
     require_once __DIR__ . '/../app/Controllers/head/headTicketController.php';
 
-    $head = new headController();
-    $headAsset    = new headAssetController();
-    $headTicket   = new headTicketController();
+    $head       = new headController();
+    $headAsset  = new headAssetController();
+    $headTicket = new headTicketController();
 
-    // Remove '/Head' prefix
-    $sub = trim(substr($uri, strlen('/head')), '/');
     if ($sub === '' || $sub === 'dashboard') {
         $head->dashboard();
     } elseif ($sub === 'assets') {
@@ -248,31 +268,15 @@ if (strpos($uri, '/head') === 0) {
         $headTicket->index();
     } elseif ($sub === 'tickets/create') {
         $headTicket->create();
-    } elseif ($sub === 'tickets/history') {
-        $headTicket->history();
-    } elseif ($sub === 'tickets/history/fetch'){
-        $headTicket->fetchHistory();
-    } elseif ($sub === 'tickets/rate' && $_SERVER['REQUEST_METHOD'] === 'GET') {
-        $headTicket->rate();
-    } elseif ($sub === 'tickets/rate' && $_SERVER['REQUEST_METHOD'] === 'POST') {
-        $headTicket->storeRating();
-    } elseif ($sub === 'employee'){
+    } elseif ($sub === 'employee') {
         $head->department();
-    } elseif ($sub === 'employee/tickets') {
-        require_once __DIR__ . '/../app/Controllers/head/HeadEmployeeController.php';
-        (new HeadEmployeeController())->tickets();
-    } elseif ($sub === 'employee/assets') {
-        require_once __DIR__ . '/../app/Controllers/head/HeadEmployeeController.php';
-        (new HeadEmployeeController())->assets();
-    } elseif ($sub === 'employee/assets/tickets') {
-        require_once __DIR__ . '/../app/Controllers/head/HeadEmployeeController.php';
-        (new HeadEmployeeController())->assetTickets();
     } else {
         http_response_code(404);
-        echo "Employee page not found.";
+        echo "Head page not found.";
     }
     exit;
 }
+
 // FALLBACK
 http_response_code(404);
 echo "404 - Page not found.";
