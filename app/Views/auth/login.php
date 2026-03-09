@@ -27,7 +27,7 @@ $base = rtrim(BASE_URL, '/');
             </div>
 
             <?php if(isset($loginMessage)) : ?>
-                <div class="message"><?= $loginMessage ?></div>
+                <div class="message text-danger small mt-1"><?= htmlspecialchars($loginMessage, ENT_QUOTES, 'UTF-8') ?></div>
             <?php endif; ?>
 
             <!-- Use the base path so action will be correct even when project is in a subfolder -->

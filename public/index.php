@@ -12,11 +12,8 @@ if (php_sapi_name() === 'cli-server') {
 require_once __DIR__ . '/../config/config.php';
 require_once __DIR__ . '/../app/Helpers/Session.php';
 
-// ensure session started
-if (session_status() === PHP_SESSION_NONE) session_start();
-
-// Debug: log raw request for troubleshooting (remove in production)
-file_put_contents(__DIR__ . '/debug.log', date('c') . " RAW REQUEST_URI=" . ($_SERVER['REQUEST_URI'] ?? '') . " SCRIPT_NAME=" . ($_SERVER['SCRIPT_NAME'] ?? '') . PHP_EOL, FILE_APPEND);
+// BUG-26 fix: use Session::start() to apply httponly/SameSite settings
+Session::start();
 
 // normalize URI and strip BASE_URL if your app is in a subfolder
 $uri = parse_url($_SERVER['REQUEST_URI'], PHP_URL_PATH);
@@ -24,9 +21,6 @@ if (BASE_URL !== '/' && strpos($uri, BASE_URL) === 0) {
     $uri = substr($uri, strlen(BASE_URL));
 }
 $uri = '/' . trim($uri, '/'); // now '/login', '/admin', '/admin/account', etc.
-
-// Debug: log normalized URI
-file_put_contents(__DIR__ . '/debug.log', date('c') . " NORMALIZED_URI=" . $uri . PHP_EOL, FILE_APPEND);
 
 // ROUTES
 // HOME ROUTE
@@ -182,7 +176,8 @@ if (strpos($uri, '/employee') === 0) {
 }
 
 //IT  prefix routes
-if (strpos($uri, '/it') === 0) {
+// BUG-25 fix: only match exactly '/it' or paths starting with '/it/'
+if ($uri === '/it' || strpos($uri, '/it/') === 0) {
 
     require_once __DIR__ . '/../app/Controllers/it/ItController.php';
     require_once __DIR__ . '/../app/Controllers/it/AssetController.php';
@@ -190,7 +185,7 @@ if (strpos($uri, '/it') === 0) {
 
     $it = new itController();
     $asset    = new AssetController();
-    $ticket   = new TicketController();
+    $ticket   = new ItTicketController();
 
     $sub = trim(substr($uri, strlen('/it')), '/');
     if ($sub === '' || $sub === 'dashboard') {

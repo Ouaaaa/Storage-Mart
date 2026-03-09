@@ -65,7 +65,7 @@ class AuthController {
         $this->log("Attempt login for username='{$username}'");
 
         if ($username === '' || $password === '') {
-            $_SESSION['loginMessage'] = "<span style='color:red'>Please fill both fields.</span>";
+            $_SESSION['loginMessage'] = 'Please fill in both username and password.';
             $this->log('Missing username or password — redirecting back.');
             $this->redirect('/login');
         }
@@ -100,13 +100,13 @@ class AuthController {
 
 
         if (!$account) {
-            $_SESSION['loginMessage'] = "<font color='red'><br>Incorrect login details</font>";
+            $_SESSION['loginMessage'] = 'Incorrect username or password.';
             $this->log('Login failed for ' . $username . ' — redirecting back to /login');
             $this->redirect('/login');
         }
 
         if (isset($account['status']) && strtolower($account['status']) === "inactive") {
-            $_SESSION['loginMessage'] = "<font color='red'><br>Your account is inactive. Please contact admin.</font>";
+            $_SESSION['loginMessage'] = 'Your account is inactive. Please contact your administrator.';
             $this->log('Account inactive for ' . $username);
             $this->redirect('/login');
         }

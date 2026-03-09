@@ -1,31 +1,28 @@
 <?php
-require_once __DIR__ . '/../../../config/config.php';
+// BUG-10 fix: Extend BaseModel for consistent DB access instead of
+// requiring config.php directly with a brittle relative path.
+require_once __DIR__ . '/../admin/BaseModel.php';
 
-class TicketRatingModel
+class TicketRatingModel extends BaseModel
 {
-    protected $db;
-
-    public function __construct()
+    public function hasRated(int $ticketId, int $employeeId): bool
     {
-        global $pdo;
-        $this->db = $pdo;
-    }
-
-    public function hasRated($ticketId, $employeeId)
-    {
-        $stmt = $this->db->prepare("
-            SELECT COUNT(*) 
+        $stmt = $this->pdo->prepare("
+            SELECT COUNT(*)
             FROM ticket_ratings
             WHERE ticket_id = ? AND employee_id = ?
         ");
-        $stmt->execute([(int)$ticketId, (int)$employeeId]);
+        $stmt->execute([$ticketId, $employeeId]);
 
-        return $stmt->fetchColumn() > 0;
+        return (int)$stmt->fetchColumn() > 0;
     }
 
-    public function create($ticketId, $employeeId, $itId, $rating, $comment = '')
+    public function create(int $ticketId, int $employeeId, int $itId, int $rating, string $comment = ''): void
     {
-        $stmt = $this->db->prepare("
+        // BUG-20 fix: validate rating range 1–5
+        $rating = max(1, min(5, $rating));
+
+        $stmt = $this->pdo->prepare("
             INSERT INTO ticket_ratings
                 (ticket_id, employee_id, it_id, rating, comment, created_at)
             VALUES
@@ -33,10 +30,10 @@ class TicketRatingModel
         ");
 
         $stmt->execute([
-            (int)$ticketId,
-            (int)$employeeId,
-            (int)$itId,
-            (int)$rating,
+            $ticketId,
+            $employeeId,
+            $itId,
+            $rating,
             trim($comment)
         ]);
     }

@@ -444,9 +444,9 @@ class AdminController extends AuthController
         $employee_id = (int)($_GET['employee_id'] ?? 0);
 
         if ($employee_id <= 0) {
-            // no employee specified — show message or redirect back
+            // no employee specified — redirect to the employee list
             $_SESSION['flash'] = 'No employee specified.';
-            $this->redirect('/admin/employee'); // change target as appropriate
+            $this->redirect('/admin/account'); // correct employee list route
             return;
         }
         $assets = method_exists($accountModel, 'fetchAssetsByEmployeeId')

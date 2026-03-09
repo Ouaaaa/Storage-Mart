@@ -177,7 +177,18 @@ class EmployeeTicketController extends AuthController
 
     public function fetchHistory()
     {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // BUG-11 fix: authenticate before returning any ticket data
+        if (empty($_SESSION['account_id'])) {
+            header('Content-Type: application/json');
+            http_response_code(401);
+            echo json_encode([]);
+            return;
+        }
+
         if (!isset($_GET['ticket_id'])) {
+            header('Content-Type: application/json');
             echo json_encode([]);
             return;
         }

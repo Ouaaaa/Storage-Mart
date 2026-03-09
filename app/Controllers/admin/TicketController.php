@@ -294,6 +294,14 @@ class TicketController extends AuthController
             return;
         }
 
+        // BUG-17 fix: CSRF validation
+        $posted_csrf = $_POST['csrf_token'] ?? '';
+        if (empty($posted_csrf) || !hash_equals($_SESSION['csrf_token'] ?? '', $posted_csrf)) {
+            $_SESSION['flash_error'] = 'Invalid form token. Please try again.';
+            $this->redirect('/admin/tickets');
+            return;
+        }
+
         $ticketModel = new Ticket();
 
         // from POST

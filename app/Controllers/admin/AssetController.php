@@ -223,7 +223,17 @@ class AssetController extends AuthController {
 
         } catch (\Throwable $e) {
             $_SESSION['flash_error'] = 'Error adding group: ' . $e->getMessage();
-            // ensure categories still available if you re-render the form
+            // Initialize all layout variables required by the view
+            if (empty($_SESSION['csrf_token'])) $_SESSION['csrf_token'] = bin2hex(random_bytes(16));
+            $csrf_token = $_SESSION['csrf_token'];
+            $ctx = $this->getLoggedUserContext();
+            $base = $ctx['base'];
+            $loggedFirstname = $ctx['loggedFirstname'];
+            $loggedPosition  = $ctx['loggedPosition'];
+            $notificationData = $this->loadNotifications();
+            $count = $notificationData['count'];
+            $notifications = $notificationData['notifications'];
+            // $categories already loaded at the top of group()
             require_once __DIR__ . '/../../Views/admin/asset/add_group.php';
             exit;
         }
@@ -697,7 +707,7 @@ class AssetController extends AuthController {
                 $_SESSION['flash_error'] = 'Transfer failed: ' . $result['message'];
             }
 
-            $group_id = (int)($_POST['group_id'] ?? 0);
+            $group_id = max(0, (int)($_POST['group_id'] ?? 0));
             $this->redirect('/admin/assets/item?group_id=' . $group_id);
             return;
         }

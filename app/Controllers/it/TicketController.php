@@ -1,12 +1,12 @@
 <?php
-// app/Controllers/employee/TicketController.php
+// app/Controllers/it/TicketController.php
 
 require_once __DIR__ . '/../AuthController.php';
 require_once __DIR__ . '/../../Models/it/IT.php';
 require_once __DIR__ . '/../../Models/it/ItTicketModel.php';
 require_once __DIR__ . '/../../Helpers/Session.php';
 require_once __DIR__ . '/../../Models/admin/Logger.php';
-class TicketController extends AuthController
+class ItTicketController extends AuthController
 {
     public function create()
     {
@@ -177,7 +177,18 @@ class TicketController extends AuthController
 
     public function fetchHistory()
     {
+        if (session_status() === PHP_SESSION_NONE) session_start();
+
+        // BUG-12 fix: authenticate before returning any ticket data
+        if (empty($_SESSION['account_id'])) {
+            header('Content-Type: application/json');
+            http_response_code(401);
+            echo json_encode([]);
+            return;
+        }
+
         if (!isset($_GET['ticket_id'])) {
+            header('Content-Type: application/json');
             echo json_encode([]);
             return;
         }
@@ -206,7 +217,9 @@ class TicketController extends AuthController
 
         $employeeId = $itModel->getEmployeeIdByAccountId($accountId);
         if (!$employeeId) {
-            die('Employee not found');
+            $_SESSION['flash_error'] = 'Employee profile not found. Please contact your administrator.';
+            $this->redirect('/it/dashboard');
+            return;
         }
 
         $ticketModel = new ItTicketModel();
@@ -284,12 +297,21 @@ class TicketController extends AuthController
 
                 $notificationModel = new NotificationModel();
                 $base = $this->getLoggedUserContext()['base'];
+
+                // Determine the filer's role so we route them to the correct rate page
+                $filerUsertype = $ticketModel->getUsertypeByAccountId((int)$receiverAccountId);
+                $rateUrl = match(strtoupper((string)$filerUsertype)) {
+                    'HEAD'     => '/head/tickets/rate?id=' . $ticketId,
+                    'IT'       => '/it/tickets/rate?id=' . $ticketId,
+                    default    => '/employee/tickets/rate?id=' . $ticketId,
+                };
+
                 $notificationModel->create(
                     (int) $receiverAccountId,
                     'Your ticket has been resolved. Click to rate IT support.',
                     'fa-star',
                     'success',
-                    '/employee/tickets/rate?id=' . $ticketId,
+                    $rateUrl,
                     $ticketId
                 );
 

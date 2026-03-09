@@ -23,4 +23,7 @@ class Session {
         session_destroy();
     }
 }
-Session::start();
+// BUG-26 fix: removed auto-invocation of Session::start() here.
+// Callers must call Session::start() explicitly to avoid unintended side effects
+// when this file is included before headers have been sent or before
+// the calling code is ready to start a session.

@@ -44,13 +44,17 @@ class Ticket extends BaseModel {
 
     public function fetchEmployeesByDepartment(string $department): array
     {
-        $sql = "SELECT employee_id, firstname, lastname 
-                FROM tblemployee 
-                WHERE department = :dept 
-                ORDER BY firstname, lastname";
+        // BUG-16 fix: join with tblaccounts to filter by active IT accounts only
+        $sql = "SELECT e.employee_id, e.firstname, e.lastname
+                FROM tblemployee e
+                JOIN tblaccounts a ON a.account_id = e.account_id
+                WHERE e.department = :dept
+                  AND UPPER(a.usertype) = UPPER(:dept_type)
+                  AND UPPER(a.status) = 'ACTIVE'
+                ORDER BY e.firstname, e.lastname";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute([':dept' => $department]);
+        $stmt->execute([':dept' => $department, ':dept_type' => $department]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }

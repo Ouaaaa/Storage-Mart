@@ -277,5 +277,19 @@ class ItTicketModel extends BaseModel
         return $accountId ? (int)$accountId : null;
     }
 
+    /**
+     * BUG-07 fix: look up the usertype for an account_id so notification URLs
+     * can be routed to the correct role-specific rate page.
+     */
+    public function getUsertypeByAccountId(int $accountId): ?string
+    {
+        $stmt = $this->pdo->prepare(
+            "SELECT usertype FROM tblaccounts WHERE account_id = ? LIMIT 1"
+        );
+        $stmt->execute([$accountId]);
+        $val = $stmt->fetchColumn();
+        return $val !== false ? (string)$val : null;
+    }
+
 
 }

@@ -48,9 +48,11 @@ class itController extends AuthController{
         $count = $notificationData['count'];
         $notifications = $notificationData['notifications'];
         $dashboardModel = new DashboardModel();
-        $employeeId = (int) $employeeId; // already defined earlier in your controller
-
-        $rows = $dashboardModel->getItTicketResolutionTimes($employeeId);
+        // BUG-28 fix: only call getItTicketResolutionTimes when we have a real employee ID
+        $employeeId = (int)$employeeId; // cast null → 0 safely
+        $rows = ($employeeId > 0)
+            ? $dashboardModel->getItTicketResolutionTimes($employeeId)
+            : [];
 
         $resolutionLabels = [];
         $resolutionData   = [];

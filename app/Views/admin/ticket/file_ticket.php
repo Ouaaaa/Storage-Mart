@@ -48,7 +48,8 @@ $base = rtrim(BASE_URL, '/');
                         </div>
                         <div class="card-body">
                             <div class="container mt-4">
-                            <form action="<?= htmlspecialchars($base) ?>/admin/tickets/file" method="POST">   
+                            <form action="<?= htmlspecialchars($base) ?>/admin/tickets/file" method="POST">
+                                <input type="hidden" name="csrf_token" value="<?= htmlspecialchars($_SESSION['csrf_token'] ?? '') ?>">
                                 <input type="hidden" name="inventory_id" value="<?= htmlspecialchars($inventory['inventory_id'] ?? '') ?>">
                                 <input type="hidden" name="branch_id" value="<?= htmlspecialchars($inventory['branch_id'] ?? '') ?>">                                 
                             <h1>Employee Details</h1>

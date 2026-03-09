@@ -15,6 +15,8 @@ class Logger {
     }
 
     public function log($action, $module, $id, $performedby) {
+        // BUG-27 fix: always cast $id to string for consistent type across all callers
+        $id   = (string)$id;
         $date = date('Y-m-d');
         $time = date('H:i:s');  
         if ($this->pdo) {

@@ -122,12 +122,6 @@ class headTicketController extends AuthController
             'created_by'      => $accountId
         ]);
 
-        if (!$employeeId) {
-            $_SESSION['flash_error'] = "Unable to determine your head record.";
-            $this->redirect('/head/assets');
-            return;
-        }
-
         /* ✅ GET EMPLOYEE DEPARTMENT SAFELY */
         $employee = $employeeModel->getEmployeeById($employeeId);
         $department = $employee['department'] ?? null;

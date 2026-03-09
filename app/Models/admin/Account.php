@@ -69,7 +69,8 @@ class Account extends BaseModel {
     }
 
     public function countOngoingTickets(){
-        $stmt = $this->pdo->prepare("SELECT COUNT(*) as countOngoingTickets FROM {$this->tbltickets} WHERE status = 'Ongoing'");
+        // Status in tbltickets is 'In Progress', not 'Ongoing'
+        $stmt = $this->pdo->prepare("SELECT COUNT(*) as countOngoingTickets FROM {$this->tbltickets} WHERE status = 'In Progress'");
         $stmt->execute();
         $result = $stmt->fetch(PDO::FETCH_ASSOC);
         return $result ? (int)$result['countOngoingTickets'] : 0;

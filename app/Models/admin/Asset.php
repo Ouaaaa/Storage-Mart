@@ -188,11 +188,10 @@ class Asset extends BaseModel {
                 return null;
             }
 
-            // 2) compute assetCode (sequential) and assetNumber
-            $stmt = $this->pdo->query("SELECT COUNT(*) AS cnt FROM {$this->tblassets}");
+            // 2) compute assetCode (sequential based on MAX, safe after deletions)
+            $stmt = $this->pdo->query("SELECT IFNULL(MAX(assetCode), 0) AS max_code FROM {$this->tblassets}");
             $countRow = $stmt->fetch(PDO::FETCH_ASSOC);
-            $total = (int)($countRow['cnt'] ?? 0);
-            $assetCode = $total + 1;
+            $assetCode = (int)($countRow['max_code'] ?? 0) + 1;
             $assetCodePadded = str_pad($assetCode, 3, "0", STR_PAD_LEFT);
 
             // use last 2 chars of provided year string (e.g. "2022" -> "22")
@@ -497,7 +496,7 @@ class Asset extends BaseModel {
         ";
 
         $stmt = $this->pdo->prepare($sql);
-        $stmt->execute(['inventory_id' => $inventoryId]);
+        $stmt->execute([':inventory_id' => $inventoryId]);
         return $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
     }
 

@@ -1,7 +1,9 @@
 <?php
 
 require_once __DIR__ . '/../AuthController.php';
-require_once __DIR__ . '/../../Models/employee/Asset.php';
+// BUG-22 fix: use headAssetModel instead of employee Asset to keep
+// head-specific asset logic separate and avoid model divergence issues.
+require_once __DIR__ . '/../../Models/head/headAssetModel.php';
 require_once __DIR__ . '/../../Models/employee/Employee.php';
 require_once __DIR__ . '/../../Helpers/Session.php';
 
@@ -48,7 +50,7 @@ class HeadAssetController extends AuthController
         }
 
         // Fetch HEAD's own assets
-        $assetModel = new Asset();
+        $assetModel = new headAssetModel();
         $assets = $assetModel->fetchAssetsByEmployee($employeeId);
         $employee_id = $employeeId;
 
