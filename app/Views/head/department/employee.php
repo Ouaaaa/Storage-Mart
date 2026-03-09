@@ -276,19 +276,6 @@ $base = rtrim(BASE_URL, '/');
     </div>
   </div>
 </div>
-<script>
-(function () {
-    const originalDataTable = window.DataTable;
-
-    window.DataTable = function (selector, options) {
-        const el = document.querySelector(selector);
-        if (el && el.dataset.dtIgnore === "true") {
-            return; // ⛔ skip auto-init
-        }
-        return new originalDataTable(selector, options);
-    };
-})();
-</script>
 
     <!-- Bootstrap core JavaScript-->
     <script src="<?= htmlspecialchars($base) ?>/assets/vendor/jquery/jquery.min.js"></script>
@@ -305,6 +292,7 @@ $base = rtrim(BASE_URL, '/');
 
     <!-- Page level custom scripts -->
     <script src="<?= htmlspecialchars($base) ?>/assets/js/demo/datatables-demo.js"></script>
+
 <script>
 $(document).on('click', '.viewEmployeeTicketsBtn', function () {
     const employeeId = $(this).data('employee-id');
@@ -313,12 +301,13 @@ $(document).on('click', '.viewEmployeeTicketsBtn', function () {
     $('#ticketEmployeeName').val(name);
     $('#ticketEmployeeId').val(employeeId);
 
+    // FIX: removed dataSrc:'' — server returns {data:[...]}, so default dataSrc:'data' is correct
     $('#employeeTicketsTable').DataTable({
         destroy: true,
         ajax: {
             url: "<?= $base ?>/head/employee/tickets",
             data: { employee_id: employeeId },
-            dataSrc: ''
+            dataSrc: 'data'
         },
         columns: [
             { data: 'ticket_number' },
@@ -332,6 +321,7 @@ $(document).on('click', '.viewEmployeeTicketsBtn', function () {
     $('#employeeTicketsModal').modal('show');
 });
 </script>
+
 <script>
 $(document).on('click', '.viewEmployeeAssetsBtn', function () {
     const employeeId = $(this).data('employee-id');
@@ -340,12 +330,13 @@ $(document).on('click', '.viewEmployeeAssetsBtn', function () {
     $('#assetEmployeeName').val(name);
     $('#assetEmployeeId').val(employeeId);
 
+    // FIX: removed dataSrc:'' — server returns {data:[...]}, so default dataSrc:'data' is correct
     $('#employeeAssetsTable').DataTable({
         destroy: true,
         ajax: {
             url: "<?= $base ?>/head/employee/assets",
             data: { employee_id: employeeId },
-            dataSrc: ''
+            dataSrc: 'data'
         },
         columns: [
             { data: 'assetNumber' },
@@ -355,7 +346,7 @@ $(document).on('click', '.viewEmployeeAssetsBtn', function () {
             { data: 'serialNumber' },
             {
                 data: null,
-                render: function (row) {
+                render: function (data, type, row) {
                     return `
                         <button class="btn btn-sm btn-primary viewAssetTicketsBtn"
                             data-inventory-id="${row.inventory_id}"
@@ -380,12 +371,13 @@ $(document).on('click', '.viewAssetTicketsBtn', function () {
     $('#assetTicketItemInfo').val($(this).data('iteminfo'));
     $('#assetTicketAssetNumber').val($(this).data('assetnumber'));
 
+    // FIX: removed dataSrc:'' — server returns {data:[...]}, so default dataSrc:'data' is correct
     $('#assetTicketsTable').DataTable({
         destroy: true,
         ajax: {
             url: "<?= $base ?>/head/employee/assets/tickets",
             data: { inventory_id: inventoryId },
-            dataSrc: ''
+            dataSrc: 'data'
         },
         columns: [
             { data: 'ticket_number' },
@@ -399,7 +391,6 @@ $(document).on('click', '.viewAssetTicketsBtn', function () {
     $('#assetTicketsModal').modal('show');
 });
 </script>
-
 
 </body>
 
