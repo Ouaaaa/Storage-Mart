@@ -154,7 +154,7 @@ class headTicketController extends AuthController
             if ($receiverType === 'ADMIN') {
                 $actionUrl = '/admin/tickets';
             } elseif ($receiverType === 'HEAD') {
-                $actionUrl = '/head/employee';
+                $actionUrl = '/head/tickets';
             } else {
                 $actionUrl = '/it/tickets';
             }
