@@ -265,15 +265,21 @@ class Asset extends BaseModel {
                 $dateIssued = date('Y-m-d');     // legacy used both
                 $dateReturned = date('Y-m-d');
 
+                // FIX Bug #1: compute next transferCount (same logic as transferAssetToEmployee)
+                $stmt = $this->pdo->query("SELECT IFNULL(MAX(CAST(transferCount AS UNSIGNED)), 0) AS m FROM {$this->tblassign}");
+                $tcRow = $stmt->fetch(PDO::FETCH_ASSOC);
+                $formattedTransferCount = str_pad((int)($tcRow['m'] ?? 0) + 1, 3, "0", STR_PAD_LEFT);
+
                 $sqlIns = "INSERT INTO {$this->tblassign}
-                        (employee_id, inventory_id, assignedTo, dateIssued, transferDetails, dateReturned, datecreated, createdby)
-                        VALUES (:employee_id, :inventory_id, :assignedTo, :dateIssued, :transferDetails, :dateReturned, :datecreated, :createdby)";
+                        (employee_id, inventory_id, transferCount, assignedTo, dateIssued, transferDetails, dateReturned, datecreated, createdby)
+                        VALUES (:employee_id, :inventory_id, :transferCount, :assignedTo, :dateIssued, :transferDetails, :dateReturned, :datecreated, :createdby)";
                 $stmt2 = $this->pdo->prepare($sqlIns);
 
                 // employee_id is NULL (unassigned) for returned/lost/disposed in legacy
                 $ok2 = $stmt2->execute([
                     ':employee_id'    => null,
                     ':inventory_id'   => $inventoryID,
+                    ':transferCount'  => $formattedTransferCount,
                     ':assignedTo'     => "Unassigned / {$status}",
                     ':dateIssued'     => $dateIssued,
                     ':transferDetails'=> $transferDetails,
