@@ -1,7 +1,7 @@
 <?php
 require '../vendor/autoload.php';
 require_once "config.php";
-include("../Employee/session-checker.php");
+include('session-checker.php');
 
 use PhpOffice\PhpWord\TemplateProcessor;
 
