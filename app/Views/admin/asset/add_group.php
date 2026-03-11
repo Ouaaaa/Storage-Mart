@@ -36,9 +36,6 @@ $base = rtrim(BASE_URL, '/');
 
                 <!-- Begin Page Content -->
                 <div class="container-fluid">
-                    <h1 class="h3 mb-2 text-gray-800">Add Group Asset</h1>
-                    <p class="mb-4">Create a new asset group by filling out the information below.</p>
-
                     <!-- Form to Add Group -->
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">

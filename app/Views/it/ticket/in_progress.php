@@ -36,8 +36,6 @@ $base = rtrim(BASE_URL, '/');
     require_once __DIR__ . '/../../partials/it/sidebar_topbar.php';?>
         <!-- End of Sidebar -->
                 <div class="container-fluid">
-                    <h1 class="h3 mb-2 text-gray-800">Tables</h1>
-                    <p class="mb-4">DataTables used below. For more: <a target="_blank" href="https://datatables.net">DataTables docs</a>.</p>
                     <div class="card shadow mb-4">
                         <div class="card-header py-3">
                             <h6 class="m-0 font-weight-bold text-primary">List of Pending Tickets</h6>
